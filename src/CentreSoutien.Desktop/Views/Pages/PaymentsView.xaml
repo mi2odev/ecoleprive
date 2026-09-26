@@ -1,0 +1,271 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.PaymentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:PaymentsViewModel}">
+    <StackPanel>
+        <!-- Title row -->
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth}" DisplayMemberPath="Label" Width="170" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Encaisser un paiement" Command="{Binding CollectCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding MonthLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Paiements des élèves" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Tabs -->
+        <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,22">
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="Mensualités" IsChecked="{Binding IsMonthly, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="monthly" Style="{StaticResource TabRadio}" />
+                <RadioButton Content="Reçus" IsChecked="{Binding IsReceipts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="receipts" Style="{StaticResource TabRadio}" />
+                <RadioButton Content="Remises" IsChecked="{Binding IsDiscounts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="discounts" Style="{StaticResource TabRadio}" />
+            </StackPanel>
+        </Border>
+
+        <!-- ===== Mensualités ===== -->
+        <StackPanel Visibility="{Binding IsMonthly, Converter={StaticResource BoolToVisible}}">
+            <ItemsControl ItemsSource="{Binding Kpis}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.8*" />
+                    <ColumnDefinition Width="16" />
+                    <ColumnDefinition Width="*" MinWidth="260" />
+                </Grid.ColumnDefinitions>
+
+                <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}" Padding="16,12,16,8">
+                            <DockPanel>
+                                <TextBox DockPanel.Dock="Right" Width="220" VerticalAlignment="Top" Tag="Rechercher un élève"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=150}" Margin="12,0,0,4" />
+                                <ListBox ItemsSource="{Binding Filters}" SelectedItem="{Binding SelectedFilter}" Style="{StaticResource ChipList}" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource TableHeader}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="80" />
+                                    <ColumnDefinition Width="80" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Élève" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="1" Text="Mensualité" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="2" Text="Payé" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="3" Text="Reste" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="4" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="Aucun élève ne correspond au filtre." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Rows}" VirtualizingPanel.IsVirtualizing="True">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:PayLine}">
+                                    <Border Style="{StaticResource TableRow}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="80" />
+                                                <ColumnDefinition Width="80" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Command="{Binding Open}" Style="{StaticResource InkLinkButton}" HorizontalAlignment="Left" Margin="0,0,10,0">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <TextBlock Background="Transparent" Cursor="Hand" TextTrimming="CharacterEllipsis" FontSize="13">
+                                                            <Run Text="{Binding Name, Mode=OneWay}" FontWeight="Medium" Foreground="{DynamicResource InkBrush}" /><Run Text="{Binding Discount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
+                                                        </TextBlock>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <TextBlock Grid.Column="1" Text="{Binding Due}" Style="{StaticResource Body}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Paid}" Style="{StaticResource Body}" />
+                                            <TextBlock Grid.Column="3" Text="{Binding Rest}" Style="{StaticResource Body}" />
+                                            <ContentControl Grid.Column="4" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
+                                            <Button Grid.Column="5" Content="Encaisser" Command="{Binding Collect}" Style="{StaticResource InkLinkButton}" FontSize="12"
+                                                    Visibility="{Binding CanCollect, Converter={StaticResource BoolToVisible}}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="{Binding CountLabel}" Style="{StaticResource Small}" Margin="20,12" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Latest receipts -->
+                <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Tous les reçus" Command="{Binding ShowTabCommand}" CommandParameter="receipts" Style="{StaticResource LinkButton}" />
+                                <TextBlock Text="Derniers reçus" Style="{StaticResource H2}" />
+                            </DockPanel>
+                        </Border>
+                        <TextBlock Text="Aucun reçu ce mois-ci." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding LatestReceipts, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding LatestReceipts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:PayRecentReceipt}">
+                                    <Button Command="{Binding Print}" Style="{StaticResource RowButton}" ToolTip="Réimprimer le reçu">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" Margin="10,0,0,0" />
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                                <TextBlock Text="{Binding Details}" Style="{StaticResource Small}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+
+        <!-- ===== Reçus ===== -->
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsReceipts, Converter={StaticResource BoolToVisible}}">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ReceiptsTotal}" Style="{StaticResource Muted}" />
+                        <TextBlock Style="{StaticResource H2}">
+                            <Run Text="Reçus émis · " /><Run Text="{Binding MonthLabel, Mode=OneWay}" />
+                        </TextBlock>
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="95" />
+                            <ColumnDefinition Width="1.4*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="130" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="N° de reçu" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Date" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Élève" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Objet" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Mois" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Mode" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="6" Text="Montant" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun reçu émis ce mois-ci." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Receipts, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Receipts}" VirtualizingPanel.IsVirtualizing="True">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:PayReceiptLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="95" />
+                                        <ColumnDefinition Width="1.4*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="130" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Number}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Date}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Student}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Kind}" Style="{StaticResource Muted}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Month}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Method}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="6" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
+                                    <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Imprimer" Command="{Binding Print}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== Remises ===== -->
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsDiscounts, Converter={StaticResource BoolToVisible}}">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Nouvelle remise" Command="{Binding AddDiscountCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                        <StackPanel>
+                            <TextBlock Text="Remises" Style="{StaticResource H2}" />
+                            <TextBlock Text="Appliquées à la mensualité depuis la fiche de l'élève (« Appliquer une remise »)." Style="{StaticResource Small}" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.4*" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="140" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Nom" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Type" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Valeur" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Bénéficiaires" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucune remise définie." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding DiscountLines, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding DiscountLines}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:DiscountLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.4*" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                        <TextBlock Text="{Binding Notes}" Style="{StaticResource Small}" Margin="0,2,0,0"
+                                                   Visibility="{Binding Notes, Converter={StaticResource NotNullToVisible}}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Type}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource BodyStrong}" />
+                                    <ContentControl Grid.Column="3" Content="{Binding Active}" Focusable="False" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Students}" Style="{StaticResource Muted}" />
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
