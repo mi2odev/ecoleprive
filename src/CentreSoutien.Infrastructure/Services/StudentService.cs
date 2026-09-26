@@ -113,12 +113,12 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
         return await NextMatriculeAsync(db, ct);
     }
 
-    private static async Task<string> NextMatriculeAsync(AppDbContext db, CancellationToken ct)
-    {
-        var all = await db.Students.Select(s => s.Matricule).ToListAsync(ct);
-        var max = all.Select(m => int.TryParse(m.TrimStart('E', 'e'), out var n) ? n : 0).DefaultIfEmpty(1000).Max();
-        return "E" + Math.Max(1000, max + 1);
-    }
+    private static async Task<string> NextMatriculeAsync(AppDbContext db, CancellationToken ct) =>
+        "E" + NextMatriculeNumber(await db.Students.Select(s => s.Matricule).ToListAsync(ct));
+
+    /// <summary>Matricule rule shared with the Excel import: E + (highest existing number + 1), at least E1000.</summary>
+    internal static int NextMatriculeNumber(IEnumerable<string> existing) =>
+        Math.Max(1000, existing.Select(m => int.TryParse(m.TrimStart('E', 'e'), out var n) ? n : 0).DefaultIfEmpty(1000).Max() + 1);
 
     public async Task EnrollAsync(int studentId, int groupId, CancellationToken ct = default)
     {

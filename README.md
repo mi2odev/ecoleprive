@@ -20,6 +20,14 @@ UI language: French · Currency: DZD · Visual direction: **B · Marine** from t
 | **Rapports, Documents** | Monthly financial summary, per-course revenue, unpaid students, teacher pay, attendance and results per group; print / PDF, Excel export. Documents attached to the center, students, teachers or parents. |
 | **Paramètres, Mon compte** | Center identity and logo, pricing and payment rules, discount and compensation defaults, attendance and grading rules, receipts, backup / restore / export, language and theme, security (auto-lock delay, session timeout). Owner username, profile, photo and password. |
 
+### Owner productivity
+
+- **Dashboard insights:** an "À traiter" list of prioritized alerts (unpaid fees past the due day, students over the absence threshold, teacher pay due, full groups, attendance not taken, backup overdue, new students without a group), each with a direct link; 6-month charts of revenue / expenses / teacher pay / profit, collection rate, weekly attendance rate and students per level.
+- **Parent reminders ("Relances"):** in Paiements, the list of unpaid students with days overdue and a ready-to-send message (templates editable in Paramètres → Messages aux parents): copy, open WhatsApp (wa.me link, local numbers converted with the country code), SMS text, printed reminder letters in one batch, Excel export. After taking attendance, "Prévenir les parents" prepares absence messages the same way.
+- **Printable school documents:** report cards (bulletins: averages, rank, mention, attendance, appréciation) for one student or a whole group, enrollment certificates and attendance certificates — print or save as PDF.
+- **Excel import** of students (with parents, groups and discounts): downloadable template, preview with errors / warnings (duplicates, full or unknown groups), import in one transaction.
+- **Global search (Ctrl+K):** students, parents, teachers, groups, documents and receipts, accent-insensitive.
+
 There is deliberately **no** user management, roles, permissions, or teacher / staff / accountant login.
 
 ## Security
@@ -27,7 +35,7 @@ There is deliberately **no** user management, roles, permissions, or teacher / s
 - **Single owner account.** Created on first start as `admin` / `admin`. The owner **must** choose a new password at first login (8+ characters, letters and digits/symbols). The login screen only shows the default username while the default password is still in place.
 - **Password hashing:** PBKDF2-HMAC-SHA256, 600 000 iterations, random 128-bit salt, constant-time comparison. Hashes are upgraded automatically if the policy changes. No plain-text password is ever stored.
 - **Brute-force protection:** after 5 wrong attempts, login is locked for 1, 2, 4, 8, then 15 minutes.
-- **Automatic lock** after N minutes of inactivity (configurable: never, 5, 10, 15, 30, 60). The lock screen asks for the password. **Session timeout:** a session left locked too long ends and requires a full login. Closing the app signs the owner out. `Ctrl+L` locks immediately.
+- **Automatic lock** after N minutes of inactivity (configurable: never, 5, 10, 15, 30, 60). The lock screen asks for the password. **Session timeout:** a session left locked too long ends and requires a full login. Closing the app signs the owner out. `Ctrl+L` locks immediately, `Ctrl+K` opens the global search.
 - **Encrypted database:** SQLite with SQLCipher (AES-256). The random 256-bit key is stored in `keys.json`, protected by Windows DPAPI (bound to the Windows user account).
 - **Encrypted backups (`.csbak`):** the database copy, images and documents are encrypted (AES-256-GCM). The key is wrapped with the owner's password, so a backup can be restored **on another PC** with the password in use when the backup was made. The current database is kept as `avant-restauration-*.db` before a restore.
 - Single instance per Windows session (two copies can't write the database at the same time).

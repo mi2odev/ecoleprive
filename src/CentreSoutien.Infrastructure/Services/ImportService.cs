@@ -180,8 +180,7 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
         var ctx = await LoadAsync(db, ct);
         var plans = Evaluate(ctx, rows, options.SkipDuplicates);
 
-        // Same rule as StudentService.NextMatriculeAsync: E + (highest number + 1), starting at E1000.
-        var next = Math.Max(1000, ctx.Students.Select(s => int.TryParse(s.Matricule.TrimStart('E', 'e'), out var n) ? n : 0).DefaultIfEmpty(1000).Max() + 1);
+        var next = StudentService.NextMatriculeNumber(ctx.Students.Select(s => s.Matricule));
         int created = 0, parentsCreated = 0, enrollments = 0, skipped = 0;
         var messages = new List<string>();
         var newParents = new HashSet<Parent>();
