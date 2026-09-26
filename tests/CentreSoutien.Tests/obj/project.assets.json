@@ -35,6 +35,22 @@
           }
         }
       },
+      "CommunityToolkit.Mvvm/8.4.2": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/CommunityToolkit.Mvvm.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/CommunityToolkit.Mvvm.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/CommunityToolkit.Mvvm.targets": {}
+        }
+      },
       "DocumentFormat.OpenXml/3.1.1": {
         "type": "package",
         "dependencies": {
@@ -979,6 +995,21 @@
         "runtime": {
           "bin/placeholder/CentreSoutien.Infrastructure.dll": {}
         }
+      },
+      "CentreSoutien.Presentation/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "CentreSoutien.Application": "1.0.0",
+          "CommunityToolkit.Mvvm": "8.4.2",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12"
+        },
+        "compile": {
+          "bin/placeholder/CentreSoutien.Presentation.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/CentreSoutien.Presentation.dll": {}
+        }
       }
     }
   },
@@ -1015,6 +1046,46 @@
         "lib/netstandard2.0/ClosedXML.Parser.xml",
         "lib/netstandard2.1/ClosedXML.Parser.dll",
         "lib/netstandard2.1/ClosedXML.Parser.xml"
+      ]
+    },
+    "CommunityToolkit.Mvvm/8.4.2": {
+      "sha512": "WadCzGEc2U+3e20avRLng4qNtt4zoOGWrdUISqJWrHe3/FSnrYjuM5Sb4yQb09LhkBXrrI4Zt3dLKgRMbItsrg==",
+      "type": "package",
+      "path": "communitytoolkit.mvvm/8.4.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "License.md",
+        "ThirdPartyNotices.txt",
+        "analyzers/dotnet/roslyn4.0/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.0/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
+        "analyzers/dotnet/roslyn4.12/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.12/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
+        "analyzers/dotnet/roslyn4.3/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.3/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
+        "analyzers/dotnet/roslyn5.0/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
+        "analyzers/dotnet/roslyn5.0/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
+        "build/CommunityToolkit.Mvvm.FeatureSwitches.targets",
+        "build/CommunityToolkit.Mvvm.SourceGenerators.targets",
+        "build/CommunityToolkit.Mvvm.Windows.targets",
+        "build/CommunityToolkit.Mvvm.WindowsSdk.targets",
+        "build/CommunityToolkit.Mvvm.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.FeatureSwitches.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.SourceGenerators.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.Windows.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.WindowsSdk.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.targets",
+        "communitytoolkit.mvvm.8.4.2.nupkg.sha512",
+        "communitytoolkit.mvvm.nuspec",
+        "lib/net8.0-windows10.0.17763/CommunityToolkit.Mvvm.dll",
+        "lib/net8.0-windows10.0.17763/CommunityToolkit.Mvvm.xml",
+        "lib/net8.0/CommunityToolkit.Mvvm.dll",
+        "lib/net8.0/CommunityToolkit.Mvvm.xml",
+        "lib/netstandard2.0/CommunityToolkit.Mvvm.dll",
+        "lib/netstandard2.0/CommunityToolkit.Mvvm.xml",
+        "lib/netstandard2.1/CommunityToolkit.Mvvm.dll",
+        "lib/netstandard2.1/CommunityToolkit.Mvvm.xml"
       ]
     },
     "DocumentFormat.OpenXml/3.1.1": {
@@ -2173,11 +2244,17 @@
       "type": "project",
       "path": "../../src/CentreSoutien.Infrastructure/CentreSoutien.Infrastructure.csproj",
       "msbuildProject": "../../src/CentreSoutien.Infrastructure/CentreSoutien.Infrastructure.csproj"
+    },
+    "CentreSoutien.Presentation/1.0.0": {
+      "type": "project",
+      "path": "../../src/CentreSoutien.Presentation/CentreSoutien.Presentation.csproj",
+      "msbuildProject": "../../src/CentreSoutien.Presentation/CentreSoutien.Presentation.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net10.0": [
       "CentreSoutien.Infrastructure >= 1.0.0",
+      "CentreSoutien.Presentation >= 1.0.0",
       "Microsoft.NET.Test.Sdk >= 18.10.1",
       "xunit >= 2.9.3",
       "xunit.runner.visualstudio >= 3.1.4"
@@ -2211,6 +2288,9 @@
           "projectReferences": {
             "/home/claude/repo/src/CentreSoutien.Infrastructure/CentreSoutien.Infrastructure.csproj": {
               "projectPath": "/home/claude/repo/src/CentreSoutien.Infrastructure/CentreSoutien.Infrastructure.csproj"
+            },
+            "/home/claude/repo/src/CentreSoutien.Presentation/CentreSoutien.Presentation.csproj": {
+              "projectPath": "/home/claude/repo/src/CentreSoutien.Presentation/CentreSoutien.Presentation.csproj"
             }
           }
         }

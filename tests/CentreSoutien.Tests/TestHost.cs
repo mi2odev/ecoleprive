@@ -15,19 +15,20 @@ public sealed class TestHost : IAsyncDisposable
     public ServiceProvider Services { get; }
     public FakeClock Clock { get; } = new(new DateTimeOffset(2026, 9, 26, 14, 32, 0, TimeSpan.FromHours(1)));
 
-    private TestHost(string folder, bool encrypt)
+    private TestHost(string folder, bool encrypt, Action<IServiceCollection>? configure)
     {
         Folder = folder;
         var sc = new ServiceCollection();
         sc.AddLocalInfrastructure(new StorageOptions { DataFolder = folder, EncryptDatabase = encrypt }, new PlainKeyProtector());
         sc.AddSingleton<TimeProvider>(Clock);
         sc.AddSingleton<IPasswordHasher>(new Pbkdf2PasswordHasher(1_000));
+        configure?.Invoke(sc);
         Services = sc.BuildServiceProvider();
     }
 
-    public static async Task<TestHost> CreateAsync(string? folder = null, bool encrypt = true)
+    public static async Task<TestHost> CreateAsync(string? folder = null, bool encrypt = true, Action<IServiceCollection>? configure = null)
     {
-        var host = new TestHost(folder ?? Path.Combine(Path.GetTempPath(), "cs-tests-" + Guid.NewGuid().ToString("N")), encrypt);
+        var host = new TestHost(folder ?? Path.Combine(Path.GetTempPath(), "cs-tests-" + Guid.NewGuid().ToString("N")), encrypt, configure);
         await host.Get<DatabaseInitializer>().InitializeAsync();
         return host;
     }

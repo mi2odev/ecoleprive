@@ -207,10 +207,5 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
         return levels.Where(l => !string.IsNullOrWhiteSpace(l)).Distinct().OrderBy(LevelOrder).ToList();
     }
 
-    /// <summary>Orders Algerian levels: 1AP…5AP, 1AM…4AM, 1AS…3AS.</summary>
-    public static int LevelOrder(string level)
-    {
-        var cycle = level.EndsWith("AP") ? 0 : level.EndsWith("AM") ? 10 : level.EndsWith("AS") ? 20 : 30;
-        return cycle + (level.Length > 0 && char.IsDigit(level[0]) ? level[0] - '0' : 9);
-    }
+    public static int LevelOrder(string level) => Levels.Order(level);
 }

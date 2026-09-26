@@ -149,3 +149,6 @@
 /home/claude/repo/tests/CentreSoutien.Tests/obj/Debug/net10.0/CentreSoutien.Tests.pdb
 /home/claude/repo/tests/CentreSoutien.Tests/obj/Debug/net10.0/CentreSoutien.Tests.genruntimeconfig.cache
 /home/claude/repo/tests/CentreSoutien.Tests/obj/Debug/net10.0/ref/CentreSoutien.Tests.dll
+/home/claude/repo/tests/CentreSoutien.Tests/bin/Debug/net10.0/CommunityToolkit.Mvvm.dll
+/home/claude/repo/tests/CentreSoutien.Tests/bin/Debug/net10.0/CentreSoutien.Presentation.dll
+/home/claude/repo/tests/CentreSoutien.Tests/bin/Debug/net10.0/CentreSoutien.Presentation.pdb

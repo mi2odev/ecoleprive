@@ -1,3 +1,5 @@
+using CentreSoutien.Application.Abstractions;
+
 namespace CentreSoutien.Infrastructure.Storage;
 
 /// <summary>Bound from the "Storage" section of appsettings.json.</summary>
@@ -41,10 +43,4 @@ public sealed class AppPaths
         StorageAreas.Documents => Documents,
         _ => throw new ArgumentOutOfRangeException(nameof(area)),
     };
-}
-
-public static class StorageAreas
-{
-    public const string Images = "images";
-    public const string Documents = "documents";
 }

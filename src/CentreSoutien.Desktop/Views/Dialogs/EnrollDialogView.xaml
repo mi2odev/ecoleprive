@@ -1,0 +1,23 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.EnrollDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:core="clr-namespace:CentreSoutien.Presentation.Core;assembly=CentreSoutien.Presentation"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:EnrollDialogViewModel}">
+    <StackPanel>
+        <TextBlock FontSize="14" Margin="0,0,0,6">
+            <Run Text="Élève : " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentName, Mode=OneWay}" Foreground="{DynamicResource InkBrush}" />
+        </TextBlock>
+        <TextBlock FontSize="14" Margin="0,0,0,6" Visibility="{Binding FromGroup, Converter={StaticResource NotNullToVisible}}">
+            <Run Text="Groupe actuel : " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding FromGroup, Mode=OneWay}" Foreground="{DynamicResource InkBrush}" />
+        </TextBlock>
+        <TextBlock Text="Nouveau groupe" Style="{StaticResource FieldLabel}" Margin="0,12,0,6" />
+        <ComboBox ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label" MaxDropDownHeight="320" />
+        <TextBlock Text="Aucun groupe disponible pour ce niveau." Style="{StaticResource Muted}" Margin="0,8,0,0"
+                   Visibility="{Binding GroupOptions, Converter={StaticResource NullToVisible}}" />
+        <CheckBox Content="Afficher les groupes de tous les niveaux" IsChecked="{Binding ShowAllLevels}" Margin="0,14,0,0" />
+    </StackPanel>
+</UserControl>

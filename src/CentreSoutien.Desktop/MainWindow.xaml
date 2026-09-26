@@ -1,12 +1,240 @@
-﻿<Window x:Class="CentreSoutien.Desktop.MainWindow"
+<Window x:Class="CentreSoutien.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CentreSoutien.Desktop"
+        xmlns:shell="clr-namespace:CentreSoutien.Presentation.ViewModels.Shell;assembly=CentreSoutien.Presentation"
+        xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+        xmlns:views="clr-namespace:CentreSoutien.Desktop.Views"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        d:DataContext="{d:DesignInstance Type=shell:ShellViewModel}"
+        Title="{Binding CenterName}"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Width="1366" Height="800" MinWidth="1100" MinHeight="680"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource InkBrush}"
+        FontFamily="{StaticResource SansFont}" FontSize="14"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Window.Resources>
+        <views:ViewLocator x:Key="ViewLocator" />
+    </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding Dialogs.Current.CancelCommand}" />
+        <KeyBinding Key="L" Modifiers="Control" Command="{Binding LockNowCommand}" />
+    </Window.InputBindings>
 
+    <Grid>
+        <!-- ===================== LOGIN ===================== -->
+        <Grid Visibility="{Binding ShowLogin, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.15*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Background="{DynamicResource PlateBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0" Padding="48,44">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="GESTION DU CENTRE" FontSize="12" Foreground="#6A6A66" />
+                    <TextBlock DockPanel.Dock="Bottom" FontSize="13" Foreground="#6A6A66">
+                        <Run Text="{Binding CenterName, Mode=OneWay}" /><Run Text=" · Cours de soutien" />
+                    </TextBlock>
+                    <Grid MaxWidth="540" Margin="0,24">
+                        <Image Source="pack://application:,,,/Assets/logo.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                               Visibility="{Binding HasCustomLogo, Converter={StaticResource BoolToCollapsed}}" />
+                        <Image Source="{Binding LogoPath, Converter={StaticResource PathToImage}}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                               Visibility="{Binding HasCustomLogo, Converter={StaticResource BoolToVisible}}" />
+                    </Grid>
+                </DockPanel>
+            </Border>
+            <Grid Grid.Column="1" Margin="48">
+                <StackPanel Width="360" VerticalAlignment="Center" DataContext="{Binding Login}">
+                    <TextBlock Text="Connexion" Style="{StaticResource H1}" />
+                    <TextBlock Text="Accès propriétaire du centre." Style="{StaticResource Muted}" FontSize="14" Margin="0,8,0,22" />
+                    <TextBlock Text="Nom d'utilisateur" Style="{StaticResource FieldLabel}" FontSize="13" />
+                    <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}"
+                             ui:Enter.Command="{Binding SignInCommand}" ui:FocusOnShow.Enabled="True" />
+                    <TextBlock Text="Mot de passe" Style="{StaticResource FieldLabel}" FontSize="13" Margin="0,14,0,6" />
+                    <PasswordBox ui:PasswordBinding.Password="{Binding Password, Mode=TwoWay}" ui:Enter.Command="{Binding SignInCommand}" />
+                    <TextBlock Text="{Binding Error}" Style="{StaticResource ErrorText}" Margin="0,12,0,0"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVisible}}" />
+                    <Button Content="Se connecter" Command="{Binding SignInCommand}" Style="{StaticResource PrimaryButton}" Height="44" FontSize="14" Margin="0,22,0,0" IsDefault="True" />
+                    <TextBlock Text="{Binding LockHint}" Style="{StaticResource Small}" Margin="0,22,0,0" TextWrapping="Wrap" />
+                    <Border Visibility="{Binding IsFirstRun, Converter={StaticResource BoolToVisible}}" Margin="0,16,0,0" Padding="14,12"
+                            Background="{DynamicResource SunkBrush}" CornerRadius="{StaticResource RadiusSmall}">
+                        <TextBlock Style="{StaticResource Small}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}">
+                            <Run FontWeight="Medium" Text="Première utilisation :" />
+                            <Run Text="identifiant « admin », mot de passe « admin ». Vous devrez ensuite choisir votre propre mot de passe." />
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- ===================== FORCED PASSWORD CHANGE ===================== -->
+        <Grid Visibility="{Binding ShowChangePassword, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}">
+            <StackPanel Width="400" VerticalAlignment="Center" HorizontalAlignment="Center" DataContext="{Binding ChangePassword}">
+                <TextBlock Text="Choisissez votre mot de passe" Style="{StaticResource H1}" FontSize="32" TextWrapping="Wrap" />
+                <TextBlock Style="{StaticResource Muted}" FontSize="14" Margin="0,8,0,22" TextWrapping="Wrap"
+                           Text="Vous utilisez le mot de passe d'installation. Remplacez-le avant d'accéder au centre : ce compte unique donne accès à toutes les données." />
+                <TextBlock Text="Mot de passe actuel" Style="{StaticResource FieldLabel}" />
+                <PasswordBox ui:PasswordBinding.Password="{Binding CurrentPassword, Mode=TwoWay}" ui:FocusOnShow.Enabled="True" />
+                <TextBlock Text="Nouveau mot de passe" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+                <PasswordBox ui:PasswordBinding.Password="{Binding NewPassword, Mode=TwoWay}" />
+                <TextBlock Text="Confirmer le nouveau mot de passe" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+                <PasswordBox ui:PasswordBinding.Password="{Binding ConfirmPassword, Mode=TwoWay}" ui:Enter.Command="{Binding SaveCommand}" />
+                <TextBlock Text="{Binding Rules}" Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                <TextBlock Text="{Binding Error}" Style="{StaticResource ErrorText}" Margin="0,12,0,0"
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisible}}" />
+                <Button Content="Enregistrer et continuer" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Height="44" FontSize="14" Margin="0,22,0,0" />
+                <Button Content="Se déconnecter" Command="{Binding SignOutCommand}" Style="{StaticResource LinkButton}" FontSize="13" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===================== APPLICATION ===================== -->
+        <DockPanel Visibility="{Binding ShowApp, Converter={StaticResource BoolToVisible}}">
+            <!-- Sidebar -->
+            <Border DockPanel.Dock="Left" Width="236" Background="{DynamicResource SideBrush}" BorderBrush="{DynamicResource SideLineBrush}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,18,18,14">
+                        <Border Width="40" Height="40" CornerRadius="{StaticResource RadiusSmall}" Background="#FFFFFF" ClipToBounds="True">
+                            <Grid Margin="1">
+                                <Image Source="pack://application:,,,/Assets/logo.png" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                                       Visibility="{Binding HasCustomLogo, Converter={StaticResource BoolToCollapsed}}" />
+                                <Image Source="{Binding LogoPath, Converter={StaticResource PathToImage}}" Stretch="Uniform"
+                                       Visibility="{Binding HasCustomLogo, Converter={StaticResource BoolToVisible}}" />
+                            </Grid>
+                        </Border>
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center" Width="150">
+                            <TextBlock Text="{Binding CenterName}" FontFamily="{StaticResource SerifFont}" FontSize="16" Foreground="{DynamicResource SideInkBrush}"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding CenterName}" />
+                            <TextBlock Text="CENTRE DE SOUTIEN" FontSize="10.5" Foreground="{DynamicResource SideMutedBrush}" Margin="0,1,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Owner account + sign out -->
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource SideLineBrush}" BorderThickness="0,1,0,0" Padding="10,12">
+                        <StackPanel>
+                            <Button Command="{Binding OpenAccountCommand}" Style="{StaticResource NavButton}" ToolTip="Mon compte">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:Avatar Size="32" Initials="{Binding OwnerInitials}" ImagePath="{Binding OwnerPhotoPath}" />
+                                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center" Width="140">
+                                        <TextBlock Text="{Binding OwnerName}" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource SideInkBrush}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="Mon compte" FontSize="12" Foreground="{DynamicResource SideMutedBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                            <Button Content="Déconnexion" Command="{Binding SignOutCommand}" Style="{StaticResource NavButton}" FontSize="13" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10,6,10,12">
+                        <ItemsControl ItemsSource="{Binding NavGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type shell:NavGroup}">
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="{Binding Caption}" Style="{StaticResource Overline}"
+                                                   Visibility="{Binding HasLabel, Converter={StaticResource BoolToVisible}}" />
+                                        <ItemsControl ItemsSource="{Binding Items}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type shell:NavItem}">
+                                                    <Button Content="{Binding Label}" Command="{Binding GoCommand}" Tag="{Binding IsActive}"
+                                                            Style="{StaticResource NavButton}" Margin="0,0,0,1" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Main column -->
+            <DockPanel>
+                <Border DockPanel.Dock="Top" Height="60" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource BgBrush}" Padding="28,0">
+                    <DockPanel VerticalAlignment="Center" LastChildFill="False">
+                        <TextBox DockPanel.Dock="Left" Width="320" Tag="Rechercher un élève (Entrée)"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding SearchCommand}" />
+                        <Button DockPanel.Dock="Right" Content="Verrouiller" Command="{Binding LockNowCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34"
+                                ToolTip="Verrouiller l'application (Ctrl+L)" />
+                        <Button DockPanel.Dock="Right" Content="{Binding ThemeLabel}" Command="{Binding ToggleThemeCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Margin="0,0,14,0" />
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding ClockLabel}" Style="{StaticResource Muted}" Margin="0,0,14,0" />
+                    </DockPanel>
+                </Border>
+                <ScrollViewer x:Name="PageScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{DynamicResource BgBrush}">
+                    <ContentControl MaxWidth="1320" Margin="32,28,32,64" Focusable="False"
+                                    Content="{Binding Navigator.Current}" ContentTemplateSelector="{StaticResource ViewLocator}" />
+                </ScrollViewer>
+            </DockPanel>
+        </DockPanel>
+
+        <!-- ===================== LOCK SCREEN ===================== -->
+        <Grid Visibility="{Binding ShowLock, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}" Panel.ZIndex="50">
+            <StackPanel Width="340" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <ui:Avatar Size="80" Initials="{Binding OwnerInitials}" ImagePath="{Binding OwnerPhotoPath}" HorizontalAlignment="Center" />
+                <TextBlock Text="{Binding OwnerName}" FontFamily="{StaticResource SerifFont}" FontSize="28" HorizontalAlignment="Center" Margin="0,16,0,4" />
+                <TextBlock Text="Application verrouillée. Saisissez votre mot de passe." Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                <PasswordBox DataContext="{Binding Lock}" HorizontalContentAlignment="Center"
+                             ui:PasswordBinding.Password="{Binding Password, Mode=TwoWay}" ui:Enter.Command="{Binding UnlockCommand}" ui:FocusOnShow.Enabled="True" />
+                <TextBlock DataContext="{Binding Lock}" Text="{Binding Error}" Style="{StaticResource ErrorText}" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,12,0,0"
+                           Visibility="{Binding HasError, Converter={StaticResource BoolToVisible}}" />
+                <Button Content="Déverrouiller" DataContext="{Binding Lock}" Command="{Binding UnlockCommand}" Style="{StaticResource PrimaryButton}" Height="42" FontSize="14" Margin="0,16,0,0" />
+                <Button Content="Se déconnecter" DataContext="{Binding Lock}" Command="{Binding SignOutCommand}" Style="{StaticResource LinkButton}" FontSize="13" HorizontalAlignment="Center" Margin="0,16,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ===================== DIALOG OVERLAY ===================== -->
+        <Grid Visibility="{Binding Dialogs.Current, Converter={StaticResource NotNullToVisible}}" Background="{DynamicResource OverlayBrush}" Panel.ZIndex="40">
+            <Border Style="{StaticResource Card}" Width="{Binding Dialogs.Current.Width}" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static views:Sizes.MinusMargin}}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="60" ShadowDepth="20" Opacity="0.2" Color="#000000" />
+                </Border.Effect>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding Dialogs.Current.Title}" Style="{StaticResource H3}" Margin="24,22,24,14" TextWrapping="Wrap" />
+                    <Border DockPanel.Dock="Bottom" Padding="24,14,24,20">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Dialogs.Current.Error}" Style="{StaticResource ErrorText}" Margin="0,0,0,12"
+                                       Visibility="{Binding Dialogs.Current.HasError, Converter={StaticResource BoolToVisible}}" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="{Binding Dialogs.Current.CancelText}" Command="{Binding Dialogs.Current.CancelCommand}" Style="{StaticResource SecondaryButton}" Height="38" Margin="0,0,8,0" />
+                                <Button Content="{Binding Dialogs.Current.ConfirmText}" Command="{Binding Dialogs.Current.ConfirmCommand}" Height="38">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Dialogs.Current.IsDanger}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource BadBrush}" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BadBrush}" />
+                                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,0">
+                        <ContentControl Content="{Binding Dialogs.Current}" ContentTemplateSelector="{StaticResource ViewLocator}" Focusable="False" />
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===================== TOAST ===================== -->
+        <Border Panel.ZIndex="60" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,28" Padding="16,10" CornerRadius="{StaticResource RadiusSmall}"
+                MaxWidth="640" IsHitTestVisible="False"
+                Visibility="{Binding Notifier.Message, Converter={StaticResource NotNullToVisible}}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="{DynamicResource InkBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Notifier.IsError}" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource BadBrush}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock Text="{Binding Notifier.Message}" FontSize="13" Foreground="{DynamicResource BgBrush}" TextWrapping="Wrap" />
+        </Border>
     </Grid>
 </Window>

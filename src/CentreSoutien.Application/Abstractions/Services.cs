@@ -180,3 +180,19 @@ public interface IDemoDataService
     Task<bool> IsDatabaseEmptyAsync(CancellationToken ct = default);
     Task SeedAsync(CancellationToken ct = default);
 }
+
+public static class StorageAreas
+{
+    public const string Images = "images";
+    public const string Documents = "documents";
+}
+
+/// <summary>Facts about the local installation shown in Settings (storage location, encryption).</summary>
+public interface ISystemInfo
+{
+    bool DatabaseEncrypted { get; }
+    /// <summary>How the database key is protected, e.g. "Windows (DPAPI)".</summary>
+    string KeyProtection { get; }
+    string DataFolder { get; }
+    string DatabasePath { get; }
+}

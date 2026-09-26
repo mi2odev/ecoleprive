@@ -1,0 +1,15 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.DiscountPickerDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:core="clr-namespace:CentreSoutien.Presentation.Core;assembly=CentreSoutien.Presentation"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:DiscountPickerDialogViewModel}">
+    <StackPanel>
+        <TextBlock Text="Remise appliquée aux mensualités" Style="{StaticResource FieldLabel}" />
+        <ComboBox ItemsSource="{Binding DiscountOptions}" SelectedItem="{Binding SelectedDiscount}" DisplayMemberPath="Label" />
+        <TextBlock Text="Les remises se gèrent dans Paiements → Remises." Style="{StaticResource Small}" Margin="0,10,0,0" />
+    </StackPanel>
+</UserControl>

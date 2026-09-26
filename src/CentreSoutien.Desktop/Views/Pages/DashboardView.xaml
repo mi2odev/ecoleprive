@@ -1,0 +1,189 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}">
+    <StackPanel>
+        <!-- Title row -->
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="Paiements" Command="{Binding GoPaymentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Encaisser un paiement" Command="{Binding CollectPaymentCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding DateLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Tableau de bord" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Finance strip -->
+        <ItemsControl ItemsSource="{Binding Finance}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
+
+        <!-- Students / Teachers / Courses blocks -->
+        <ItemsControl ItemsSource="{Binding Blocks}" Margin="0,0,-16,6">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:DashboardBlock}">
+                    <Border Style="{StaticResource PaddedCard}" Margin="0,0,16,16">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,12">
+                                <Button DockPanel.Dock="Right" Content="Ouvrir" Command="{Binding Open}" Style="{StaticResource LinkButton}" />
+                                <TextBlock Text="{Binding Title}" Style="{StaticResource H2}" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Stats}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:DashboardStat}">
+                                        <StackPanel Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding Value}" Style="{StaticResource StatValue}" />
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Small}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Today's sessions + side column -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.7*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource Card}" VerticalAlignment="Top">
+                <StackPanel>
+                    <Border Style="{StaticResource CardHeader}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Emploi du temps" Command="{Binding GoScheduleCommand}" Style="{StaticResource LinkButton}" />
+                            <TextBlock Text="Séances d'aujourd'hui" Style="{StaticResource H2}" />
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Text="Aucune séance prévue aujourd'hui." Style="{StaticResource EmptyText}"
+                               Visibility="{Binding HasNoSessionToday, Converter={StaticResource BoolToVisible}}" />
+                    <ItemsControl ItemsSource="{Binding Today}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:TodayRow}">
+                                <Button Command="{Binding Open}" Style="{StaticResource RowButton}" Padding="20,11" ToolTip="Faire l'appel">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="1.6*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="90" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Time}" Style="{StaticResource Muted}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="12,0" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Teacher}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Room}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                        <ContentControl Grid.Column="4" Content="{Binding State}" Focusable="False" />
+                                    </Grid>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Column="2">
+                <!-- Attendance today -->
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,14">
+                            <Button DockPanel.Dock="Right" Content="Faire l'appel" Command="{Binding GoAttendanceCommand}" Style="{StaticResource LinkButton}" />
+                            <TextBlock Text="Présences du jour" Style="{StaticResource H2}" />
+                        </DockPanel>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Attendance[0].Value}" Style="{StaticResource StatValue}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" Margin="0,0,6,0" />
+                                    <TextBlock Text="Présents" Style="{StaticResource Small}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding Attendance[1].Value}" Style="{StaticResource StatValue}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="{DynamicResource BadBrush}" Margin="0,0,6,0" />
+                                    <TextBlock Text="Absents" Style="{StaticResource Small}" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="{Binding Attendance[2].Value}" Style="{StaticResource StatValue}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Fill="{DynamicResource WarnBrush}" Margin="0,0,6,0" />
+                                    <TextBlock Text="Retards" Style="{StaticResource Small}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                        <Border Height="6" CornerRadius="3" Background="{DynamicResource SunkBrush}" ClipToBounds="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding PresentShare, Converter={StaticResource ShareToStar}}" />
+                                    <ColumnDefinition Width="{Binding LateShare, Converter={StaticResource ShareToStar}}" />
+                                    <ColumnDefinition Width="{Binding AbsentShare, Converter={StaticResource ShareToStar}}" />
+                                </Grid.ColumnDefinitions>
+                                <Rectangle Fill="{DynamicResource OkBrush}" />
+                                <Rectangle Grid.Column="1" Fill="{DynamicResource WarnBrush}" />
+                                <Rectangle Grid.Column="2" Fill="{DynamicResource BadBrush}" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Next session -->
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding NextWhen}" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding NextName}" FontFamily="{StaticResource SerifFont}" FontSize="21" Margin="0,8,0,8" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding NextDetails}" Style="{StaticResource Muted}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Free rooms -->
+                <Border Style="{StaticResource PaddedCard}">
+                    <StackPanel>
+                        <TextBlock Text="Salles disponibles maintenant" Style="{StaticResource Small}" Margin="0,0,0,12" />
+                        <TextBlock Text="Toutes les salles sont occupées." Style="{StaticResource Muted}"
+                                   Visibility="{Binding NoFreeRoom, Converter={StaticResource BoolToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding FreeRooms}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Height="28" Padding="10,0" Margin="0,0,6,6" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                            CornerRadius="{StaticResource RadiusSmall}">
+                                        <TextBlock Text="{Binding}" FontSize="13" VerticalAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>

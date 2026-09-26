@@ -1,2 +1,12 @@
 <Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CentreSoutien.Application/CentreSoutien.Application.csproj" />
+    <Project Path="src/CentreSoutien.Desktop/CentreSoutien.Desktop.csproj" />
+    <Project Path="src/CentreSoutien.Domain/CentreSoutien.Domain.csproj" />
+    <Project Path="src/CentreSoutien.Infrastructure/CentreSoutien.Infrastructure.csproj" />
+    <Project Path="src/CentreSoutien.Presentation/CentreSoutien.Presentation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CentreSoutien.Tests/CentreSoutien.Tests.csproj" />
+  </Folder>
 </Solution>

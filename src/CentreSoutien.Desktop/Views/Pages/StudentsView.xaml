@@ -1,0 +1,85 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.StudentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:StudentsViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Ajouter un élève" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding CountLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Élèves" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Margin="0,0,0,18">
+            <TextBox DockPanel.Dock="Left" Width="340" VerticalAlignment="Top" Tag="Nom, matricule ou téléphone du parent"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=150}" Margin="0,0,12,0" />
+            <StackPanel>
+                <ListBox ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}" Style="{StaticResource ChipList}" />
+                <ListBox ItemsSource="{Binding States}" SelectedItem="{Binding SelectedState}" Style="{StaticResource ChipList}" />
+            </StackPanel>
+        </DockPanel>
+
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="70" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="1.3*" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Élève" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Niveau" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Cours" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Parent" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Reste à payer" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="{Binding MonthLabel}" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun élève ne correspond à la recherche." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Rows}" VirtualizingPanel.IsVirtualizing="True">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:StudentRow}">
+                            <Button Command="{Binding Open}" Style="{StaticResource RowButton}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="70" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="1.3*" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="90" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal">
+                                        <ui:Avatar Size="30" Initials="{Binding Initials}" />
+                                        <StackPanel Margin="10,0,12,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                            <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{Binding Level}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Courses}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Parent}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Balance}" Style="{StaticResource Body}" />
+                                    <ContentControl Grid.Column="5" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

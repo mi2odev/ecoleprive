@@ -1,0 +1,95 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.StudentEditorDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:StudentEditorDialogViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="Cell" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,16,14" />
+        </Style>
+    </UserControl.Resources>
+    <StackPanel>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <ui:Avatar Size="64" ImagePath="{Binding PhotoPath}" Initials="?" />
+            <Button Content="Choisir une photo" Command="{Binding PickPhotoCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="16,0,8,0" VerticalAlignment="Center" />
+            <Button Content="Retirer" Command="{Binding RemovePhotoCommand}" Style="{StaticResource LinkButton}" VerticalAlignment="Center"
+                    Visibility="{Binding PhotoPath, Converter={StaticResource NotNullToVisible}}" />
+        </StackPanel>
+
+        <UniformGrid Columns="2" Margin="0,0,-16,0">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Prénom *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Nom *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Matricule" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Matricule, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Niveau *" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding Levels}" Text="{Binding Level, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Date de naissance" Style="{StaticResource FieldLabel}" />
+                <DatePicker SelectedDate="{Binding BirthDate}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Sexe" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender}" DisplayMemberPath="Label" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Établissement scolaire" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding School, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Téléphone de l'élève" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Inscrit au centre le" Style="{StaticResource FieldLabel}" />
+                <DatePicker SelectedDate="{Binding EnrolledOn}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Remise" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding DiscountOptions}" SelectedItem="{Binding SelectedDiscount}" DisplayMemberPath="Label" />
+            </StackPanel>
+        </UniformGrid>
+
+        <TextBlock Text="Adresse" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+
+        <TextBlock Text="Parent / tuteur" Style="{StaticResource FieldLabel}" />
+        <ComboBox ItemsSource="{Binding Parents}" SelectedItem="{Binding SelectedParent}" DisplayMemberPath="Label" IsTextSearchEnabled="True" TextSearch.TextPath="Label"
+                  IsEnabled="{Binding CreateParent, Converter={StaticResource Not}}" MaxDropDownHeight="300" />
+        <CheckBox Content="Créer un nouveau parent" IsChecked="{Binding CreateParent}" Margin="0,10,0,10" />
+        <UniformGrid Columns="3" Margin="0,0,-16,0" Visibility="{Binding CreateParent, Converter={StaticResource BoolToVisible}}">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Nom du parent" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding NewParentName, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Téléphone" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding NewParentPhone, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Lien" Style="{StaticResource FieldLabel}" />
+                <ComboBox Text="{Binding NewParentRelation, UpdateSourceTrigger=PropertyChanged}" IsEditable="True">
+                    <ComboBoxItem Content="Père" />
+                    <ComboBoxItem Content="Mère" />
+                    <ComboBoxItem Content="Tuteur" />
+                </ComboBox>
+            </StackPanel>
+        </UniformGrid>
+
+        <TextBlock Text="Notes" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,14" />
+        <CheckBox Content="Élève actif (facturé et compté dans les effectifs)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
+    </StackPanel>
+</UserControl>
