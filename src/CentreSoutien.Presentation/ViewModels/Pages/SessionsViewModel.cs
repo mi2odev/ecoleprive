@@ -21,7 +21,7 @@ public sealed record SessionRow(
 public sealed record SessionDayGroup(string Title, string Count, IReadOnlyList<SessionRow> Rows);
 
 public sealed partial class SessionsViewModel(
-    ISessionService sessions, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    ISessionService sessions, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<Session> _all = [];
 
@@ -166,4 +166,8 @@ public sealed partial class SessionsViewModel(
             await ReloadAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Nouvelle séance";
 }

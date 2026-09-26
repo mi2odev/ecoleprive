@@ -23,7 +23,7 @@ public sealed record CourseRow(Course Course, string Groups, string Teachers, st
 }
 
 public sealed partial class CoursesViewModel(
-    ICourseService courses, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    ICourseService courses, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<Course> _all = [];
 
@@ -89,4 +89,8 @@ public sealed partial class CoursesViewModel(
             await nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(id));
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter un cours";
 }

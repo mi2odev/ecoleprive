@@ -32,7 +32,7 @@ public sealed record ParentChildRow(int Id, string Name, string Initials, string
 
 public sealed partial class ParentsViewModel(
     IParentService parents, IStudentService students, IDocumentService documents, INavigator nav, DialogHost dialogs, INotifier notifier,
-    IFilePicker files, IExportService export, IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel
+    IFilePicker files, IExportService export, IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<Parent> _all = [];
     private Dictionary<int, decimal> _balances = [];
@@ -241,4 +241,8 @@ public sealed partial class ParentsViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter un parent";
 }

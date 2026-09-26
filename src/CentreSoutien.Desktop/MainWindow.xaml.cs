@@ -28,8 +28,13 @@ public partial class MainWindow : Window
 
     private ShellViewModel? Shell => DataContext as ShellViewModel;
 
+    private ShellViewModel? _hookedShell;
+
     private void HookSearch()
     {
+        if (_hookedShell is not null) _hookedShell.PropertyChanged -= OnShellChanged;
+        _hookedShell = Shell;
+        if (_hookedShell is not null) _hookedShell.PropertyChanged += OnShellChanged;
         if (_search is not null) _search.PropertyChanged -= OnSearchChanged;
         _search = Shell?.Search;
         if (_search is not null) _search.PropertyChanged += OnSearchChanged;
@@ -86,5 +91,21 @@ public partial class MainWindow : Window
     private void SearchOverlay_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (ReferenceEquals(e.OriginalSource, SearchOverlay)) _search?.Close();
+    }
+
+    /// <summary>A click outside the shortcuts panel (F1) closes it.</summary>
+    private void ShortcutsOverlay_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (ReferenceEquals(e.OriginalSource, ShortcutsOverlay) && Shell is { } shell) shell.IsShortcutsOpen = false;
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // The shortcuts panel had the focus: give it back to the page so Tab and shortcuts keep working.
+        if (e.PropertyName == nameof(ShellViewModel.IsShortcutsOpen) && Shell is { IsShortcutsOpen: false })
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (Keyboard.FocusedElement is not UIElement { IsVisible: true, IsEnabled: true }) PageScroller.Focus();
+            }, DispatcherPriority.Input);
     }
 }

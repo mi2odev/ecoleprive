@@ -26,7 +26,7 @@ public sealed record TeacherListRow(TeacherListItem Item, IRelayCommand Open)
 
 public sealed partial class TeachersViewModel(
     ITeacherService teachers, INavigator nav, DialogHost dialogs, INotifier notifier, IFilePicker files, IExportService export,
-    IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel
+    IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<TeacherListItem> _all = [];
 
@@ -96,4 +96,8 @@ public sealed partial class TeachersViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter un enseignant";
 }

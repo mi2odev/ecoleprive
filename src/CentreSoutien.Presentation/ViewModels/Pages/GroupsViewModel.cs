@@ -23,7 +23,7 @@ public sealed record GroupRow(Group Group, int Enrolled, IRelayCommand Open, IRe
 }
 
 public sealed partial class GroupsViewModel(
-    IGroupService groups, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    IGroupService groups, INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<Group> _all = [];
 
@@ -88,4 +88,8 @@ public sealed partial class GroupsViewModel(
             await RefreshAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Nouveau groupe";
 }

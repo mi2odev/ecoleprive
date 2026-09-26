@@ -15,7 +15,7 @@ public sealed record DocumentLine(int Id, string Title, string FileName, string 
 
 public sealed partial class DocumentsViewModel(
     IDocumentService documents, IStudentService students, ITeacherService teachers, IParentService parents, IShell shell,
-    INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    INavigator nav, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<(Document Doc, string Owner)> _all = [];
 
@@ -125,4 +125,8 @@ public sealed partial class DocumentsViewModel(
             await RefreshAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter un document";
 }

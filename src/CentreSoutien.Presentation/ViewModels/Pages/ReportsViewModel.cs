@@ -16,7 +16,7 @@ public sealed record ReportGradeLine(string Group, string Exams, string Average,
 
 public sealed partial class ReportsViewModel(
     IReportService reports, ISettingsService settings, IPrintService printer, IExportService export, IFilePicker files, IShell shell,
-    INavigator nav, INotifier notifier, TimeProvider clock) : PageViewModel
+    INavigator nav, INotifier notifier, TimeProvider clock) : PageViewModel, IHasPrintAction
 {
     private FinanceReport? _report;
 
@@ -129,4 +129,7 @@ public sealed partial class ReportsViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    // Ctrl+P in the shell.
+    IAsyncRelayCommand? IHasPrintAction.PrintCommand => PrintCommand;
 }
