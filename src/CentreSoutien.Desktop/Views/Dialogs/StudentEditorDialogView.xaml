@@ -40,7 +40,8 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Date de naissance" Style="{StaticResource FieldLabel}" />
-                <DatePicker SelectedDate="{Binding BirthDate}" />
+                <ui:DateInput SelectedDate="{Binding BirthDate}" StartWithYears="True" NoFutureDates="True"
+                              HasInvalidText="{Binding BirthDateInvalid, Mode=OneWayToSource}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Sexe" Style="{StaticResource FieldLabel}" />
@@ -56,7 +57,7 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Inscrit au centre le *" Style="{StaticResource FieldLabel}" />
-                <DatePicker SelectedDate="{Binding EnrolledOn}" />
+                <ui:DateInput SelectedDate="{Binding EnrolledOn}" HasInvalidText="{Binding EnrolledOnInvalid, Mode=OneWayToSource}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Remise" Style="{StaticResource FieldLabel}" />

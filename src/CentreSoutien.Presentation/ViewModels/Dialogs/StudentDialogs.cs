@@ -24,6 +24,9 @@ public sealed partial class StudentEditorDialogViewModel(
     [ObservableProperty] private string _firstName = "";
     [ObservableProperty] private string _lastName = "";
     [ObservableProperty] private DateTime? _birthDate;
+    /// <summary>Set by the date field while its text is not a valid date.</summary>
+    [ObservableProperty] private bool _birthDateInvalid;
+    [ObservableProperty] private bool _enrolledOnInvalid;
     [ObservableProperty] private Option<Gender>? _gender;
     [ObservableProperty] private IReadOnlyList<string> _levels = Options.DefaultLevels;
     [ObservableProperty] private string _level = "";
@@ -94,6 +97,9 @@ public sealed partial class StudentEditorDialogViewModel(
 
     protected override async Task<bool> OnConfirmAsync()
     {
+        if (BirthDateInvalid) throw new BusinessException("Date de naissance invalide : tapez-la au format jj/mm/aaaa (ex. 15/03/2010) ou choisissez-la dans le calendrier.");
+        if (BirthDate is { } born && born.Date > clock.GetLocalNow().Date) throw new BusinessException("La date de naissance ne peut pas être dans le futur.");
+        if (EnrolledOnInvalid) throw new BusinessException("Date d'inscription invalide : format jj/mm/aaaa.");
         int? parentId = SelectedParent?.Value;
         if (CreateParent)
         {

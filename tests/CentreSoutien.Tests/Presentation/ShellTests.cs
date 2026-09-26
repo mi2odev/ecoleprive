@@ -138,4 +138,31 @@ public class ShellTests
         await enroll;
         Assert.Single(profile.Enrollments);
     }
+
+    [Fact]
+    public async Task Student_editor_refuses_an_invalid_or_future_birth_date()
+    {
+        await using var host = await UiHost.CreateAsync(demo: false);
+        var editor = host.Get<StudentEditorDialogViewModel>();
+        await editor.InitializeAsync(null);
+        editor.FirstName = "Lina";
+        editor.LastName = "Kaci";
+        editor.Level = "4AM";
+
+        editor.BirthDateInvalid = true; // what the date field reports for "31/02/2010"
+        await editor.ConfirmCommand.ExecuteAsync(null);
+        Assert.Contains("Date de naissance invalide", editor.Error);
+        Assert.Null(editor.SavedId);
+
+        editor.BirthDateInvalid = false;
+        editor.BirthDate = new DateTime(2030, 1, 1);
+        await editor.ConfirmCommand.ExecuteAsync(null);
+        Assert.Contains("futur", editor.Error);
+
+        editor.BirthDate = new DateTime(2011, 3, 15);
+        await editor.ConfirmCommand.ExecuteAsync(null);
+        Assert.False(editor.HasError, editor.Error);
+        var saved = await host.Get<CentreSoutien.Application.Abstractions.IStudentService>().GetAsync(editor.SavedId!.Value);
+        Assert.Equal(new DateTime(2011, 3, 15), saved!.BirthDate);
+    }
 }

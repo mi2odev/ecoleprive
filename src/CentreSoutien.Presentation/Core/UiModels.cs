@@ -123,6 +123,60 @@ public static class Parse
     }
 
     public static string Time(TimeSpan t) => t.ToString(@"hh\:mm");
+
+    /// <summary>
+    /// Parses a typed date, day first: "15/03/2010", "15-3-2010", "15.03.10", "15032010", "150310", or ISO "2010-03-15".
+    /// Two-digit years: 00–(current year) → 20xx, otherwise 19xx. Returns null when the text is not a valid date.
+    /// </summary>
+    public static DateTime? Date(string? text, int? currentYear = null)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var t = text.Trim();
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        if (DateTime.TryParseExact(t, "yyyy-MM-dd", inv, System.Globalization.DateTimeStyles.None, out var iso)) return iso;
+
+        int day, month, year;
+        var parts = t.Split(['/', '-', '.', ' '], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 3 && parts.All(p => p.All(char.IsDigit)))
+        {
+            if (parts[0].Length > 2 || parts[1].Length > 2 || parts[2].Length is not (2 or 4)) return null;
+            day = int.Parse(parts[0]);
+            month = int.Parse(parts[1]);
+            year = int.Parse(parts[2]);
+            if (parts[2].Length == 2) year = TwoDigitYear(year, currentYear);
+        }
+        else if (t.All(char.IsDigit) && t.Length is 8 or 6)
+        {
+            day = int.Parse(t[..2]);
+            month = int.Parse(t[2..4]);
+            year = t.Length == 8 ? int.Parse(t[4..]) : TwoDigitYear(int.Parse(t[4..]), currentYear);
+        }
+        else return null;
+
+        if (year < 1900 || year > 2100 || month is < 1 or > 12 || day < 1 || day > DateTime.DaysInMonth(year, month)) return null;
+        return new DateTime(year, month, day);
+    }
+
+    private static int TwoDigitYear(int yy, int? currentYear)
+    {
+        var now = (currentYear ?? DateTime.Today.Year) % 100;
+        return yy <= now ? 2000 + yy : 1900 + yy;
+    }
+
+    /// <summary>Formats a date the way <see cref="Date"/> reads it back ("15/03/2010").</summary>
+    public static string Date(DateTime d) => d.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Formats what is being typed: digits only get their slashes inserted ("1503" → "15/03", "15032010" → "15/03/2010").
+    /// Text that already contains separators is left as typed.
+    /// </summary>
+    public static string DateAsTyped(string text)
+    {
+        if (text.Length == 0 || !text.All(char.IsDigit) || text.Length > 8) return text;
+        if (text.Length <= 2) return text;
+        if (text.Length <= 4) return $"{text[..2]}/{text[2..]}";
+        return $"{text[..2]}/{text[2..4]}/{text[4..]}";
+    }
 }
 
 /// <summary>Toggle state for settings switches.</summary>

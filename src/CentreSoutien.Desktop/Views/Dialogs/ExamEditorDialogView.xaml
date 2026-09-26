@@ -25,7 +25,7 @@
         <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Date" Style="{StaticResource FieldLabel}" />
-                <DatePicker SelectedDate="{Binding Date}" />
+                <ui:DateInput SelectedDate="{Binding Date}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Noté sur *" Style="{StaticResource FieldLabel}" />

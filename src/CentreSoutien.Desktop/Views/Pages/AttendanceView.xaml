@@ -30,7 +30,7 @@
                 <Button Content="← Jour précédent" Command="{Binding PreviousDayCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
                 <Button Content="Aujourd'hui" Command="{Binding TodayCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
                 <Button Content="Jour suivant →" Command="{Binding NextDayCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0" />
-                <DatePicker SelectedDate="{Binding Day}" Width="160" VerticalAlignment="Center" />
+                <ui:DateInput SelectedDate="{Binding Day}" Width="160" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel>
                 <TextBlock Text="{Binding DayLabel}" Style="{StaticResource Muted}" />
