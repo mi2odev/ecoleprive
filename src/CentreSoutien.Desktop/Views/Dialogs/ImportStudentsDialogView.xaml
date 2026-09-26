@@ -1,0 +1,145 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.ImportStudentsDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:ImportStudentsDialogViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="StepCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SunkBrush}" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+            <Setter Property="Padding" Value="16,14" />
+        </Style>
+        <Style x:Key="StepNumber" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,14"
+                   Text="Reprenez votre liste d'élèves existante : remplissez le modèle Excel (ou utilisez votre propre fichier avec les mêmes intitulés de colonnes), vérifiez l'aperçu puis importez. Rien n'est enregistré avant la confirmation." />
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource StepCard}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Bottom" HorizontalAlignment="Left" Content="Télécharger le modèle" Command="{Binding DownloadTemplateCommand}"
+                            Style="{StaticResource SmallSecondaryButton}" Margin="0,12,0,0" />
+                    <StackPanel>
+                        <TextBlock Text="ÉTAPE 1" Style="{StaticResource StepNumber}" />
+                        <TextBlock Text="Préparer le fichier" Style="{StaticResource BodyStrong}" FontSize="14" />
+                        <TextBlock Style="{StaticResource Small}" TextWrapping="Wrap" TextTrimming="None" Margin="0,4,0,0"
+                                   Text="Le modèle contient les colonnes attendues, une ligne d'exemple et une feuille « Aide » avec vos niveaux, groupes et remises." />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource StepCard}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                        <Button Content="Choisir un fichier" Command="{Binding PickFileCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                        <Button Content="Recharger" Command="{Binding ReloadCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="8,0,0,0"
+                                ToolTip="Relire le fichier après l'avoir corrigé dans Excel"
+                                Visibility="{Binding HasPreview, Converter={StaticResource BoolToVisible}}" />
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="ÉTAPE 2" Style="{StaticResource StepNumber}" />
+                        <TextBlock Text="Choisir le fichier Excel (.xlsx)" Style="{StaticResource BodyStrong}" FontSize="14" />
+                        <TextBlock Text="{Binding FileName}" Style="{StaticResource Small}" Margin="0,4,0,0" ToolTip="{Binding Preview.Path}" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <TextBlock Text="Lecture du fichier…" Style="{StaticResource Muted}" Margin="0,16,0,0"
+                   Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisible}}" />
+
+        <!-- Preview -->
+        <StackPanel Margin="0,20,0,0" Visibility="{Binding HasPreview, Converter={StaticResource BoolToVisible}}">
+            <DockPanel Margin="0,0,0,10">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource Small}" VerticalAlignment="Center">
+                        <Run Text="OK " /><Run Text="{Binding OkCount, Mode=OneWay}" Foreground="{DynamicResource OkBrush}" FontWeight="SemiBold" />
+                        <Run Text="   Avertissements " /><Run Text="{Binding WarningCount, Mode=OneWay}" Foreground="{DynamicResource WarnBrush}" FontWeight="SemiBold" />
+                        <Run Text="   Erreurs " /><Run Text="{Binding ErrorCount, Mode=OneWay}" Foreground="{DynamicResource BadBrush}" FontWeight="SemiBold" />
+                    </TextBlock>
+                </StackPanel>
+                <TextBlock Text="{Binding Summary}" Style="{StaticResource BodyStrong}" FontSize="14" />
+            </DockPanel>
+            <CheckBox IsChecked="{Binding SkipDuplicates}" Margin="0,0,0,12"
+                      Content="Ignorer les doublons (élève déjà enregistré ou répété dans le fichier : même nom et même date de naissance)" />
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Style="{StaticResource TableHeader}" Padding="14,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="46" />
+                                <ColumnDefinition Width="1.3*" />
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="86" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="116" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Ligne" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="1" Text="Élève" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="2" Text="Niveau" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="3" Text="Naissance" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="4" Text="Parent" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="5" Text="Groupes" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Grid.Column="6" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                        </Grid>
+                    </Border>
+                    <TextBlock DockPanel.Dock="Top" Text="Aucune ligne d'élève trouvée sous l'en-tête." Style="{StaticResource EmptyText}"
+                               Visibility="{Binding Lines, Converter={StaticResource NullToVisible}}" />
+                    <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Lines}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type dlg:ImportPreviewLine}">
+                                    <Border Style="{StaticResource TableRow}" Padding="14,8" MinHeight="0">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="46" />
+                                                    <ColumnDefinition Width="1.3*" />
+                                                    <ColumnDefinition Width="56" />
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="1.4*" />
+                                                    <ColumnDefinition Width="1.5*" />
+                                                    <ColumnDefinition Width="116" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Line}" Style="{StaticResource Muted}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" ToolTip="{Binding Name}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Level}" Style="{StaticResource Body}" />
+                                                <TextBlock Grid.Column="3" Text="{Binding BirthDate}" Style="{StaticResource Body}" />
+                                                <TextBlock Grid.Column="4" Text="{Binding Parent}" Style="{StaticResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Parent}" />
+                                                <TextBlock Grid.Column="5" Text="{Binding Groups}" Style="{StaticResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Groups}" />
+                                                <ContentControl Grid.Column="6" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
+                                            </Grid>
+                                            <TextBlock x:Name="Msg" Text="{Binding Messages}" FontSize="12" TextWrapping="Wrap" Margin="46,4,0,0"
+                                                       Foreground="{DynamicResource WarnBrush}"
+                                                       Visibility="{Binding HasMessages, Converter={StaticResource BoolToVisible}}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Row.Status}" Value="Error">
+                                            <Setter TargetName="Msg" Property="Foreground" Value="{DynamicResource BadBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

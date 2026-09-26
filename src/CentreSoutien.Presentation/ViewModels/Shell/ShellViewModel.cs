@@ -33,7 +33,7 @@ public sealed class NavGroup(string? label, IReadOnlyList<NavItem> items)
 
 /// <summary>
 /// Root view model: decides between login, forced password change, lock screen and the application,
-/// and owns the sidebar, header, current page, dialog overlay and toast.
+/// and owns the sidebar, header, current page, search palette, dialog overlay and toast.
 /// </summary>
 public sealed partial class ShellViewModel : ViewModelBase
 {
@@ -44,7 +44,8 @@ public sealed partial class ShellViewModel : ViewModelBase
     private readonly IFileStorage _storage;
 
     public ShellViewModel(AppSession session, Navigator navigator, DialogHost dialogs, Notifier notifier, IThemeService theme,
-        ISettingsService settings, IFileStorage storage, TimeProvider clock, LoginViewModel login, LockViewModel lockScreen, ChangePasswordViewModel changePassword)
+        ISettingsService settings, IFileStorage storage, TimeProvider clock, LoginViewModel login, LockViewModel lockScreen, ChangePasswordViewModel changePassword,
+        SearchViewModel search)
     {
         _session = session;
         _theme = theme;
@@ -57,6 +58,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         Login = login;
         Lock = lockScreen;
         ChangePassword = changePassword;
+        Search = search;
 
         NavGroups =
         [
@@ -98,6 +100,7 @@ public sealed partial class ShellViewModel : ViewModelBase
 
         _session.StateChanged += (_, _) => OnSessionChanged();
         Dialogs.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(DialogHost.Current)) OnPropertyChanged(nameof(IsAppInteractive)); };
+        Search.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(SearchViewModel.IsOpen)) OnPropertyChanged(nameof(IsAppInteractive)); };
         Navigator.Navigated += (_, _) => HighlightNav();
         Login.SignedIn += async (_, _) => await EnterAppAsync();
         ChangePassword.Completed += async (_, _) => await EnterAppAsync();
@@ -109,14 +112,16 @@ public sealed partial class ShellViewModel : ViewModelBase
     public LoginViewModel Login { get; }
     public LockViewModel Lock { get; }
     public ChangePasswordViewModel ChangePassword { get; }
+    /// <summary>Global search palette (Ctrl+K).</summary>
+    public SearchViewModel Search { get; }
     public IReadOnlyList<NavGroup> NavGroups { get; }
 
     public bool ShowLogin => _session.State == SessionState.SignedOut;
     public bool ShowChangePassword => _session.State == SessionState.PasswordChangeRequired;
     public bool ShowApp => _session.State is SessionState.Active or SessionState.Locked;
     public bool ShowLock => _session.State == SessionState.Locked;
-    /// <summary>False while locked or while a dialog is open, so keyboard focus cannot reach hidden controls.</summary>
-    public bool IsAppInteractive => !ShowLock && Dialogs.Current is null;
+    /// <summary>False while locked, while a dialog is open or while the search palette is open, so keyboard focus cannot reach hidden controls.</summary>
+    public bool IsAppInteractive => !ShowLock && Dialogs.Current is null && !Search.IsOpen;
 
     public string OwnerName => string.IsNullOrWhiteSpace(_session.Account?.FullName) ? _session.Account?.Username ?? "" : _session.Account!.FullName;
     public string OwnerInitials => _session.Account?.Initials ?? "";
@@ -187,6 +192,7 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     private void OnSessionChanged()
     {
+        if (_session.State != SessionState.Active) Search.Close();
         if (_session.State == SessionState.SignedOut)
         {
             Dialogs.CloseAll();
@@ -242,11 +248,24 @@ public sealed partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     private Task Back() => Navigator.BackAsync();
 
+    /// <summary>Enter in the header search box: opens the search palette with the typed text.</summary>
+    // "On" prefix: the generated command is still SearchCommand (Search is the palette property).
     [RelayCommand]
-    private async Task Search()
+    private void OnSearch()
     {
         var q = SearchText.Trim();
         SearchText = "";
-        await Navigator.NavigateAsync<StudentsViewModel>(new StudentsViewModel.Query(q));
+        OpenSearch(q);
     }
+
+    /// <summary>Ctrl+K or a click on the header search box. Ignored when the application is not usable (locked, signed out, dialog open).</summary>
+    [RelayCommand]
+    private void OpenSearch(string? text)
+    {
+        if (_session.State != SessionState.Active || Dialogs.Current is not null) return;
+        Search.Open(string.IsNullOrWhiteSpace(text) ? null : text.Trim());
+    }
+
+    [RelayCommand]
+    private void CloseSearch() => Search.Close();
 }

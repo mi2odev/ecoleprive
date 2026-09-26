@@ -95,6 +95,19 @@ public sealed partial class StudentsViewModel(
     }
 
     [RelayCommand]
+    private async Task Import()
+    {
+        var dialog = services.GetRequiredService<ImportStudentsDialogViewModel>();
+        if (!await dialogs.ShowAsync(dialog) || dialog.Result is not { } r) return;
+        var summary = $"{r.StudentsCreated} élève{(r.StudentsCreated > 1 ? "s" : "")} importé{(r.StudentsCreated > 1 ? "s" : "")}";
+        if (r.ParentsCreated > 0) summary += $" · {r.ParentsCreated} parent{(r.ParentsCreated > 1 ? "s" : "")} créé{(r.ParentsCreated > 1 ? "s" : "")}";
+        if (r.Enrollments > 0) summary += $" · {r.Enrollments} inscription{(r.Enrollments > 1 ? "s" : "")}";
+        if (r.Skipped > 0) summary += $" · {r.Skipped} ligne{(r.Skipped > 1 ? "s" : "")} ignorée{(r.Skipped > 1 ? "s" : "")}";
+        notifier.Info(summary);
+        await LoadAsync(null);
+    }
+
+    [RelayCommand]
     private async Task Export()
     {
         var path = files.SaveFile("Exporter les élèves", $"eleves-{clock.GetLocalNow():yyyy-MM-dd}.xlsx", "Classeur Excel|*.xlsx");
