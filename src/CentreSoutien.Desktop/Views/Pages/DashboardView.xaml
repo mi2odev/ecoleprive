@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}">
     <StackPanel>
@@ -20,6 +21,59 @@
 
         <!-- Finance strip -->
         <ItemsControl ItemsSource="{Binding Finance}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
+
+        <!-- À traiter: prioritized alerts -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding AlertCount}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                        <TextBlock Text="À traiter" Style="{StaticResource H2}" />
+                    </DockPanel>
+                </Border>
+                <TextBlock Text="Rien à traiter pour le moment." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding HasNoAlert, Converter={StaticResource BoolToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Alerts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AlertRow}">
+                            <Border x:Name="Row" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ContentControl Content="{Binding Badge}" Focusable="False" VerticalAlignment="Top" />
+                                    <StackPanel Grid.Column="1" Margin="0,2,16,0">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrong}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Small}" Margin="0,3,0,0"
+                                                   Visibility="{Binding HasDetail, Converter={StaticResource BoolToVisible}}" />
+                                        <ItemsControl ItemsSource="{Binding Items}" Margin="0,6,0,0" Focusable="False"
+                                                      Visibility="{Binding HasItems, Converter={StaticResource BoolToVisible}}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:AlertItemRow}">
+                                                    <Button Content="{Binding Text}" Command="{Binding Open}" Style="{StaticResource LinkButton}" Margin="0,2,16,2" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="{Binding More}" Style="{StaticResource Small}" Margin="0,2,0,0"
+                                                   Visibility="{Binding HasMore, Converter={StaticResource BoolToVisible}}" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding Action}" Style="{StaticResource LinkButton}"
+                                            VerticalAlignment="Top" Margin="0,3,0,0"
+                                            Visibility="{Binding HasAction, Converter={StaticResource BoolToVisible}}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
 
         <!-- Students / Teachers / Courses blocks -->
         <ItemsControl ItemsSource="{Binding Blocks}" Margin="0,0,-16,6">
@@ -184,6 +238,65 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+        </Grid>
+
+        <!-- Trends: last 6 months / 8 weeks -->
+        <TextBlock Text="Tendances" Style="{StaticResource H2}" Margin="0,22,0,12" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.4*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Style="{StaticResource PaddedCard}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,4">
+                        <Button DockPanel.Dock="Right" Content="Rapports" Command="{Binding GoReportsCommand}" Style="{StaticResource LinkButton}" />
+                        <TextBlock Text="Recettes, rémunérations et dépenses" Style="{StaticResource H2}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding FinanceSummary}" Style="{StaticResource Small}" Margin="0,0,0,14" />
+                    <ui:BarChart Data="{Binding FinanceChart}" Height="250" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource PaddedCard}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,4">
+                        <Button DockPanel.Dock="Right" Content="Paiements" Command="{Binding GoPaymentsCommand}" Style="{StaticResource LinkButton}" />
+                        <TextBlock Text="Taux de recouvrement" Style="{StaticResource H2}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding CollectionSummary}" Style="{StaticResource Small}" Margin="0,0,0,14" />
+                    <ui:BarChart Data="{Binding CollectionChart}" ShowLegend="False" Height="250" EmptyText="Aucune mensualité attendue" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource PaddedCard}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,4">
+                        <Button DockPanel.Dock="Right" Content="Présences" Command="{Binding GoAttendanceCommand}" Style="{StaticResource LinkButton}" />
+                        <TextBlock Text="Taux de présence par semaine" Style="{StaticResource H2}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding AttendanceSummary}" Style="{StaticResource Small}" Margin="0,0,0,14" />
+                    <ui:LineChart Data="{Binding AttendanceChart}" ShowLegend="False" Height="220" EmptyText="Aucun appel enregistré" />
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource PaddedCard}">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,4">
+                        <Button DockPanel.Dock="Right" Content="Élèves" Command="{Binding GoStudentsCommand}" Style="{StaticResource LinkButton}" />
+                        <TextBlock Text="Élèves par niveau" Style="{StaticResource H2}" />
+                    </DockPanel>
+                    <TextBlock Text="{Binding LevelsSummary}" Style="{StaticResource Small}" Margin="0,0,0,14" />
+                    <ui:BarChart Data="{Binding LevelsChart}" Horizontal="True" Height="220" EmptyText="Aucun élève actif" />
+                </StackPanel>
+            </Border>
         </Grid>
     </StackPanel>
 </UserControl>
