@@ -148,3 +148,23 @@ public class SecurityTests
         Directory.Delete(root, true);
     }
 }
+
+public class PreferencesTests
+{
+    [Fact]
+    public async Task Preferences_persist_and_survive_a_corrupt_file()
+    {
+        await using var host = await TestHost.CreateAsync();
+        var prefs = host.Get<IUserPreferences>();
+        Assert.Equal(1.0, prefs.Get(PreferenceKeys.TextScale, 1.0));
+        prefs.Set(PreferenceKeys.TextScale, 1.15);
+        prefs.Set(PreferenceKeys.OnboardingDismissed, true);
+        var reloaded = new CentreSoutien.Infrastructure.Storage.JsonUserPreferences(host.Get<AppPaths>());
+        Assert.Equal(1.15, reloaded.Get(PreferenceKeys.TextScale, 1.0));
+        Assert.True(reloaded.Get(PreferenceKeys.OnboardingDismissed, false));
+
+        File.WriteAllText(Path.Combine(host.Get<AppPaths>().Root, "preferences.json"), "{ not json");
+        var broken = new CentreSoutien.Infrastructure.Storage.JsonUserPreferences(host.Get<AppPaths>());
+        Assert.Equal(1.0, broken.Get(PreferenceKeys.TextScale, 1.0));
+    }
+}

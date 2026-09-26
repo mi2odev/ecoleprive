@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<DatabaseInitializer>();
         services.AddSingleton<IFileStorage, FileStorage>();
         services.AddSingleton<ISystemInfo, SystemInfo>();
+        services.AddSingleton<IUserPreferences, JsonUserPreferences>();
 
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<ISettingsService, SettingsService>();
