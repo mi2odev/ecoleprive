@@ -64,7 +64,7 @@ public sealed partial class ExpenseEditorDialogViewModel(ICrudService<Expense> e
     public IReadOnlyList<string> Categories => Options.ExpenseCategories;
     public IReadOnlyList<Option<PaymentMethod>> Methods => Options.PaymentMethods;
 
-    [ObservableProperty] private DateTime _date = DateTime.Today;
+    [ObservableProperty] private DateTime? _date = DateTime.Today;
     [ObservableProperty] private string _category = "";
     [ObservableProperty] private string _description = "";
     [ObservableProperty] private string? _supplier;
@@ -89,7 +89,7 @@ public sealed partial class ExpenseEditorDialogViewModel(ICrudService<Expense> e
         var amount = Parse.Amount(Amount) ?? 0;
         if (amount <= 0) throw new BusinessException("Saisissez un montant.");
         var e = _expense;
-        e.Date = Date.Date;
+        e.Date = (Date ?? throw new BusinessException("Saisissez une date valide.")).Date;
         e.Category = Category.Trim();
         e.Description = (Description ?? "").Trim();
         e.Supplier = string.IsNullOrWhiteSpace(Supplier) ? null : Supplier.Trim();

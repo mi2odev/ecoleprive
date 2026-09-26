@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.IO;
+using System.Windows.Markup;
 using System.Windows;
 using System.Windows.Threading;
 using CentreSoutien.Application.Abstractions;
@@ -23,6 +25,14 @@ public partial class App
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // French formatting everywhere: "7,5", dates dd/MM/yyyy in date pickers, binding conversions.
+        var fr = new CultureInfo("fr-FR");
+        fr.NumberFormat.NumberGroupSeparator = " ";
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = fr;
+        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = fr;
+        FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement),
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(fr.IetfLanguageTag)));
 
         // One instance per Windows session: two copies writing the same database would be unsafe.
         _singleInstance = new Mutex(true, @"Local\CentreSoutien.SingleInstance", out var isFirst);

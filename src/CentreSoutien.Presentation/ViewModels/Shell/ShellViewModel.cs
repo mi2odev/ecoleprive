@@ -97,6 +97,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         ];
 
         _session.StateChanged += (_, _) => OnSessionChanged();
+        Dialogs.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(DialogHost.Current)) OnPropertyChanged(nameof(IsAppInteractive)); };
         Navigator.Navigated += (_, _) => HighlightNav();
         Login.SignedIn += async (_, _) => await EnterAppAsync();
         ChangePassword.Completed += async (_, _) => await EnterAppAsync();
@@ -114,6 +115,8 @@ public sealed partial class ShellViewModel : ViewModelBase
     public bool ShowChangePassword => _session.State == SessionState.PasswordChangeRequired;
     public bool ShowApp => _session.State is SessionState.Active or SessionState.Locked;
     public bool ShowLock => _session.State == SessionState.Locked;
+    /// <summary>False while locked or while a dialog is open, so keyboard focus cannot reach hidden controls.</summary>
+    public bool IsAppInteractive => !ShowLock && Dialogs.Current is null;
 
     public string OwnerName => string.IsNullOrWhiteSpace(_session.Account?.FullName) ? _session.Account?.Username ?? "" : _session.Account!.FullName;
     public string OwnerInitials => _session.Account?.Initials ?? "";
@@ -200,6 +203,7 @@ public sealed partial class ShellViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowChangePassword));
         OnPropertyChanged(nameof(ShowApp));
         OnPropertyChanged(nameof(ShowLock));
+        OnPropertyChanged(nameof(IsAppInteractive));
         OnPropertyChanged(nameof(OwnerName));
         OnPropertyChanged(nameof(OwnerInitials));
         OnPropertyChanged(nameof(OwnerPhotoPath));

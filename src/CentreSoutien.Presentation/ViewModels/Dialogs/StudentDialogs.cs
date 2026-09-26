@@ -30,7 +30,7 @@ public sealed partial class StudentEditorDialogViewModel(
     [ObservableProperty] private string? _school;
     [ObservableProperty] private string? _phone;
     [ObservableProperty] private string? _address;
-    [ObservableProperty] private DateTime _enrolledOn = DateTime.Today;
+    [ObservableProperty] private DateTime? _enrolledOn = DateTime.Today;
     [ObservableProperty] private bool _isActive = true;
     [ObservableProperty] private string? _notes;
     [ObservableProperty] private string? _photoFile;
@@ -111,7 +111,7 @@ public sealed partial class StudentEditorDialogViewModel(
         s.School = School;
         s.Phone = Phone;
         s.Address = Address;
-        s.EnrolledOn = EnrolledOn;
+        s.EnrolledOn = (EnrolledOn ?? throw new BusinessException("Saisissez la date d'inscription.")).Date;
         s.IsActive = IsActive;
         s.Notes = Notes;
         s.PhotoFile = PhotoFile;

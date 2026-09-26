@@ -67,8 +67,10 @@ public class ShellTests
         Assert.True(shell.ShowApp);
         Assert.IsType<DashboardViewModel>(host.Get<Navigator>().Current);
 
+        Assert.True(shell.IsAppInteractive);
         shell.LockNowCommand.Execute(null);
         Assert.True(shell.ShowLock);
+        Assert.False(shell.IsAppInteractive); // nothing behind the lock screen can take focus
         shell.Lock.Password = "admin";
         await shell.Lock.UnlockCommand.ExecuteAsync(null);
         Assert.True(shell.ShowLock);
@@ -77,6 +79,7 @@ public class ShellTests
         Assert.False(shell.ShowLock);
 
         var signOut = shell.SignOutCommand.ExecuteAsync(null);
+        Assert.False(shell.IsAppInteractive); // confirmation dialog open
         await host.AnswerDialogAsync();
         await signOut;
         Assert.True(shell.ShowLogin);
