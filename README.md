@@ -1,25 +1,92 @@
-# CODING AGENTS: READ THIS FIRST
+# Centre de soutien — gestion d'un centre de cours de soutien
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Windows desktop application for the **owner of a private tutoring center** (Future Leaders Academy).
+One owner, one account, full access to every module. Everything runs locally on the school PC:
+no server, no cloud, no MySQL/XAMPP/Docker.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+UI language: French · Currency: DZD · Visual direction: **B · Marine** from the Claude Design prototype
+(`project/Centre de soutien.dc.html`, original handoff notes in `project/README-handoff.md`).
 
-## What you should do — IMPORTANT
+## Features
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+| Area | What the owner can do |
+|---|---|
+| **Tableau de bord** | Students (total / active / new), teachers (total / active / payments due), courses (active, today's sessions, full groups), today's attendance (present / absent / late), finance (today's and monthly revenue, unpaid balances, teacher payments, expenses, estimated profit), today's sessions, next session, free rooms. |
+| **Élèves** | List with search and level / payment filters, Excel export. Profile with direct actions: edit, add payment (receipt printed), enroll / change group / remove from group, apply discount, add documents, deactivate, delete. Tabs: overview, attendance, grades, payment history (reprint / cancel receipts), documents. |
+| **Parents, Enseignants, Matières, Cours, Groupes, Salles** | Add / edit / delete. Teacher profile: schedule, courses, students, earnings (percentage, per session or fixed monthly), record payments. Course page: change price, teacher, room, timetable; add/remove students; revenue and attendance. Timetable conflicts (same room or same teacher) are refused. |
+| **Emploi du temps, Séances, Présences** | Weekly timetable (Saturday → Thursday), sessions generated from the timetable or created ad hoc, attendance per session (present / absent / late / excused). |
+| **Notes, Examens** | Evaluations per group (test, homework, exam; max score, coefficient), grade entry, weighted averages on the configured scale. |
+| **Paiements, Paiements enseignants, Dépenses** | Monthly fees per student (course prices − discount), partial payments, numbered receipts, discounts, teacher compensation, expenses by category. |
+| **Rapports, Documents** | Monthly financial summary, per-course revenue, unpaid students, teacher pay, attendance and results per group; print / PDF, Excel export. Documents attached to the center, students, teachers or parents. |
+| **Paramètres, Mon compte** | Center identity and logo, pricing and payment rules, discount and compensation defaults, attendance and grading rules, receipts, backup / restore / export, language and theme, security (auto-lock delay, session timeout). Owner username, profile, photo and password. |
 
-**Read `project/Centre de soutien.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+There is deliberately **no** user management, roles, permissions, or teacher / staff / accountant login.
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+## Security
 
-## About the design files
+- **Single owner account.** Created on first start as `admin` / `admin`. The owner **must** choose a new password at first login (8+ characters, letters and digits/symbols). The login screen only shows the default username while the default password is still in place.
+- **Password hashing:** PBKDF2-HMAC-SHA256, 600 000 iterations, random 128-bit salt, constant-time comparison. Hashes are upgraded automatically if the policy changes. No plain-text password is ever stored.
+- **Brute-force protection:** after 5 wrong attempts, login is locked for 1, 2, 4, 8, then 15 minutes.
+- **Automatic lock** after N minutes of inactivity (configurable: never, 5, 10, 15, 30, 60). The lock screen asks for the password. **Session timeout:** a session left locked too long ends and requires a full login. Closing the app signs the owner out. `Ctrl+L` locks immediately.
+- **Encrypted database:** SQLite with SQLCipher (AES-256). The random 256-bit key is stored in `keys.json`, protected by Windows DPAPI (bound to the Windows user account).
+- **Encrypted backups (`.csbak`):** the database copy, images and documents are encrypted (AES-256-GCM). The key is wrapped with the owner's password, so a backup can be restored **on another PC** with the password in use when the backup was made. The current database is kept as `avant-restauration-*.db` before a restore.
+- Single instance per Windows session (two copies can't write the database at the same time).
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+## Architecture
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+```
+src/
+  CentreSoutien.Domain          Entities, enums, business rules (billing, teacher earnings, grading). No dependencies.
+  CentreSoutien.Application     Service interfaces + read models used by the UI (the seam for a future network version).
+  CentreSoutien.Infrastructure  Local implementation: EF Core + SQLite/SQLCipher, PBKDF2, DPAPI key store,
+                                backups, file storage, Excel export (ClosedXML), demo data, migrations.
+  CentreSoutien.Presentation    MVVM view models (CommunityToolkit.Mvvm), navigation, dialogs. Platform-neutral (net10.0).
+  CentreSoutien.Desktop         WPF views, Marine theme (light/dark), converters, Windows services (dialogs, printing),
+                                composition root (Microsoft.Extensions.Hosting DI + appsettings.json).
+tests/
+  CentreSoutien.Tests           xUnit: security, billing, services on a real encrypted database, backups,
+                                and view-model flows (login, lock, every page loading with demo data, CRUD flows).
+tools/
+  publish.ps1                   Self-contained Windows build.
+  check_xaml.py                 Static XAML checks (unknown resources, view ↔ view-model naming).
+  gen_codebehind.py             Creates the minimal code-behind for new views.
+```
 
-## Bundle contents
+- **ONE OWNER → ONE ACCOUNT → FULL ACCESS → ALL MODULES.** `AppSession` is a small state machine (signed out / password change required / active / locked); there is no authorization layer because there is nothing to authorize against.
+- The UI only talks to the interfaces in `CentreSoutien.Application.Abstractions`. A future multi-computer version can add an HTTP-backed implementation of these interfaces (and a server hosting the Infrastructure project) without changing view models or views.
+- Views are resolved by convention: `FooViewModel` is displayed by `FooView` (`Views/ViewLocator.cs`).
+- Database schema changes go through EF Core migrations (`src/CentreSoutien.Infrastructure/Data/Migrations`), applied automatically at startup and after a restore.
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Design brief questionnaire` project files (HTML prototypes, assets, components)
+## Data location
+
+`%LOCALAPPDATA%\CentreSoutien\` (configurable in `appsettings.json` → `Storage:DataFolder`):
+
+| Path | Content |
+|---|---|
+| `centre.db` | Encrypted database |
+| `keys.json` | Database key (DPAPI-protected) and its password-wrapped copy for backups |
+| `Images\`, `Documents\` | Logo, photos, attached documents |
+| `Backups\` | Default backup folder (daily automatic backup, 30 kept by default) |
+| `Logs\` | Error log |
+
+> Keep backups on an external drive or USB key as well: if the PC's Windows account is lost, `keys.json` can't be decrypted, and only a `.csbak` backup plus the owner's password can recover the data.
+
+## Build and run
+
+Requirements: .NET 10 SDK. The WPF app runs on Windows 10/11 (x64).
+
+```powershell
+dotnet build CentreSoutien.slnx
+dotnet test tests/CentreSoutien.Tests
+dotnet run --project src/CentreSoutien.Desktop
+./tools/publish.ps1          # self-contained release in publish/CentreSoutien
+```
+
+To try the application with realistic data (50 students, 9 teachers, 11 groups, a month of payments),
+open **Paramètres → Sauvegarde et export → Charger des données de démonstration** on an empty database.
+
+On Linux/macOS the whole solution builds (`EnableWindowsTargeting`) and the tests run, but the WPF app itself only runs on Windows.
+
+## Fonts and licences
+
+Public Sans and Newsreader (SIL Open Font License 1.1) are embedded; licence texts are copied next to the executable in `Licenses/`.
