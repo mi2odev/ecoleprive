@@ -4,6 +4,7 @@ using CentreSoutien.Application.Models;
 using CentreSoutien.Domain.Calculations;
 using CentreSoutien.Presentation.Core;
 using CentreSoutien.Presentation.ViewModels.Dialogs;
+using CentreSoutien.Presentation.ViewModels.Shell;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,13 +33,27 @@ public sealed record AlertRow(AlertKind Kind, Badge Badge, string Title, string?
     public bool HasMore => More is not null;
 }
 
+/// <summary>Large tile of the "Actions rapides" row: icon glyph (Segoe Fluent Icons / MDL2 Assets), label and a one-line hint.</summary>
+public sealed record QuickAction(string Key, string Glyph, string Label, string Hint, IRelayCommand Command);
+
+/// <summary>One line of the "Premiers pas" checklist.</summary>
+public sealed record OnboardingStepRow(OnboardingStep Step, string Title, string Hint, bool IsDone, bool IsOptional, IRelayCommand Do)
+{
+    public bool IsTodo => !IsDone;
+    public string State => IsDone ? "Fait" : IsOptional ? "Facultatif" : "À faire";
+    public Badge Badge => new(State, IsDone ? BadgeKind.Ok : IsOptional ? BadgeKind.Outline : BadgeKind.Warn);
+}
+
 public sealed partial class DashboardViewModel(
-    IDashboardService dashboard, IInsightsService insights, INavigator nav, DialogHost dialogs, TimeProvider clock, IServiceProvider services) : PageViewModel
+    IDashboardService dashboard, IInsightsService insights, INavigator nav, DialogHost dialogs, TimeProvider clock, IServiceProvider services,
+    IOnboardingService onboarding, IUserPreferences preferences, IDemoDataService demo, AppSession session, INotifier notifier) : PageViewModel
 {
     public override string NavKey => "dashboard";
     public override string Title => "Tableau de bord";
 
     [ObservableProperty] private string _dateLabel = "";
+    /// <summary>"Bonjour Mourad — samedi 26 septembre 2026" (just the date when the owner's name is unknown).</summary>
+    [ObservableProperty] private string _greeting = "";
     [ObservableProperty] private IReadOnlyList<Kpi> _finance = [];
     [ObservableProperty] private IReadOnlyList<DashboardBlock> _blocks = [];
     [ObservableProperty] private IReadOnlyList<TodayRow> _today = [];
@@ -57,6 +72,18 @@ public sealed partial class DashboardViewModel(
     [ObservableProperty] private IReadOnlyList<AlertRow> _alerts = [];
     [ObservableProperty] private bool _hasNoAlert;
     [ObservableProperty] private string _alertCount = "";
+    /// <summary>"À traiter (5)", or just "À traiter" when there is nothing to do.</summary>
+    [ObservableProperty] private string _alertsTitle = "À traiter";
+
+    // "Premiers pas"
+    [ObservableProperty] private bool _showOnboarding;
+    [ObservableProperty] private IReadOnlyList<OnboardingStepRow> _onboardingSteps = [];
+    [ObservableProperty] private string _onboardingProgress = "";
+    /// <summary>Share of the steps done (0–1) and left, for the progress bar.</summary>
+    [ObservableProperty] private double _onboardingDoneShare;
+    [ObservableProperty] private double _onboardingTodoShare = 1;
+    /// <summary>True when the database is completely empty: the demo data can be loaded.</summary>
+    [ObservableProperty] private bool _canLoadDemo;
 
     // Trends
     [ObservableProperty] private ChartData _financeChart = ChartData.Empty;
@@ -75,6 +102,7 @@ public sealed partial class DashboardViewModel(
             var now = clock.GetLocalNow().DateTime;
             var d = await dashboard.GetAsync(now);
             DateLabel = Labels.LongDate(now);
+            Greeting = GreetingFor(session.Account?.FullName, DateLabel);
             var month = Labels.Month(now);
             Finance =
             [
@@ -128,8 +156,118 @@ public sealed partial class DashboardViewModel(
             NoFreeRoom = FreeRooms.Count == 0;
 
             ApplyInsights(await insights.GetAsync(now));
+            await LoadOnboardingAsync();
         });
     }
+
+    // ----- Actions rapides -----
+
+    private IReadOnlyList<QuickAction>? _quickActions;
+
+    /// <summary>The most frequent tasks, one click away.</summary>
+    public IReadOnlyList<QuickAction> QuickActions => _quickActions ??=
+    [
+        new("collect", "\uE8C7", "Encaisser un paiement", "Mensualité ou inscription, reçu imprimé", CollectPaymentCommand),
+        new("student", "\uE8FA", "Inscrire un élève", "Nouvelle fiche élève et son groupe", AddStudentCommand),
+        new("attendance", "\uE73A", "Faire l'appel", "Présences des séances d'aujourd'hui", TakeAttendanceCommand),
+        new("expense", "\uE8EF", "Ajouter une dépense", "Loyer, fournitures, factures…", AddExpenseCommand),
+        new("reminders", "\uE8BD", "Relancer les impayés", "WhatsApp, SMS ou lettres aux parents", RemindUnpaidCommand),
+        new("search", "\uE721", "Rechercher (Ctrl+K)", "Élève, parent, enseignant, reçu…", SearchCommand),
+    ];
+
+    /// <summary>"Bonjour Mourad — samedi 26 septembre 2026"; only the date when the name is unknown.</summary>
+    public static string GreetingFor(string? fullName, string date)
+    {
+        var first = (fullName ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(first)) return date;
+        return $"Bonjour {first} — {(date.Length > 0 ? char.ToLowerInvariant(date[0]) + date[1..] : date)}";
+    }
+
+    [RelayCommand]
+    private async Task AddStudent()
+    {
+        var dialog = services.GetRequiredService<StudentEditorDialogViewModel>();
+        await dialog.InitializeAsync(null);
+        if (await dialogs.ShowAsync(dialog) && dialog.SavedId is { } id)
+        {
+            notifier.Info("Élève ajouté");
+            await nav.NavigateAsync<StudentDetailViewModel>(id);
+        }
+    }
+
+    [RelayCommand]
+    private Task TakeAttendance() => nav.NavigateAsync<AttendanceViewModel>(new AttendanceViewModel.Target(clock.GetLocalNow().Date));
+
+    [RelayCommand]
+    private async Task AddExpense()
+    {
+        var dialog = services.GetRequiredService<ExpenseEditorDialogViewModel>();
+        dialog.Initialize(null, clock.GetLocalNow().DateTime);
+        if (!await dialogs.ShowAsync(dialog)) return;
+        notifier.Info("Dépense ajoutée");
+        await LoadAsync(null);
+    }
+
+    [RelayCommand]
+    private Task RemindUnpaid() => nav.NavigateAsync<PaymentsViewModel>(new PaymentsViewModel.Target(Tab: "reminders"));
+
+    /// <summary>Opens the global search (same as Ctrl+K). The shell is resolved lazily: it depends on the navigator that creates this page.</summary>
+    [RelayCommand]
+    private void Search() => services.GetRequiredService<ShellViewModel>().OpenSearchCommand.Execute(null);
+
+    // ----- Premiers pas -----
+
+    private async Task LoadOnboardingAsync()
+    {
+        var status = await onboarding.GetAsync();
+        OnboardingSteps = status.Steps.Select(s => new OnboardingStepRow(s.Step, s.Title, s.Hint, s.IsDone, s.IsOptional,
+            new AsyncRelayCommand(() => OpenStepAsync(s.Step)))).ToList();
+        OnboardingProgress = $"{status.DoneCount} / {status.Total} étape{(status.Total > 1 ? "s" : "")}";
+        OnboardingDoneShare = status.Total == 0 ? 1 : (double)status.DoneCount / status.Total;
+        OnboardingTodoShare = 1 - OnboardingDoneShare;
+        CanLoadDemo = status.IsDatabaseEmpty;
+        ShowOnboarding = !status.IsComplete && !preferences.Get(PreferenceKeys.OnboardingDismissed, false);
+    }
+
+    /// <summary>Opens the page where a "Premiers pas" step is done.</summary>
+    public Task OpenStepAsync(OnboardingStep step) => step switch
+    {
+        OnboardingStep.CenterInfo or OnboardingStep.Logo => nav.NavigateAsync<SettingsViewModel>("centre"),
+        OnboardingStep.Password => nav.NavigateAsync<AccountViewModel>(),
+        OnboardingStep.Subjects => nav.NavigateAsync<SubjectsViewModel>(),
+        OnboardingStep.Rooms => nav.NavigateAsync<RoomsViewModel>(),
+        OnboardingStep.Teachers => nav.NavigateAsync<TeachersViewModel>(),
+        OnboardingStep.CoursesAndGroups => nav.NavigateAsync<CoursesViewModel>(),
+        OnboardingStep.Students => nav.NavigateAsync<StudentsViewModel>(),
+        OnboardingStep.Backup => nav.NavigateAsync<SettingsViewModel>("backup"),
+        _ => Task.CompletedTask,
+    };
+
+    /// <summary>"Masquer": hides the checklist on this computer.</summary>
+    [RelayCommand]
+    private void DismissOnboarding()
+    {
+        preferences.Set(PreferenceKeys.OnboardingDismissed, true);
+        ShowOnboarding = false;
+    }
+
+    /// <summary>"Essayer avec des données de démonstration", offered while the database is completely empty.</summary>
+    [RelayCommand]
+    private async Task LoadDemo()
+    {
+        if (!await dialogs.ConfirmAsync("Données de démonstration",
+                "Charger des élèves, enseignants, cours et paiements fictifs pour essayer l'application ? Vous pourrez les supprimer ensuite.",
+                "Charger", danger: false))
+            return;
+        if (await RunAsync(() => demo.SeedAsync(), notifier))
+        {
+            notifier.Info("Données de démonstration chargées");
+            await LoadAsync(null);
+        }
+    }
+
+    /// <summary>Paramètres → Sauvegarde et export (demo data, restore a backup).</summary>
+    [RelayCommand] private Task GoSettings() => nav.NavigateAsync<SettingsViewModel>("backup");
 
     private void ApplyInsights(DashboardInsights i)
     {
@@ -139,6 +277,7 @@ public sealed partial class DashboardViewModel(
             a.Count > a.Items.Count && a.Items.Count > 0 ? $"+ {a.Count - a.Items.Count} autre{(a.Count - a.Items.Count > 1 ? "s" : "")}" : null)).ToList();
         HasNoAlert = Alerts.Count == 0;
         AlertCount = Alerts.Count == 0 ? "" : $"{Alerts.Count} point{(Alerts.Count > 1 ? "s" : "")}";
+        AlertsTitle = Alerts.Count == 0 ? "À traiter" : $"À traiter ({Alerts.Count})";
 
         var months = i.Months.Select(m => ChartLabels.Month(m.Period)).ToList();
         FinanceChart = new ChartData(months,

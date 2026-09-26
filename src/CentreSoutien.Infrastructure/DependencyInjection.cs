@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddSingleton<ITeacherPaymentService, TeacherPaymentService>();
         services.AddSingleton<IDashboardService, DashboardService>();
         services.AddSingleton<IInsightsService, InsightsService>();
+        services.AddSingleton<IOnboardingService, OnboardingService>();
         services.AddSingleton<IReportService, ReportService>();
         services.AddSingleton<IExportService, ExportService>();
         services.AddSingleton<IDocumentService, DocumentService>();

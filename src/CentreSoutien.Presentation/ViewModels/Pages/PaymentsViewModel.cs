@@ -139,8 +139,10 @@ public sealed partial class PaymentsViewModel(
         {
             var now = clock.GetLocalNow().DateTime;
             Months = Options.Months(now);
-            SelectedMonth = Months.First(m => m.Value == Period.Of(parameter is DateTime d ? d : now));
+            var start = parameter switch { DateTime d => d, Target { Month: { } m } => m, _ => now };
+            SelectedMonth = Months.FirstOrDefault(m => m.Value == Period.Of(start)) ?? Months.First(m => m.Value == Period.Of(now));
         }
+        if (parameter is Target { Tab: { } tab }) Tab = tab;
         await ReloadAsync();
     }
 
@@ -468,4 +470,7 @@ public sealed partial class PaymentsViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    /// <summary>Optional navigation parameter: open a given month and/or tab ("monthly", "receipts", "discounts", "reminders").</summary>
+    public sealed record Target(DateTime? Month = null, string? Tab = null);
 }

@@ -10,10 +10,12 @@
     <StackPanel>
         <StackPanel Visibility="{Binding CanPickStudent, Converter={StaticResource BoolToVisible}}" Margin="0,0,0,16">
             <TextBlock Text="Élève" Style="{StaticResource FieldLabel}" />
-            <ComboBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}" DisplayMemberPath="Label" IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" />
+            <ComboBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}" DisplayMemberPath="Label"
+                      IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Label" StaysOpenOnEdit="True" MaxDropDownHeight="320"
+                      ToolTip="Tapez le début du nom pour trouver l'élève" />
         </StackPanel>
         <TextBlock Visibility="{Binding CanPickStudent, Converter={StaticResource BoolToCollapsed}}" FontSize="14" Margin="0,0,0,16">
-            <Run Text="Bénéficiaire : " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentName, Mode=OneWay}" Foreground="{DynamicResource InkBrush}" />
+            <Run Text="Bénéficiaire : " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentName, Mode=OneWay}" Foreground="{DynamicResource InkBrush}" /><Run Text=" — " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentBalance, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
         </TextBlock>
         <UniformGrid Columns="2" Margin="0,0,0,12">
             <StackPanel Margin="0,0,8,0">
@@ -28,6 +30,22 @@
         <TextBlock Text="{Binding Summary}" Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,16" />
         <TextBlock Text="Montant (DZD)" Style="{StaticResource FieldLabel}" />
         <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" ui:FocusOnShow.Enabled="True" />
+        <TextBlock Text="{Binding RemainingAfter}" Style="{StaticResource Small}" Margin="0,6,0,0"
+                   Visibility="{Binding HasRemainingAfter, Converter={StaticResource BoolToVisible}}" />
+        <!-- Quick amounts: one click fills the amount -->
+        <ItemsControl ItemsSource="{Binding QuickAmounts}" Margin="0,8,0,0" Focusable="False"
+                      Visibility="{Binding HasQuickAmounts, Converter={StaticResource BoolToVisible}}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type dlg:QuickAmountOption}">
+                    <Button Content="{Binding Text}" Command="{Binding Apply}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,6,6" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <TextBlock Text="Mode de paiement" Style="{StaticResource FieldLabel}" Margin="0,16,0,6" />
         <ListBox ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
         <TextBlock Text="Note (facultatif)" Style="{StaticResource FieldLabel}" Margin="0,12,0,6" />

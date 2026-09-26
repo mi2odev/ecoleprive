@@ -6,18 +6,147 @@
              xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:DashboardViewModel}">
+    <UserControl.Resources>
+        <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <!-- Large "Actions rapides" tile: panel card, sunk on hover / keyboard focus. -->
+        <Style x:Key="QuickActionButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="MinHeight" Value="96" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                CornerRadius="{StaticResource Radius}" Padding="{TemplateBinding Padding}" MinHeight="{TemplateBinding MinHeight}">
+                            <ContentPresenter VerticalAlignment="Top" HorizontalAlignment="Stretch" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
     <StackPanel>
         <!-- Title row -->
-        <DockPanel Margin="0,0,0,22">
+        <DockPanel Margin="0,0,0,18">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
                 <Button Content="Paiements" Command="{Binding GoPaymentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
                 <Button Content="Encaisser un paiement" Command="{Binding CollectPaymentCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <StackPanel>
-                <TextBlock Text="{Binding DateLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="{Binding Greeting}" Style="{StaticResource Muted}" />
                 <TextBlock Text="Tableau de bord" Style="{StaticResource H1}" Margin="0,4,0,0" />
             </StackPanel>
         </DockPanel>
+
+        <!-- Actions rapides: the most frequent tasks, one click away -->
+        <TextBlock Text="Actions rapides" Style="{StaticResource Overline}" Margin="0,0,0,8" />
+        <ItemsControl ItemsSource="{Binding QuickActions}" Margin="0,0,-12,10" Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Rows="1" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:QuickAction}">
+                    <Button Command="{Binding Command}" Style="{StaticResource QuickActionButton}" Margin="0,0,12,12"
+                            ToolTip="{Binding Hint}" AutomationProperties.Name="{Binding Label}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource IconFont}" FontSize="24"
+                                       Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,10" />
+                            <TextBlock Text="{Binding Label}" Style="{StaticResource BodyStrong}" TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Hint}" Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                        </StackPanel>
+                    </Button>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Premiers pas: guided setup, shown until every required step is done (or hidden by the owner) -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,22"
+                Visibility="{Binding ShowOnboarding, Converter={StaticResource BoolToVisible}}">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding OnboardingProgress}" Style="{StaticResource Small}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                            <Button Content="Masquer" Command="{Binding DismissOnboardingCommand}" Style="{StaticResource LinkButton}"
+                                    ToolTip="Ne plus afficher cette liste sur cet ordinateur" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Premiers pas" Style="{StaticResource H2}" />
+                            <TextBlock Text="Quelques étapes pour mettre le centre en route. Cliquez sur « Faire » pour ouvrir la bonne page."
+                                       Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Height="6" CornerRadius="3" Background="{DynamicResource SunkBrush}" ClipToBounds="True" Margin="20,14,20,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{Binding OnboardingDoneShare, Converter={StaticResource ShareToStar}}" />
+                            <ColumnDefinition Width="{Binding OnboardingTodoShare, Converter={StaticResource ShareToStar}}" />
+                        </Grid.ColumnDefinitions>
+                        <Rectangle Fill="{DynamicResource OkBrush}" />
+                    </Grid>
+                </Border>
+
+                <!-- Empty database: try the app with demo data first -->
+                <Border Background="{DynamicResource SunkBrush}" CornerRadius="{StaticResource RadiusSmall}" Padding="16,12" Margin="20,10,20,4"
+                        Visibility="{Binding CanLoadDemo, Converter={StaticResource BoolToVisible}}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="Paramètres" Command="{Binding GoSettingsCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
+                            <Button Content="Essayer avec des données de démonstration" Command="{Binding LoadDemoCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                        </StackPanel>
+                        <TextBlock Text="La base est vide. Vous pouvez d'abord découvrir l'application avec des élèves, enseignants et paiements fictifs."
+                                   Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0" />
+                    </DockPanel>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding OnboardingSteps}" Margin="0,6,0,0" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:OnboardingStepRow}">
+                            <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="20,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="32" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource OkBrush}"
+                                               VerticalAlignment="Center" Visibility="{Binding IsDone, Converter={StaticResource BoolToVisible}}" />
+                                    <TextBlock Text="&#xE739;" FontFamily="{StaticResource IconFont}" FontSize="16" Foreground="{DynamicResource MutedBrush}"
+                                               VerticalAlignment="Center" Visibility="{Binding IsTodo, Converter={StaticResource BoolToVisible}}" />
+                                    <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                                        <TextBlock Style="{StaticResource BodyStrong}" TextWrapping="Wrap">
+                                            <Run Text="{Binding Title, Mode=OneWay}" /><Run Text=" · " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding State, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" FontWeight="Normal" />
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Hint}" Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Content="Faire" Command="{Binding Do}" Style="{StaticResource SmallSecondaryButton}" VerticalAlignment="Center"
+                                            Visibility="{Binding IsTodo, Converter={StaticResource BoolToVisible}}" />
+                                    <Button Grid.Column="2" Content="Ouvrir" Command="{Binding Do}" Style="{StaticResource LinkButton}" VerticalAlignment="Center"
+                                            Visibility="{Binding IsDone, Converter={StaticResource BoolToVisible}}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
 
         <!-- Finance strip -->
         <ItemsControl ItemsSource="{Binding Finance}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
@@ -28,7 +157,7 @@
                 <Border Style="{StaticResource CardHeader}">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="{Binding AlertCount}" Style="{StaticResource Small}" VerticalAlignment="Center" />
-                        <TextBlock Text="À traiter" Style="{StaticResource H2}" />
+                        <TextBlock Text="{Binding AlertsTitle}" Style="{StaticResource H2}" />
                     </DockPanel>
                 </Border>
                 <TextBlock Text="Rien à traiter pour le moment." Style="{StaticResource EmptyText}"
