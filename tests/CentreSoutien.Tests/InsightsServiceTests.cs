@@ -11,10 +11,10 @@ public class InsightsServiceTests
     /// <summary>Saturday 26 September 2026, 14:32 (same as the test clock).</summary>
     private static readonly DateTime Now = new(2026, 9, 26, 14, 32, 0);
 
-    private sealed record Scenario(int GroupId, int CourseId, int Alice, int Bilal, int Chahra, int TeacherId, int TodaySessionId);
+    private sealed record Scenario(int GroupId, int Alice, int Bilal, int Chahra, int TeacherId, int TodaySessionId);
 
     /// <summary>
-    /// Six months (April → September 2026) of a tiny center: one 4 000 DZD course, a full group of two, a fixed-salary teacher.
+    /// Six months (April → September 2026) of a tiny center: one 4 000 DZD group of two (full), a fixed-salary teacher.
     /// Alice pays every month, Bilal skips September and misses three sessions, Chahra joined this month without a group.
     /// August's teacher pay is not recorded and today's morning session has no attendance.
     /// </summary>
@@ -23,11 +23,10 @@ public class InsightsServiceTests
         await using var db = await host.Get<IDbContextFactory<AppDbContext>>().CreateDbContextAsync();
         var april = new DateTime(2026, 4, 1);
         var subject = new Subject { Name = "Mathématiques" };
-        var course = new Course { Subject = subject, Level = "3AS", MonthlyPrice = 4000 };
         var teacher = new Teacher { FirstName = "Karima", LastName = "Boudiaf", CompensationType = CompensationType.FixedMonthly, CompensationValue = 20000 };
         var group = new Group
         {
-            Course = course, Name = "A", Teacher = teacher, Capacity = 2,
+            Subject = subject, Level = "3AS", MonthlyPrice = 4000, Name = "A", Teacher = teacher, Capacity = 2,
             Slots = [new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) }],
         };
         var alice = new Student { Matricule = "E1", FirstName = "Alice", LastName = "Amrani", Level = "3AS", EnrolledOn = april };
@@ -64,7 +63,7 @@ public class InsightsServiceTests
         var today = new Session { GroupId = group.Id, Date = Now.Date, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) };
         db.Sessions.Add(today);
         await db.SaveChangesAsync();
-        return new Scenario(group.Id, course.Id, alice.Id, bilal.Id, chahra.Id, teacher.Id, today.Id);
+        return new Scenario(group.Id, alice.Id, bilal.Id, chahra.Id, teacher.Id, today.Id);
     }
 
     [Fact]
@@ -140,7 +139,7 @@ public class InsightsServiceTests
         Assert.DoesNotContain(alerts, a => a.Kind == AlertKind.TeacherPayDue); // pay day (30) not reached
 
         var full = Of(AlertKind.GroupFull);
-        Assert.Equal(new InsightTarget(InsightLink.Course, s.CourseId, GroupId: s.GroupId), Assert.Single(full.Items).Target);
+        Assert.Equal(new InsightTarget(InsightLink.Course, s.GroupId, GroupId: s.GroupId), Assert.Single(full.Items).Target);
         Assert.Equal("2/2", full.Items[0].Value);
         Assert.DoesNotContain(alerts, a => a.Kind == AlertKind.GroupNearlyFull);
 

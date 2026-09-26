@@ -10,7 +10,7 @@ public class BusinessTests
     private static readonly DateTime Sept = new(2026, 9, 1);
 
     private static Group G(decimal price, string level = "3AS") =>
-        new() { Id = Random.Shared.Next(1, 100000), Course = new Course { MonthlyPrice = price, Level = level, Subject = new Subject { Name = "Maths" } } };
+        new() { Id = Random.Shared.Next(1, 100000), MonthlyPrice = price, Level = level, Subject = new Subject { Name = "Maths" } };
 
     [Fact]
     public void Monthly_due_sums_enrollments_and_applies_discount()
@@ -63,7 +63,6 @@ public class BusinessTests
         await using var host = await TestHost.CreateAsync();
         var subjects = host.Get<ICrudService<Subject>>();
         var rooms = host.Get<ICrudService<Room>>();
-        var courses = host.Get<ICourseService>();
         var groups = host.Get<IGroupService>();
         var teachers = host.Get<ITeacherService>();
         var studentsSvc = host.Get<IStudentService>();
@@ -72,16 +71,15 @@ public class BusinessTests
         var maths = await subjects.SaveAsync(new Subject { Name = "Mathématiques" });
         var room = await rooms.SaveAsync(new Room { Name = "Salle 1", Capacity = 12 });
         var t = await teachers.SaveAsync(new Teacher { FirstName = "Karima", LastName = "Boudiaf", SubjectId = maths.Id });
-        var course = await courses.SaveAsync(new Course { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500 });
         var slot = new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) };
-        var a = await groups.SaveAsync(new Group { CourseId = course.Id, Name = "A", TeacherId = t.Id, RoomId = room.Id, Capacity = 1 }, [slot]);
+        var a = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "A", TeacherId = t.Id, RoomId = room.Id, Capacity = 1 }, [slot]);
 
         // Same room, overlapping time → rejected.
         var ex = await Assert.ThrowsAsync<BusinessException>(() => groups.SaveAsync(
-            new Group { CourseId = course.Id, Name = "B", RoomId = room.Id, Capacity = 5 },
+            new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "B", RoomId = room.Id, Capacity = 5 },
             [new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(10), End = TimeSpan.FromHours(12) }]));
         Assert.Contains("Salle déjà occupée", ex.Message);
-        var b = await groups.SaveAsync(new Group { CourseId = course.Id, Name = "B", Capacity = 5 },
+        var b = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "B", Capacity = 5 },
             [new ScheduleSlot { Day = DayOfWeek.Sunday, Start = TimeSpan.FromHours(10), End = TimeSpan.FromHours(12) }]);
 
         var s1 = await studentsSvc.SaveAsync(new Student { FirstName = "Yacine", LastName = "Benali", Level = "3AS" });
@@ -104,9 +102,12 @@ public class BusinessTests
         Assert.Equal(PaymentState.Paid, rows.Single(r => r.StudentId == s1.Id).State);
         Assert.Equal(3500, rows.Single(r => r.StudentId == s2.Id).Balance);
 
-        var detail = await courses.GetDetailAsync(course.Id, period);
-        Assert.Equal(9000, detail!.Expected);
-        Assert.Equal(5500, detail.Collected);
+        var groupA = await groups.GetDetailAsync(a.Id, period);
+        Assert.Equal(4500, groupA!.Expected); // Amira
+        Assert.Equal(1000, groupA.Collected);
+        var groupB = await groups.GetDetailAsync(b.Id, period);
+        Assert.Equal(4500, groupB!.Expected); // Yacine, paid in full
+        Assert.Equal(4500, groupB.Collected);
 
         await Assert.ThrowsAsync<BusinessException>(() => studentsSvc.DeleteAsync(s1.Id)); // has payments
     }

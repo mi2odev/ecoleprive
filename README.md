@@ -11,13 +11,13 @@ UI language: French · Currency: DZD · Visual direction: **B · Marine** from t
 
 | Area | What the owner can do |
 |---|---|
-| **Tableau de bord** | Students (total / active / new), teachers (total / active / payments due), courses (active, today's sessions, full groups), today's attendance (present / absent / late), finance (today's and monthly revenue, unpaid balances, teacher payments, expenses, estimated profit), today's sessions, next session, free rooms. |
+| **Tableau de bord** | Students (total / active / new), teachers (total / active / payments due), groups (active, today's sessions, full groups), today's attendance (present / absent / late), finance (today's and monthly revenue, unpaid balances, teacher payments, expenses, estimated profit), today's sessions, next session, free rooms. |
 | **Élèves** | List with search and level / payment filters, Excel export. Profile with direct actions: edit, add payment (receipt printed), enroll / change group / remove from group, apply discount, add documents, deactivate, delete. Tabs: overview, attendance, grades, payment history (reprint / cancel receipts), documents. |
-| **Parents, Enseignants, Matières, Cours, Groupes, Salles** | Add / edit / delete. Teacher profile: schedule, courses, students, earnings (percentage, per session or fixed monthly), record payments. Course page: change price, teacher, room, timetable; add/remove students; revenue and attendance. Timetable conflicts (same room or same teacher) are refused. |
+| **Parents, Enseignants, Matières, Groupes, Salles** | Add / edit / delete. A group carries its subject, level and monthly price directly (e.g. « Mathématiques · 3AS A », 4 500 DZD) — there is no separate "course" level. Teacher profile: schedule, groups, students, earnings (percentage, per session or fixed monthly), record payments. Group page: change price, teacher, room, timetable; add/remove students; revenue and attendance. Timetable conflicts (same room or same teacher) are refused. |
 | **Emploi du temps, Séances, Présences** | Weekly timetable (Saturday → Thursday), sessions generated from the timetable or created ad hoc, attendance per session (present / absent / late / excused). |
 | **Notes, Examens** | Evaluations per group (test, homework, exam; max score, coefficient), grade entry, weighted averages on the configured scale. |
-| **Paiements, Paiements enseignants, Dépenses** | Monthly fees per student (course prices − discount), partial payments, numbered receipts, discounts, teacher compensation, expenses by category. |
-| **Rapports, Documents** | Monthly financial summary, per-course revenue, unpaid students, teacher pay, attendance and results per group; print / PDF, Excel export. Documents attached to the center, students, teachers or parents. |
+| **Paiements, Paiements enseignants, Dépenses** | Monthly fees per student (group prices − discount), partial payments, numbered receipts, discounts, teacher compensation, expenses by category. |
+| **Rapports, Documents** | Monthly financial summary, per-group revenue, unpaid students, teacher pay, attendance and results per group; print / PDF, Excel export. Documents attached to the center, students, teachers or parents. |
 | **Paramètres, Mon compte** | Center identity and logo, pricing and payment rules, discount and compensation defaults, attendance and grading rules, receipts, backup / restore / export, language and theme, security (auto-lock delay, session timeout). Owner username, profile, photo and password. |
 
 ### Owner productivity

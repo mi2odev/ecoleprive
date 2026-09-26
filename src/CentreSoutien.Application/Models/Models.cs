@@ -19,7 +19,7 @@ public sealed record TeacherListItem(int Id, string FullName, string Initials, s
 public sealed record TeacherDetail(Teacher Teacher, List<Group> Groups, List<Student> Students, EarningsResult Earnings,
     decimal PaidThisMonth, List<TeacherPayment> Payments);
 
-public sealed record CourseDetail(Course Course, List<Group> Groups, decimal Expected, decimal Collected, double AttendanceRate,
+public sealed record GroupDetail(Group Group, List<Student> Students, decimal Expected, decimal Collected, double AttendanceRate,
     List<Student> EligibleStudents);
 
 public sealed record RoomAvailability(Room Room, bool IsFree, string? OccupiedBy, TimeSpan? FreeUntil);

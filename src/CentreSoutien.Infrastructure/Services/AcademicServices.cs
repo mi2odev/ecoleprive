@@ -81,103 +81,57 @@ public sealed class TeacherService(IDbContextFactory<AppDbContext> factory, Time
     }
 }
 
-public sealed class CourseService(IDbContextFactory<AppDbContext> factory, TimeProvider clock) : ICourseService
+public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimeProvider clock) : IGroupService
 {
-    public async Task<List<Course>> ListAsync(CancellationToken ct = default)
+    public async Task<GroupDetail?> GetDetailAsync(int id, DateTime period, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var list = await db.Courses.AsNoTracking()
-            .Include(c => c.Subject)
-            .Include(c => c.Groups).ThenInclude(g => g.Teacher)
-            .Include(c => c.Groups).ThenInclude(g => g.Room)
-            .Include(c => c.Groups).ThenInclude(g => g.Slots)
-            .Include(c => c.Groups).ThenInclude(g => g.Enrollments)
-            .AsSplitQuery()
-            .ToListAsync(ct);
-        return list.OrderBy(c => c.Subject!.Name).ThenBy(c => StudentService.LevelOrder(c.Level)).ToList();
-    }
-
-    public async Task<CourseDetail?> GetDetailAsync(int id, DateTime period, CancellationToken ct = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-        var course = await db.Courses.AsNoTracking().Include(c => c.Subject).FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (course is null) return null;
-        var groups = await db.GroupsFull().Where(g => g.CourseId == id).ToListAsync(ct);
-        foreach (var g in groups) g.Course = course;
+        var group = await db.GroupsFull().FirstOrDefaultAsync(g => g.Id == id, ct);
+        if (group is null) return null;
         var p = Period.Of(period);
         var today = clock.GetLocalNow().Date;
 
-        // Revenue of the course: each enrolled student's payments for the month, pro-rated on this course's share of the student's fee.
-        var studentIds = groups.SelectMany(g => g.Enrollments).Select(e => e.StudentId).Distinct().ToList();
+        // Revenue of the group: each enrolled student's payments for the month, pro-rated on this group's share of the student's fee.
+        var studentIds = group.Enrollments.Select(e => e.StudentId).Distinct().ToList();
         var students = await db.StudentsForBilling().Where(s => studentIds.Contains(s.Id)).ToListAsync(ct);
         decimal expected = 0, collected = 0;
-        foreach (var g in groups)
-            foreach (var e in g.Enrollments.Where(e => e.CoversMonth(p.Year, p.Month)))
-            {
-                var s = students.First(x => x.Id == e.StudentId);
-                if (!s.IsActive) continue;
-                var gross = Billing.GrossMonthlyFee(s, p);
-                var due = Billing.MonthlyDue(s, p);
-                var share = gross == 0 ? 0 : course.MonthlyPrice / gross;
-                expected += due * share;
-                collected += Math.Min(due, Billing.PaidForPeriod(s, p)) * share;
-            }
+        foreach (var e in group.Enrollments.Where(e => e.CoversMonth(p.Year, p.Month)))
+        {
+            var s = students.First(x => x.Id == e.StudentId);
+            if (!s.IsActive) continue;
+            var gross = Billing.GrossMonthlyFee(s, p);
+            var due = Billing.MonthlyDue(s, p);
+            var share = gross == 0 ? 0 : group.MonthlyPrice / gross;
+            expected += due * share;
+            collected += Math.Min(due, Billing.PaidForPeriod(s, p)) * share;
+        }
 
-        var sessionIds = groups.SelectMany(g => g.Sessions).Select(s => s.Id).ToList();
+        var sessionIds = group.Sessions.Select(s => s.Id).ToList();
         var marks = await db.Attendance.AsNoTracking().Where(a => sessionIds.Contains(a.SessionId)).Select(a => a.Status).ToListAsync(ct);
         var rate = marks.Count == 0 ? 0 : marks.Count(m => m != AttendanceStatus.Absent) * 100.0 / marks.Count;
 
-        var enrolledNow = groups.SelectMany(g => g.Enrollments.Where(e => e.IsActiveOn(today))).Select(e => e.StudentId).ToHashSet();
-        var eligible = await db.Students.AsNoTracking().Where(s => s.IsActive && s.Level == course.Level).ToListAsync(ct);
-        return new CourseDetail(course, groups.OrderBy(g => g.Name).ToList(), Math.Round(expected), Math.Round(collected), rate,
+        var enrolledNow = group.Enrollments.Where(e => e.IsActiveOn(today)).Select(e => e.StudentId).ToHashSet();
+        var current = students.Where(s => enrolledNow.Contains(s.Id)).OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
+        var eligible = await db.Students.AsNoTracking().Where(s => s.IsActive && s.Level == group.Level).ToListAsync(ct);
+        return new GroupDetail(group, current, Math.Round(expected), Math.Round(collected), rate,
             eligible.Where(s => !enrolledNow.Contains(s.Id)).OrderBy(s => s.LastName).ToList());
     }
 
-    public async Task<Course> SaveAsync(Course course, CancellationToken ct = default)
-    {
-        if (course.SubjectId == 0) throw new BusinessException("Choisissez une matière.");
-        if (string.IsNullOrWhiteSpace(course.Level)) throw new BusinessException("Le niveau est obligatoire.");
-        if (course.MonthlyPrice < 0) throw new BusinessException("Le prix doit être positif.");
-        await using var db = await factory.CreateDbContextAsync(ct);
-        if (await db.Courses.AnyAsync(c => c.SubjectId == course.SubjectId && c.Level == course.Level && c.Id != course.Id, ct))
-            throw new BusinessException("Ce cours existe déjà pour ce niveau.");
-        var entity = course.Id == 0 ? new Course() : await db.Courses.FindAsync([course.Id], ct) ?? throw new BusinessException("Cours introuvable.");
-        if (course.Id == 0) db.Courses.Add(entity);
-        db.Entry(entity).CurrentValues.SetValues(new { course.SubjectId, Level = course.Level.Trim(), course.MonthlyPrice, course.Description, course.IsActive });
-        await db.SaveChangesAsync(ct);
-        course.Id = entity.Id;
-        return course;
-    }
-
-    public async Task DeleteAsync(int id, CancellationToken ct = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(ct);
-        if (await db.Enrollments.AnyAsync(e => e.Group!.CourseId == id, ct))
-            throw new BusinessException("Des élèves sont (ou ont été) inscrits à ce cours. Désactivez-le plutôt que de le supprimer.");
-        var c = await db.Courses.FindAsync([id], ct);
-        if (c is null) return;
-        db.Courses.Remove(c);
-        await db.SaveChangesAsync(ct);
-    }
-}
-
-public sealed class GroupService(IDbContextFactory<AppDbContext> factory) : IGroupService
-{
     public async Task<List<Group>> ListAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var list = await db.Groups.AsNoTracking()
-            .Include(g => g.Course).ThenInclude(c => c!.Subject)
+            .Include(g => g.Subject)
             .Include(g => g.Teacher).Include(g => g.Room).Include(g => g.Slots).Include(g => g.Enrollments)
             .AsSplitQuery().ToListAsync(ct);
-        return list.OrderBy(g => g.Course!.Subject!.Name).ThenBy(g => StudentService.LevelOrder(g.Course!.Level)).ThenBy(g => g.Name).ToList();
+        return list.OrderBy(g => g.Subject!.Name).ThenBy(g => StudentService.LevelOrder(g.Level)).ThenBy(g => g.Name).ToList();
     }
 
     public async Task<Group?> GetAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         return await db.Groups.AsNoTracking()
-            .Include(g => g.Course).ThenInclude(c => c!.Subject)
+            .Include(g => g.Subject)
             .Include(g => g.Teacher).Include(g => g.Room).Include(g => g.Slots)
             .Include(g => g.Enrollments).ThenInclude(e => e.Student)
             .AsSplitQuery().FirstOrDefaultAsync(g => g.Id == id, ct);
@@ -199,7 +153,7 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory) : IGro
                 if (slots[i].Overlaps(slots[j])) errors.Add($"Deux créneaux du groupe se chevauchent le {Labels.Day(slots[i].Day).ToLowerInvariant()}.");
 
         var others = await db.Slots.AsNoTracking().Where(s => s.GroupId != group.Id && s.Group!.IsActive)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Room)
@@ -221,20 +175,27 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory) : IGro
 
     public async Task<Group> SaveAsync(Group group, IEnumerable<ScheduleSlot> slots, CancellationToken ct = default)
     {
-        if (group.CourseId == 0) throw new BusinessException("Choisissez un cours.");
+        if (group.SubjectId == 0) throw new BusinessException("Choisissez une matière.");
+        if (string.IsNullOrWhiteSpace(group.Level)) throw new BusinessException("Le niveau est obligatoire.");
+        if (group.MonthlyPrice < 0) throw new BusinessException("Le prix doit être positif.");
         if (string.IsNullOrWhiteSpace(group.Name)) throw new BusinessException("Le nom du groupe est obligatoire.");
         if (group.Capacity <= 0) throw new BusinessException("La capacité doit être positive.");
         var slotList = slots.Select(s => new ScheduleSlot { Day = s.Day, Start = s.Start, End = s.End, RoomId = s.RoomId }).ToList();
 
         await using var db = await factory.CreateDbContextAsync(ct);
-        if (await db.Groups.AnyAsync(g => g.CourseId == group.CourseId && g.Name == group.Name.Trim() && g.Id != group.Id, ct))
-            throw new BusinessException("Un groupe porte déjà ce nom pour ce cours.");
+        var level = group.Level.Trim().ToUpperInvariant();
+        if (await db.Groups.AnyAsync(g => g.SubjectId == group.SubjectId && g.Level == level && g.Name == group.Name.Trim() && g.Id != group.Id, ct))
+            throw new BusinessException("Un groupe porte déjà ce nom pour cette matière et ce niveau.");
         var conflicts = await ConflictsAsync(db, group, slotList, ct);
         if (conflicts.Count > 0) throw new BusinessException(string.Join("\n", conflicts));
 
         var entity = group.Id == 0 ? new Group() : await db.Groups.Include(g => g.Slots).FirstOrDefaultAsync(g => g.Id == group.Id, ct) ?? throw new BusinessException("Groupe introuvable.");
         if (group.Id == 0) db.Groups.Add(entity);
-        db.Entry(entity).CurrentValues.SetValues(new { group.CourseId, Name = group.Name.Trim(), group.TeacherId, group.RoomId, group.Capacity, group.IsActive });
+        db.Entry(entity).CurrentValues.SetValues(new
+        {
+            group.SubjectId, Level = level, group.MonthlyPrice, Name = group.Name.Trim(), group.TeacherId, group.RoomId,
+            group.Capacity, group.IsActive, group.Description,
+        });
         db.Slots.RemoveRange(entity.Slots);
         entity.Slots = slotList;
         await db.SaveChangesAsync(ct);
@@ -262,7 +223,7 @@ public sealed class ScheduleService(IDbContextFactory<AppDbContext> factory) : I
         var slots = await db.Slots.AsNoTracking()
             .Where(s => s.Group!.IsActive)
             .Include(s => s.Room)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Group).ThenInclude(g => g!.Enrollments)
@@ -280,7 +241,7 @@ public sealed class ScheduleService(IDbContextFactory<AppDbContext> factory) : I
         var slots = (await WeekAsync(ct)).Where(s => s.Day == day).ToList();
         // Sessions of the day take precedence over the timetable (ad hoc sessions, room changes, cancellations).
         var sessions = await db.Sessions.AsNoTracking().Where(s => s.Date == at.Date)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject).ToListAsync(ct);
+            .Include(s => s.Group).ThenInclude(g => g!.Subject).ToListAsync(ct);
         var occupancy = sessions.Count > 0
             ? sessions.Where(s => s.Status != SessionStatus.Cancelled).Select(s => (Room: s.RoomId ?? s.Group!.RoomId, s.Start, s.End, s.Group!.FullName)).ToList()
             : slots.Select(s => (Room: s.RoomId ?? s.Group!.RoomId, s.Start, s.End, s.Group!.FullName)).ToList();
@@ -302,7 +263,7 @@ public sealed class SessionService(IDbContextFactory<AppDbContext> factory) : IS
         await using var db = await factory.CreateDbContextAsync(ct);
         var list = await db.Sessions.AsNoTracking()
             .Where(s => s.Date >= from.Date && s.Date <= to.Date)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Group).ThenInclude(g => g!.Enrollments)

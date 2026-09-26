@@ -18,7 +18,7 @@ public class DeclutterTests
     {
         { nameof(StudentDetailViewModel), ["ShowTab", "AddPayment", "Edit", "Enroll", "ChangeGroup", "ApplyDiscount", "AddDocument", "PrintDocuments", "ToggleActive", "Delete", "OpenParent", "EnterGrades", "Back"] },
         { nameof(TeacherDetailViewModel), ["RecordPayment", "Edit", "OpenSchedule", "AddDocument", "ToggleActive", "Delete", "Back"] },
-        { nameof(CourseDetailViewModel), ["SavePrice", "AddStudent", "NewGroup", "EditGroup", "DeleteGroup", "EditCourse", "DeleteCourse", "OpenAttendance", "Back"] },
+        { nameof(GroupDetailViewModel), ["SavePrice", "AddStudent", "NewGroup", "EditGroup", "DeleteGroup", "OpenAttendance", "Back"] },
     };
 
     [Theory]
@@ -47,7 +47,7 @@ public class DeclutterTests
         {
             nameof(StudentDetailViewModel) => (typeof(StudentDetailViewModel), (object)(await host.Get<IStudentService>().ListAsync(now)).First(s => s.IsActive).Id),
             nameof(TeacherDetailViewModel) => (typeof(TeacherDetailViewModel), (await host.Get<ITeacherService>().ListAsync(now)).First(t => t.IsActive).Id),
-            _ => (typeof(CourseDetailViewModel), new CourseDetailViewModel.Target((await host.Get<ICourseService>().ListAsync()).First(c => c.Groups.Count > 0).Id)),
+            _ => (typeof(GroupDetailViewModel), new GroupDetailViewModel.Target((await host.Get<IGroupService>().ListAsync()).First().Id)),
         };
 
         foreach (var name in commands)
@@ -84,7 +84,6 @@ public class DeclutterTests
         { typeof(ParentsViewModel), "HasNoData" },
         { typeof(TeachersViewModel), "HasNoData" },
         { typeof(SubjectsViewModel), "HasNoData" },
-        { typeof(CoursesViewModel), "HasNoData" },
         { typeof(GroupsViewModel), "HasNoData" },
         { typeof(RoomsViewModel), "HasNoData" },
         { typeof(SessionsViewModel), "HasNoData" },

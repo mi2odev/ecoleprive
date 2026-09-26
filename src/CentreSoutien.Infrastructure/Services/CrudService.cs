@@ -72,8 +72,8 @@ public sealed class SubjectService(IDbContextFactory<AppDbContext> f) : CrudServ
     }
     protected override async Task BeforeDeleteAsync(AppDbContext db, int id, CancellationToken ct)
     {
-        if (await db.Courses.AnyAsync(c => c.SubjectId == id, ct))
-            throw new BusinessException("Cette matière est utilisée par des cours. Supprimez d'abord ces cours.");
+        if (await db.Groups.AnyAsync(g => g.SubjectId == id, ct))
+            throw new BusinessException("Cette matière est utilisée par des groupes. Supprimez d'abord ces groupes.");
     }
 }
 
@@ -122,7 +122,7 @@ public sealed class ParentService(IDbContextFactory<AppDbContext> factory) : IPa
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         return await db.Parents.AsNoTracking()
-            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(p => p.Children).ThenInclude(s => s.Payments)
             .Include(p => p.Children).ThenInclude(s => s.Discount)
             .AsSplitQuery()

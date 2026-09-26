@@ -15,7 +15,7 @@ public class ShellTests
         var shell = host.Get<ShellViewModel>();
         var labels = shell.NavGroups.SelectMany(g => g.Items).Select(i => i.Label).ToList();
         Assert.Equal(
-            ["Tableau de bord", "Élèves", "Parents", "Enseignants", "Matières", "Cours", "Groupes", "Salles", "Emploi du temps", "Séances", "Présences",
+            ["Tableau de bord", "Élèves", "Parents", "Enseignants", "Matières", "Groupes", "Salles", "Emploi du temps", "Séances", "Présences",
              "Notes", "Examens", "Paiements", "Paiements enseignants", "Dépenses", "Rapports", "Documents", "Paramètres"], labels);
         Assert.DoesNotContain(labels, l => l.Contains("Utilisateur") || l.Contains("Rôle") || l.Contains("Permission"));
     }

@@ -140,8 +140,8 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
         var students = await db.StudentsForBilling().ToListAsync(ct);
         var active = students.Where(s => s.IsActive).ToList();
         var teachers = await db.Teachers.AsNoTracking().ToListAsync(ct);
-        var courses = await db.Courses.AsNoTracking().Where(c => c.IsActive).CountAsync(ct);
         var groups = await db.GroupsFull().Where(g => g.IsActive).ToListAsync(ct);
+        var courses = groups.Select(g => (g.SubjectId, g.Level)).Distinct().Count();
         var teacherRows = await TeacherPaymentService.Rows(db, p, ct);
         var expenses = (await db.Expenses.AsNoTracking().Where(e => e.Date >= p && e.Date <= Period.End(p)).ToListAsync(ct));
         var monthPayments = await db.StudentPayments.AsNoTracking().Where(x => x.Date >= p && x.Date < p.AddMonths(1)).ToListAsync(ct);
@@ -149,7 +149,7 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
 
         // Today's sessions: generated sessions if any, otherwise the timetable.
         var sessions = await db.Sessions.AsNoTracking().Where(s => s.Date == today && s.Status != SessionStatus.Cancelled)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Group).ThenInclude(g => g!.Teacher).Include(s => s.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Room).Include(s => s.Teacher).ToListAsync(ct);
         List<TodaySession> todays;
@@ -203,22 +203,22 @@ public sealed class ReportService(IDbContextFactory<AppDbContext> factory) : IRe
         var payments = await db.StudentPayments.AsNoTracking().Where(x => x.Period == p).ToListAsync(ct);
         var expenses = await db.Expenses.AsNoTracking().Where(e => e.Date >= p && e.Date <= Period.End(p)).ToListAsync(ct);
         var teachers = await TeacherPaymentService.Rows(db, p, ct);
-        var courses = await db.Courses.AsNoTracking().Include(c => c.Subject).ToListAsync(ct);
+        var groups = await db.Groups.AsNoTracking().Include(g => g.Subject).ToListAsync(ct);
 
-        var byCourse = courses.Select(c =>
+        var byCourse = groups.Select(g =>
         {
             decimal exp = 0, col = 0;
             foreach (var s in students)
             {
-                var n = s.Enrollments.Count(e => e.Group?.CourseId == c.Id && e.CoversMonth(p.Year, p.Month));
+                var n = s.Enrollments.Count(e => e.GroupId == g.Id && e.CoversMonth(p.Year, p.Month));
                 if (n == 0) continue;
                 var gross = Billing.GrossMonthlyFee(s, p);
                 var due = Billing.MonthlyDue(s, p);
-                var share = gross == 0 ? 0 : c.MonthlyPrice * n / gross;
+                var share = gross == 0 ? 0 : g.MonthlyPrice * n / gross;
                 exp += due * share;
                 col += Math.Min(due, Billing.PaidForPeriod(s, p)) * share;
             }
-            return (Course: c.Name, Expected: Math.Round(exp), Collected: Math.Round(col));
+            return (Course: g.FullName, Expected: Math.Round(exp), Collected: Math.Round(col));
         }).Where(x => x.Expected > 0).OrderByDescending(x => x.Expected).ToList();
 
         return new FinanceReport
@@ -243,7 +243,7 @@ public sealed class ReportService(IDbContextFactory<AppDbContext> factory) : IRe
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var sessions = await db.Sessions.AsNoTracking().Where(s => s.Date >= from.Date && s.Date <= to.Date && s.Status != SessionStatus.Cancelled)
-            .Include(s => s.Attendance).Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Attendance).Include(s => s.Group).ThenInclude(g => g!.Subject)
             .AsSplitQuery().ToListAsync(ct);
         return sessions.GroupBy(s => s.GroupId).Select(g =>
         {
@@ -257,7 +257,7 @@ public sealed class ReportService(IDbContextFactory<AppDbContext> factory) : IRe
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var settings = await db.Settings.AsNoTracking().FirstAsync(ct);
-        var exams = await db.Exams.AsNoTracking().Include(e => e.Grades).Include(e => e.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+        var exams = await db.Exams.AsNoTracking().Include(e => e.Grades).Include(e => e.Group).ThenInclude(g => g!.Subject)
             .AsSplitQuery().ToListAsync(ct);
         foreach (var e in exams) foreach (var g in e.Grades) g.Exam = e;
         return exams.GroupBy(e => e.GroupId).Select(g =>

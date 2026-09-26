@@ -40,7 +40,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Enseignant" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="1" Text="Matière" Style="{StaticResource ColumnHeader}" />
-                        <TextBlock Grid.Column="2" Text="Cours" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Groupes" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="3" Text="Élèves" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="4" Text="Rémunération" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="5" Text="{Binding MonthLabel, StringFormat=Gains · {0}}" Style="{StaticResource ColumnHeader}" />

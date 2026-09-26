@@ -72,7 +72,7 @@ public class DashboardInsightsTests
         if (page.Alerts.FirstOrDefault(a => a.Kind is AlertKind.GroupFull or AlertKind.GroupNearlyFull) is { } groups)
         {
             await Run(groups.Items[0].Open);
-            Assert.False(host.Page<CourseDetailViewModel>().HasError);
+            Assert.False(host.Page<GroupDetailViewModel>().HasError);
         }
     }
 

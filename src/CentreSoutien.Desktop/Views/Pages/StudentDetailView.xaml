@@ -36,7 +36,7 @@
                         <Setter Property="ToolTip" Value="Passer l'élève dans un autre groupe du même cours" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HasNoEnrollment}" Value="True">
-                                <Setter Property="Content" Value="Inscrire à un cours" />
+                                <Setter Property="Content" Value="Inscrire dans un groupe" />
                                 <Setter Property="ToolTip" Value="Inscrire l'élève dans un groupe" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -49,7 +49,7 @@
                     ToolTip="Autres actions : inscription à un autre cours, remise, document, statut, suppression">
                 <Button.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Inscrire à un autre cours" Command="{Binding EnrollCommand}" Icon="&#xE710;"
+                        <MenuItem Header="Inscrire dans un autre groupe" Command="{Binding EnrollCommand}" Icon="&#xE710;"
                                   ToolTip="Ajouter une inscription dans un groupe (l'élève garde ses autres cours)" />
                         <MenuItem Header="Changer de groupe" Command="{Binding ChangeGroupCommand}" Icon="&#xE8AB;"
                                   ToolTip="Passer l'élève dans un autre groupe" />
@@ -111,7 +111,7 @@
                         <ui:EmptyState Title="Aucune inscription en cours" Glyph="&#xE7BE;" Padding="20,22"
                                        Message="Inscrivez l'élève dans un groupe pour qu'il soit facturé et apparaisse sur les feuilles de présence."
                                        Visibility="{Binding HasNoEnrollment, Converter={StaticResource BoolToVisible}}">
-                            <Button Content="Inscrire à un cours" Command="{Binding EnrollCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                            <Button Content="Inscrire dans un groupe" Command="{Binding EnrollCommand}" Style="{StaticResource SmallPrimaryButton}" />
                         </ui:EmptyState>
                         <ItemsControl ItemsSource="{Binding Enrollments}">
                             <ItemsControl.ItemTemplate>
@@ -216,7 +216,7 @@
                             <ColumnDefinition Width="2*" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Cours" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Text="Groupe" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="1" Text="Évaluations" Style="{StaticResource ColumnHeader}" Margin="12,0" />
                         <TextBlock Grid.Column="2" Text="Moyenne" Style="{StaticResource ColumnHeader}" />
                     </Grid>

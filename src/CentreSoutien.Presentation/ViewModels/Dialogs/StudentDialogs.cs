@@ -135,7 +135,7 @@ public sealed partial class EnrollDialogViewModel(IStudentService students, IGro
     private int _studentId;
     private int? _fromGroupId;
 
-    public override string Title => _fromGroupId is null ? "Inscrire à un cours" : "Changer de groupe";
+    public override string Title => _fromGroupId is null ? "Inscrire dans un groupe" : "Changer de groupe";
     public override string ConfirmText => _fromGroupId is null ? "Inscrire" : "Changer de groupe";
 
     [ObservableProperty] private string _studentName = "";
@@ -155,10 +155,10 @@ public sealed partial class EnrollDialogViewModel(IStudentService students, IGro
         var s = await students.GetAsync(studentId) ?? throw new BusinessException("Élève introuvable.");
         StudentName = s.FullName;
         _level = s.Level;
-        _groups = (await groups.ListAsync()).Where(g => g.IsActive && g.Course!.IsActive).ToList();
+        _groups = (await groups.ListAsync()).Where(g => g.IsActive && g.IsActive).ToList();
         var from = _groups.FirstOrDefault(g => g.Id == fromGroupId);
         FromGroup = from?.FullName;
-        if (from is not null) _level = from.Course!.Level;
+        if (from is not null) _level = from.Level;
         Refresh();
     }
 
@@ -168,13 +168,13 @@ public sealed partial class EnrollDialogViewModel(IStudentService students, IGro
     {
         var today = clock.GetLocalNow().Date;
         GroupOptions = _groups
-            .Where(g => g.Id != _fromGroupId && (ShowAllLevels || g.Course!.Level == _level))
+            .Where(g => g.Id != _fromGroupId && (ShowAllLevels || g.Level == _level))
             .Where(g => !g.Enrollments.Any(e => e.StudentId == _studentId && e.IsActiveOn(today)))
             .Select(g =>
             {
                 var n = g.Enrollments.Count(e => e.IsActiveOn(today));
                 var full = n >= g.Capacity ? " · complet" : "";
-                return new Option<int>(g.Id, $"{g.FullName} · {g.Teacher?.FullName ?? "sans enseignant"} · {n}/{g.Capacity}{full} · {Money.Format(g.Course!.MonthlyPrice)}");
+                return new Option<int>(g.Id, $"{g.FullName} · {g.Teacher?.FullName ?? "sans enseignant"} · {n}/{g.Capacity}{full} · {Money.Format(g.MonthlyPrice)}");
             }).ToList();
         SelectedGroup = GroupOptions.FirstOrDefault();
     }

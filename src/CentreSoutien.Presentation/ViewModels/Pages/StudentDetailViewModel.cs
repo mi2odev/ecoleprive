@@ -91,10 +91,10 @@ public sealed partial class StudentDetailViewModel(
             Enrollments = s.Enrollments.Where(e => e.IsActiveOn(today) || e.StartDate > today).Select(e =>
             {
                 var g = e.Group!;
-                return new EnrollmentRow(g.Id, g.CourseId, g.FullName,
+                return new EnrollmentRow(g.Id, g.Id, g.FullName,
                     $"{g.Teacher?.FullName ?? "Sans enseignant"} · {Labels.Slots(g.Slots)}",
-                    Money.Format(g.Course?.MonthlyPrice ?? 0),
-                    new AsyncRelayCommand(() => nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(g.CourseId, g.Id))),
+                    Money.Format(g.MonthlyPrice),
+                    new AsyncRelayCommand(() => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(g.Id))),
                     new AsyncRelayCommand(() => ChangeGroupAsync(g.Id)),
                     new AsyncRelayCommand(() => UnenrollAsync(g)));
             }).ToList();

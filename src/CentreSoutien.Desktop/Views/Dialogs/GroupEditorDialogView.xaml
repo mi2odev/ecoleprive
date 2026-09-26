@@ -12,22 +12,27 @@
         </Style>
     </UserControl.Resources>
     <StackPanel>
-        <Grid Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="16" />
-                <ColumnDefinition Width="110" />
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Cours *" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding CourseOptions}" SelectedItem="{Binding SelectedCourse}" DisplayMemberPath="Label" MaxDropDownHeight="320"
+        <!-- What is taught: subject, level, monthly price and the group's letter -->
+        <UniformGrid Columns="4" Margin="0,0,-16,0">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Matière *" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding SubjectOptions}" SelectedItem="{Binding SelectedSubject}" DisplayMemberPath="Label" MaxDropDownHeight="320"
                           IsTextSearchEnabled="True" TextSearch.TextPath="Label" ui:FocusOnShow.Enabled="True" />
             </StackPanel>
-            <StackPanel Grid.Column="2">
-                <TextBlock Text="Nom du groupe *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="ex. A" ui:Enter.Command="{Binding ConfirmCommand}" />
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Niveau *" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding Levels}" Text="{Binding Level, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" ToolTip="ex. 3AS, 4AM" />
             </StackPanel>
-        </Grid>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Prix mensuel (DZD) *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 4 500" ui:Enter.Command="{Binding ConfirmCommand}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Nom du groupe *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="ex. A" ui:Enter.Command="{Binding ConfirmCommand}"
+                         ToolTip="Lettre du groupe : A, B, C… (proposée automatiquement)" />
+            </StackPanel>
+        </UniformGrid>
         <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Enseignant" Style="{StaticResource FieldLabel}" />
@@ -108,6 +113,8 @@
             </StackPanel>
         </Border>
 
+        <TextBlock Text="Description (facultatif)" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Préparation au BAC" Margin="0,0,0,14" />
         <CheckBox Content="Groupe actif (planifié et proposé aux inscriptions)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
         <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>

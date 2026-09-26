@@ -21,12 +21,9 @@ public class ImportTests
         var subjects = host.Get<ICrudService<Subject>>();
         var math = await subjects.SaveAsync(new Subject { Name = "Mathématiques", ShortName = "Maths" });
         var physics = await subjects.SaveAsync(new Subject { Name = "Physique" });
-        var courses = host.Get<ICourseService>();
-        var mathCourse = await courses.SaveAsync(new Course { SubjectId = math.Id, Level = "3AS", MonthlyPrice = 4500 });
-        var physicsCourse = await courses.SaveAsync(new Course { SubjectId = physics.Id, Level = "3AS", MonthlyPrice = 4000 });
         var groups = host.Get<IGroupService>();
-        var mathA = await groups.SaveAsync(new Group { CourseId = mathCourse.Id, Name = "A", Capacity = 5 }, []);
-        var physicsA = await groups.SaveAsync(new Group { CourseId = physicsCourse.Id, Name = "A", Capacity = 1 }, []);
+        var mathA = await groups.SaveAsync(new Group { SubjectId = math.Id, Level = "3AS", MonthlyPrice = 4500, Name = "A", Capacity = 5 }, []);
+        var physicsA = await groups.SaveAsync(new Group { SubjectId = physics.Id, Level = "3AS", MonthlyPrice = 4000, Name = "A", Capacity = 1 }, []);
         var discount = await host.Get<ICrudService<Discount>>().SaveAsync(new Discount { Name = "Fratrie", Type = DiscountType.Percent, Value = 10 });
         var karim = await host.Get<IParentService>().SaveAsync(new Parent { FullName = "Karim Haddad", Phone = "0550 12 34 56", Relation = "Père" });
         var students = host.Get<IStudentService>();

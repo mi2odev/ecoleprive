@@ -42,7 +42,7 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
         var sessions = await db.Sessions.AsNoTracking()
             .Where(s => s.Date >= from && s.Date < end && s.Status != SessionStatus.Cancelled)
             .Include(s => s.Attendance)
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .AsSplitQuery().ToListAsync(ct);
         var todayGenerated = await db.Sessions.AnyAsync(s => s.Date == today, ct);
         var payments = students.SelectMany(s => s.Payments).ToList();
@@ -196,10 +196,10 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
 
     private static void Groups(List<InsightAlert> alerts, DateTime today, List<Group> groups)
     {
-        var fill = groups.Where(g => g.IsActive && g.Capacity > 0 && (g.Course?.IsActive ?? true))
+        var fill = groups.Where(g => g.IsActive && g.Capacity > 0 && g.IsActive)
             .Select(g => (g, Enrolled: g.Enrollments.Count(e => e.IsActiveOn(today)))).ToList();
         InsightItem Item((Group g, int Enrolled) x) =>
-            new(x.g.FullName, $"{x.Enrolled}/{x.g.Capacity}", new InsightTarget(InsightLink.Course, x.g.CourseId, GroupId: x.g.Id));
+            new(x.g.FullName, $"{x.Enrolled}/{x.g.Capacity}", new InsightTarget(InsightLink.Course, x.g.Id, GroupId: x.g.Id));
 
         var full = fill.Where(x => x.Enrolled >= x.g.Capacity).OrderByDescending(x => x.Enrolled - x.g.Capacity).ThenBy(x => x.g.FullName).ToList();
         if (full.Count > 0)

@@ -70,7 +70,7 @@
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                     <StackPanel>
                         <Border Style="{StaticResource CardHeader}">
-                            <TextBlock Text="Cours et horaires" Style="{StaticResource H2}" />
+                            <TextBlock Text="Groupes et horaires" Style="{StaticResource H2}" />
                         </Border>
                         <TextBlock Text="Aucun cours cette année." Style="{StaticResource EmptyText}"
                                    Visibility="{Binding HasNoGroups, Converter={StaticResource BoolToVisible}}" />

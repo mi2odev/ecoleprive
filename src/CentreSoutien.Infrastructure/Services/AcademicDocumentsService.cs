@@ -37,7 +37,7 @@ public sealed class AcademicDocumentsService(IDbContextFactory<AppDbContext> fac
         var enrollments = student.Enrollments.Where(e => e.IsActiveOn(today) || e.StartDate.Date > today).ToList();
         if (enrollments.Count == 0) enrollments = student.Enrollments.Where(e => Overlaps(e, year)).ToList();
         var courses = enrollments.OrderBy(e => e.Group!.FullName)
-            .Select(e => new CertificateCourse(e.Group!.Course?.Name ?? e.Group.FullName, e.Group.Name, e.Group.Teacher?.FullName, e.StartDate.Date))
+            .Select(e => new CertificateCourse(e.Group!.SubjectLevel ?? e.Group.FullName, e.Group.Name, e.Group.Teacher?.FullName, e.StartDate.Date))
             .ToList();
         return new CertificateData(Identity(student), settings.AcademicYear, courses, today);
     }
@@ -71,7 +71,7 @@ public sealed class AcademicDocumentsService(IDbContextFactory<AppDbContext> fac
             .Concat(gradedGroupIds).Distinct().ToList();
 
         var groups = await db.Groups.AsNoTracking()
-            .Include(g => g.Course).ThenInclude(c => c!.Subject)
+            .Include(g => g.Subject)
             .Include(g => g.Teacher)
             .Include(g => g.Enrollments)
             .Where(g => groupIds.Contains(g.Id))
@@ -116,7 +116,7 @@ public sealed class AcademicDocumentsService(IDbContextFactory<AppDbContext> fac
                 int? rank = avg is null ? null : 1 + ranking.Values.Count(v => v > avg.Value);
                 decimal? groupAvg = ranking.Count == 0 ? null : Math.Round(ranking.Values.Average(), decimals);
                 var att = AttendanceSummary.Of(attendance.Where(r => r.StudentId == student.Id && r.Session!.GroupId == g.Id).Select(r => r.Status));
-                courses.Add(new CourseReport(g.Id, g.Course?.Name ?? g.FullName, g.Name, g.Teacher?.FullName, lines, avg, rank, ranking.Count, groupAvg, att));
+                courses.Add(new CourseReport(g.Id, g.SubjectLevel ?? g.FullName, g.Name, g.Teacher?.FullName, lines, avg, rank, ranking.Count, groupAvg, att));
             }
             var averages = courses.Where(c => c.Average is not null).Select(c => c.Average!.Value).ToList();
             decimal? general = averages.Count == 0 ? null : Math.Round(averages.Average(), decimals);
@@ -129,7 +129,7 @@ public sealed class AcademicDocumentsService(IDbContextFactory<AppDbContext> fac
     private static async Task<List<Student>> LoadStudentsAsync(AppDbContext db, IReadOnlyList<int> ids, CancellationToken ct) =>
         await db.Students.AsNoTracking()
             .Include(s => s.Parent)
-            .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Teacher)
             .Where(s => ids.Contains(s.Id))
             .AsSplitQuery().ToListAsync(ct);
@@ -139,7 +139,7 @@ public sealed class AcademicDocumentsService(IDbContextFactory<AppDbContext> fac
         var from = period.From.Date;
         var to = period.To.Date.AddDays(1);
         return await db.Attendance.AsNoTracking()
-            .Include(a => a.Session).ThenInclude(s => s!.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(a => a.Session).ThenInclude(s => s!.Group).ThenInclude(g => g!.Subject)
             .Where(a => studentIds.Contains(a.StudentId) && a.Session!.Date >= from && a.Session.Date < to)
             .ToListAsync(ct);
     }

@@ -77,10 +77,10 @@ public sealed partial class TeacherDetailViewModel(
             Groups = d.Groups.Where(g => g.IsActive).Select(g =>
             {
                 var rooms = g.Room?.Name ?? "Sans salle";
-                return new TeacherGroupRow(g.Id, g.CourseId, g.FullName,
+                return new TeacherGroupRow(g.Id, g.Id, g.FullName,
                     $"{(g.Slots.Count == 0 ? "Horaire à définir" : Labels.Slots(g.Slots))} · {rooms}",
                     $"{g.Enrollments.Count(e => e.IsActiveOn(today))} / {g.Capacity}",
-                    new AsyncRelayCommand(() => nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(g.CourseId, g.Id))));
+                    new AsyncRelayCommand(() => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(g.Id))));
             }).ToList();
             HasNoGroups = Groups.Count == 0;
 

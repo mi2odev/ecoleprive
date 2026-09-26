@@ -13,7 +13,7 @@ public sealed class AttendanceService(IDbContextFactory<AppDbContext> factory) :
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var session = await db.Sessions.AsNoTracking()
-            .Include(s => s.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(s => s.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Group).ThenInclude(g => g!.Enrollments).ThenInclude(e => e.Student)
@@ -66,7 +66,7 @@ public sealed class ExamService(IDbContextFactory<AppDbContext> factory) : IExam
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var list = await db.Exams.AsNoTracking()
-            .Include(e => e.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(e => e.Grades)
             .AsSplitQuery().ToListAsync(ct);
         return list.OrderByDescending(e => e.Date).ThenBy(e => e.Title).ToList();
@@ -100,7 +100,7 @@ public sealed class ExamService(IDbContextFactory<AppDbContext> factory) : IExam
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var exam = await db.Exams.AsNoTracking()
-            .Include(e => e.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject)
+            .Include(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(e => e.Group).ThenInclude(g => g!.Enrollments).ThenInclude(en => en.Student)
             .Include(e => e.Grades).ThenInclude(g => g.Student)
             .AsSplitQuery()

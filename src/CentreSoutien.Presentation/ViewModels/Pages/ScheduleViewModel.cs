@@ -156,14 +156,14 @@ public sealed partial class ScheduleViewModel(
             }
             else laneEnds[lane] = s.End;
             var g = s.Group!;
-            var subject = g.Course?.Subject?.Display ?? "?";
+            var subject = g.Subject?.Display ?? "?";
             var top = (s.Start.TotalHours - FirstHour) * HourHeight + 2;
             var height = Math.Max(18, (s.End - s.Start).TotalHours * HourHeight - 4);
             var live = isToday && s.Start <= now.TimeOfDay && s.End > now.TimeOfDay;
-            blocks.Add(new ScheduleBlock(s.Id, g.Id, g.CourseId, $"{subject} · {g.Course?.Level} {g.Name}",
+            blocks.Add(new ScheduleBlock(s.Id, g.Id, g.Id, $"{subject} · {g.Level} {g.Name}",
                 $"{Labels.Hour(s.Start)}–{Labels.Hour(s.End)}", RoomOf(s)?.Name ?? "Sans salle", g.Teacher?.FullName ?? "Sans enseignant",
                 top, height, lane, live,
-                new AsyncRelayCommand(() => nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(g.CourseId, g.Id))))
+                new AsyncRelayCommand(() => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(g.Id))))
             { Start = s.Start, End = s.End });
         }
         var count = Math.Max(1, laneEnds.Count);

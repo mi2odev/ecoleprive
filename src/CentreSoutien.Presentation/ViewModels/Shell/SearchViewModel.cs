@@ -132,7 +132,7 @@ public sealed partial class SearchViewModel(ISearchService search, INavigator na
         SearchCategory.Student => "Élèves",
         SearchCategory.Parent => "Parents",
         SearchCategory.Teacher => "Enseignants",
-        SearchCategory.Group => "Cours et groupes",
+        SearchCategory.Group => "Groupes",
         SearchCategory.Document => "Documents",
         _ => "Reçus",
     };
@@ -199,8 +199,8 @@ public sealed partial class SearchViewModel(ISearchService search, INavigator na
                 case SearchCategory.Teacher:
                     await nav.NavigateAsync<TeacherDetailViewModel>(hit.Id);
                     break;
-                case SearchCategory.Group when hit.RelatedId is { } courseId:
-                    await nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(courseId, hit.Id == 0 ? null : hit.Id));
+                case SearchCategory.Group:
+                    await nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(hit.Id));
                     break;
                 case SearchCategory.Document:
                     await nav.NavigateAsync<DocumentsViewModel>();

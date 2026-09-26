@@ -123,7 +123,6 @@ public sealed partial class ShellViewModel : ViewModelBase
                 Item("parents", "Parents", typeof(ParentsViewModel), Glyphs.ContactInfo),
                 Item("teachers", "Enseignants", typeof(TeachersViewModel), Glyphs.Education),
                 Item("subjects", "Matières", typeof(SubjectsViewModel), Glyphs.Library),
-                Item("courses", "Cours", typeof(CoursesViewModel), Glyphs.Dictionary),
                 Item("groups", "Groupes", typeof(GroupsViewModel), Glyphs.Group),
                 Item("rooms", "Salles", typeof(RoomsViewModel), Glyphs.MapPin),
             ]),

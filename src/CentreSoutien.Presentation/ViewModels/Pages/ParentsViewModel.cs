@@ -137,7 +137,7 @@ public sealed partial class ParentsViewModel(
             ChildrenTitle = $"Enfants ({n})";
             Children = p.Children.OrderBy(c => c.FirstName).Select(c =>
             {
-                var courses = string.Join(", ", c.Enrollments.Where(e => e.CoversMonth(period.Year, period.Month)).Select(e => e.Group?.Course?.Subject?.Display).Where(x => x is not null).Distinct());
+                var courses = string.Join(", ", c.Enrollments.Where(e => e.CoversMonth(period.Year, period.Month)).Select(e => e.Group?.Subject?.Display).Where(x => x is not null).Distinct());
                 var balance = Billing.Balance(c, period);
                 return new ParentChildRow(c.Id, c.FullName, c.Initials, string.IsNullOrWhiteSpace(c.Level) ? "—" : c.Level,
                     string.Join(" · ", new[] { c.Matricule, courses }.Where(x => !string.IsNullOrWhiteSpace(x))),

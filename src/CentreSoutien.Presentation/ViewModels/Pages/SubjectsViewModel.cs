@@ -10,13 +10,13 @@ namespace CentreSoutien.Presentation.ViewModels.Pages;
 
 public sealed record SubjectRow(int Id, string Name, string ShortName, string? Description, int CourseCount, int TeacherCount, IRelayCommand Edit, IRelayCommand Delete)
 {
-    public string Courses => CourseCount == 0 ? "—" : $"{CourseCount} cours";
+    public string Courses => CourseCount == 0 ? "—" : $"{CourseCount} groupe{(CourseCount > 1 ? "s" : "")}";
     public string Teachers => TeacherCount == 0 ? "—" : $"{TeacherCount} enseignant{(TeacherCount > 1 ? "s" : "")}";
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 }
 
 public sealed partial class SubjectsViewModel(
-    ICrudService<Subject> subjects, ICourseService courses, ITeacherService teachers, DialogHost dialogs, INotifier notifier,
+    ICrudService<Subject> subjects, IGroupService groups, ITeacherService teachers, DialogHost dialogs, INotifier notifier,
     TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<SubjectRow> _all = [];
@@ -39,14 +39,14 @@ public sealed partial class SubjectsViewModel(
         await RunAsync(async () =>
         {
             var list = await subjects.ListAsync();
-            var courseList = await courses.ListAsync();
+            var groupList = await groups.ListAsync();
             var teacherList = await teachers.ListAsync(clock.GetLocalNow().DateTime);
             _all = list.Select(s =>
             {
-                var cs = courseList.Where(c => c.SubjectId == s.Id).ToList();
+                var cs = groupList.Where(g => g.SubjectId == s.Id).ToList();
                 // Teachers of the subject: by speciality or by teaching one of its groups.
                 var teacherIds = teacherList.Where(t => t.Subject == s.Name).Select(t => t.Id)
-                    .Union(cs.SelectMany(c => c.Groups).Where(g => g.TeacherId is not null).Select(g => g.TeacherId!.Value))
+                    .Union(cs.Where(g => g.TeacherId is not null).Select(g => g.TeacherId!.Value))
                     .Distinct().Count();
                 return new SubjectRow(s.Id, s.Name, string.IsNullOrWhiteSpace(s.ShortName) ? "—" : s.ShortName, s.Description, cs.Count, teacherIds,
                     new AsyncRelayCommand(() => EditAsync(s.Id)),

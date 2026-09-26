@@ -60,7 +60,7 @@
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="60" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Cours" Style="{StaticResource ColumnHeader}" />
+                            <TextBlock Text="Groupe" Style="{StaticResource ColumnHeader}" />
                             <TextBlock Grid.Column="1" Text="Attendu" Style="{StaticResource ColumnHeader}" />
                             <TextBlock Grid.Column="2" Text="Encaissé" Style="{StaticResource ColumnHeader}" />
                             <TextBlock Grid.Column="3" Text="%" Style="{StaticResource ColumnHeader}" HorizontalAlignment="Right" />

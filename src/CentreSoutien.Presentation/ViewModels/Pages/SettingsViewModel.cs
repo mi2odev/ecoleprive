@@ -262,7 +262,7 @@ public sealed partial class SettingsViewModel(
 
     // ----- Links to other screens -----
 
-    [RelayCommand] private Task GoCourses() => nav.NavigateAsync<CoursesViewModel>();
+    [RelayCommand] private Task GoCourses() => nav.NavigateAsync<GroupsViewModel>();
     [RelayCommand] private Task GoDiscounts() => nav.NavigateAsync<PaymentsViewModel>();
     [RelayCommand] private Task GoAccount() => nav.NavigateAsync<AccountViewModel>();
 
@@ -323,7 +323,7 @@ public sealed partial class SettingsViewModel(
     private async Task LoadDemo()
     {
         if (!await dialogs.ConfirmAsync("Données de démonstration",
-                "Charger des élèves, enseignants, cours et paiements fictifs pour essayer l'application ? Vous pourrez les supprimer ensuite.",
+                "Charger des élèves, enseignants, groupes et paiements fictifs pour essayer l'application ? Vous pourrez les supprimer ensuite.",
                 "Charger", danger: false))
             return;
         if (await RunAsync(() => demo.SeedAsync(), notifier))

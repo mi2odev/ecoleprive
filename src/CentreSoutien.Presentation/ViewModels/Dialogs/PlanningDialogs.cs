@@ -42,7 +42,7 @@ public sealed partial class SessionEditorDialogViewModel(
             var now = clock.GetLocalNow().DateTime;
             _session = existing ?? new Session { Date = (date ?? now).Date, GroupId = groupId ?? 0, Start = new TimeSpan(9, 0, 0), End = new TimeSpan(11, 0, 0) };
             OnPropertyChanged(nameof(Title));
-            _groups = (await groups.ListAsync()).Where(g => (g.IsActive && g.Course!.IsActive) || g.Id == _session.GroupId).ToList();
+            _groups = (await groups.ListAsync()).Where(g => (g.IsActive && g.IsActive) || g.Id == _session.GroupId).ToList();
             GroupOptions = _groups.Select(g => new Option<int>(g.Id, g.FullName)).ToList();
             RoomOptions = [new Option<int?>(null, "Aucune salle"), .. (await rooms.ListAsync()).Where(r => r.IsActive || r.Id == _session.RoomId)
                 .OrderBy(r => r.Name).Select(r => new Option<int?>(r.Id, r.Name))];

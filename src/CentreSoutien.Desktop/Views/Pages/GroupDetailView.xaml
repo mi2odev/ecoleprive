@@ -1,11 +1,11 @@
-<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.CourseDetailView"
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.GroupDetailView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
-             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:CourseDetailViewModel}">
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:GroupDetailViewModel}">
     <UserControl.Resources>
         <Style x:Key="Cell" TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,20,16" />
@@ -15,30 +15,24 @@
         </Style>
     </UserControl.Resources>
     <StackPanel>
-        <Button Content="← Cours" Command="{Binding BackCommand}" Style="{StaticResource BackButton}" Margin="0,0,0,22" />
+        <Button Content="← Groupes" Command="{Binding BackCommand}" Style="{StaticResource BackButton}" Margin="0,0,0,22" />
 
-        <!-- Header, with the course actions on the right (the rarely used ones in "Plus"). -->
+        <!-- Header, with the group actions on the right (the rarely used ones in "Plus"). -->
         <DockPanel Margin="0,0,0,18">
             <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Bottom" Margin="16,0,0,0">
-                <Button Content="Modifier le cours" Command="{Binding EditCourseCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
-                        ToolTip="Modifier la matière, le niveau, le prix ou la description du cours" />
                 <Button Content="Modifier le groupe" Command="{Binding EditGroupCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
-                        ToolTip="Modifier l'enseignant, la salle, la capacité et l'emploi du temps du groupe sélectionné"
-                        Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
+                        ToolTip="Modifier la matière, le niveau, le prix, l'enseignant, la salle, la capacité et l'emploi du temps" />
                 <Button Style="{StaticResource MoreButton}" Content="Plus"
                         ToolTip="Autres actions : nouveau groupe, présences, suppression">
                     <Button.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="Nouveau groupe" Command="{Binding NewGroupCommand}" Icon="&#xE710;"
-                                      ToolTip="Ouvrir un groupe supplémentaire pour ce cours" />
+                            <MenuItem Header="Nouveau groupe (même matière et niveau)" Command="{Binding NewGroupCommand}" Icon="&#xE710;"
+                                      ToolTip="Ouvrir un autre groupe de la même matière et du même niveau (groupe B…)" />
                             <MenuItem Header="Voir les présences" Command="{Binding OpenAttendanceCommand}" Icon="&#xE73E;"
                                       ToolTip="Feuille de présence du groupe pour aujourd'hui" />
                             <Separator />
                             <MenuItem Header="Supprimer le groupe" Command="{Binding DeleteGroupCommand}" Style="{StaticResource DangerMenuItem}" Icon="&#xE74D;"
-                                      ToolTip="Supprimer le groupe sélectionné et son emploi du temps"
-                                      Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
-                            <MenuItem Header="Supprimer le cours" Command="{Binding DeleteCourseCommand}" Style="{StaticResource DangerMenuItem}" Icon="&#xE74D;"
-                                      ToolTip="Supprimer le cours et tous ses groupes" />
+                                      ToolTip="Supprimer le groupe et son emploi du temps" />
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
@@ -54,15 +48,6 @@
                 <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}" Margin="0,4,0,0" />
             </StackPanel>
         </DockPanel>
-
-        <!-- Group selector -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-            <TextBlock Text="Groupe" Style="{StaticResource Muted}" Margin="0,0,10,4" VerticalAlignment="Center"
-                       Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
-            <ListBox ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" VerticalAlignment="Center" />
-            <Button Content="Nouveau groupe" Command="{Binding NewGroupCommand}" Style="{StaticResource LinkButton}" FontSize="13" Margin="8,0,0,4"
-                    ToolTip="Ouvrir un groupe supplémentaire pour ce cours" />
-        </StackPanel>
 
         <Grid>
             <Grid.ColumnDefinitions>
@@ -112,7 +97,7 @@
                             <DockPanel>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding HasGroup}">
                                     <ComboBox ItemsSource="{Binding Eligible}" SelectedItem="{Binding SelectedEligible}" DisplayMemberPath="Label" Width="220" MinHeight="32"
-                                              IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" ToolTip="Élèves du même niveau non inscrits à ce cours" />
+                                              IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" ToolTip="Élèves du même niveau non inscrits dans ce groupe" />
                                     <Button Content="Ajouter" Command="{Binding AddStudentCommand}" Style="{StaticResource SmallPrimaryButton}" Margin="6,0,0,0" />
                                 </StackPanel>
                                 <TextBlock Style="{StaticResource H2}" VerticalAlignment="Center">
@@ -125,7 +110,7 @@
                                        Visibility="{Binding Enrolled, Converter={StaticResource NullToVisible}}" />
                         <ItemsControl ItemsSource="{Binding Enrolled}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:CourseStudentRow}">
+                                <DataTemplate DataType="{x:Type vm:GroupStudentRow}">
                                     <Border Style="{StaticResource TableRow}" Padding="20,9" MinHeight="40">
                                         <Grid>
                                             <Grid.ColumnDefinitions>

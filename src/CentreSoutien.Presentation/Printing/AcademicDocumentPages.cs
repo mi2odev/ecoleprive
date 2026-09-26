@@ -28,15 +28,15 @@ public static class AcademicDocumentPages
                 ("Établissement", string.IsNullOrWhiteSpace(s.School) ? "—" : s.School!),
                 ("Parent / tuteur", s.ParentName is null ? "—" : string.IsNullOrWhiteSpace(s.ParentPhone) ? s.ParentName : $"{s.ParentName} · {s.ParentPhone}"),
             ]),
-            new PrintHeading("Résultats par cours"),
+            new PrintHeading("Résultats par matière"),
         };
 
         if (d.Courses.Count == 0)
-            blocks.Add(new PrintParagraph("Aucun cours suivi pendant cette période.", Muted: true));
+            blocks.Add(new PrintParagraph("Aucun groupe suivi pendant cette période.", Muted: true));
         else
         {
-            blocks.Add(new PrintTableBlock(new PrintTable("Résultats par cours",
-                ["Cours", "Enseignant", "Moyenne", "Rang", "Moy. du groupe", "Mention"],
+            blocks.Add(new PrintTableBlock(new PrintTable("Résultats par matière",
+                ["Matière", "Enseignant", "Moyenne", "Rang", "Moy. du groupe", "Mention"],
                 d.Courses.Select(c => (IReadOnlyList<string>)
                 [
                     $"{c.Course} ({c.Group})", c.Teacher ?? "—", Avg(c.Average),
@@ -52,7 +52,7 @@ public static class AcademicDocumentPages
                 e.Coefficient.ToString("0.##", Fr),
             ])).ToList();
             if (rows.Count == 0) blocks.Add(new PrintParagraph("Aucune évaluation pendant cette période.", Muted: true));
-            else blocks.Add(new PrintTableBlock(new PrintTable("Détail des évaluations", ["Cours", "Évaluation", "Date", "Note", "Coef."], rows, [3, 4])));
+            else blocks.Add(new PrintTableBlock(new PrintTable("Détail des évaluations", ["Matière", "Évaluation", "Date", "Note", "Coef."], rows, [3, 4])));
         }
 
         blocks.Add(new PrintHeading("Bilan"));
@@ -90,7 +90,7 @@ public static class AcademicDocumentPages
 
         var blocks = new List<PrintBlock> { new PrintSpacer(12), new PrintParagraph(intro, Size: 13) };
         if (d.Courses.Count > 0)
-            blocks.Add(new PrintTableBlock(new PrintTable("Cours suivis", ["Cours", "Groupe", "Enseignant", "Depuis le"],
+            blocks.Add(new PrintTableBlock(new PrintTable("Cours suivis", ["Matière", "Groupe", "Enseignant", "Depuis le"],
                 d.Courses.Select(c => (IReadOnlyList<string>)[c.Course, c.Group, c.Teacher ?? "—", c.Since.ToString("dd/MM/yyyy")]).ToList())));
         blocks.Add(new PrintSpacer(8));
         blocks.Add(new PrintParagraph($"Le présent certificat est délivré à {G("l'intéressé", "l'intéressée", "l'intéressé(e)")} pour servir et valoir ce que de droit.", Size: 13));
@@ -124,7 +124,7 @@ public static class AcademicDocumentPages
             var rows = d.Courses.Select(c => (IReadOnlyList<string>)
                 [c.Course, c.Attendance.Present.ToString(), c.Attendance.Late.ToString(), c.Attendance.Absent.ToString(), c.Attendance.Excused.ToString(), $"{c.Attendance.Attended} / {c.Attendance.Total}", Percent(c.Attendance.Rate)]).ToList();
             rows.Add(["Total", t.Present.ToString(), t.Late.ToString(), t.Absent.ToString(), t.Excused.ToString(), $"{t.Attended} / {t.Total}", Percent(t.Rate)]);
-            blocks.Add(new PrintTableBlock(new PrintTable("Présences", ["Cours", "Présent", "Retard", "Absent", "Excusé", "Séances suivies", "Taux"], rows, [1, 2, 3, 4, 5, 6])));
+            blocks.Add(new PrintTableBlock(new PrintTable("Présences", ["Matière", "Présent", "Retard", "Absent", "Excusé", "Séances suivies", "Taux"], rows, [1, 2, 3, 4, 5, 6])));
         }
         blocks.Add(new PrintSpacer(8));
         blocks.Add(new PrintParagraph($"La présente attestation est délivrée à la demande de {G("l'intéressé", "l'intéressée", "l'intéressé(e)")} pour servir et valoir ce que de droit.", Size: 13));

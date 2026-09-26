@@ -105,14 +105,13 @@ public class SearchTests
         Assert.Equal("", palette.Query);
         Assert.Equal("Rachid Bénali", host.Page<StudentDetailViewModel>().Name);
 
-        // A group opens its course page with the group selected.
+        // A group opens its group page.
         palette.Open("maths 3as a");
         await palette.Pending;
         var group = palette.Results.First(r => r.Hit.Category == SearchCategory.Group);
         await group.OpenCommand.ExecuteAsync(null);
-        var course = host.Page<CourseDetailViewModel>();
-        Assert.Equal(group.Hit.RelatedId, ((CourseDetailViewModel.Target)course.LastParameter!).CourseId);
-        Assert.Equal(group.Hit.Id, ((CourseDetailViewModel.Target)course.LastParameter!).GroupId);
+        var groupPage = host.Page<GroupDetailViewModel>();
+        Assert.Equal(group.Hit.Id, ((GroupDetailViewModel.Target)groupPage.LastParameter!).GroupId);
 
         // A receipt opens the student's profile; a parent opens the parents page on that parent.
         await using var db = await host.Get<IDbContextFactory<AppDbContext>>().CreateDbContextAsync();

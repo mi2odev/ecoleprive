@@ -1,3 +1,4 @@
+using CentreSoutien.Domain.Calculations;
 using CentreSoutien.Application.Abstractions;
 using CentreSoutien.Application.Models;
 using CentreSoutien.Domain.Entities;
@@ -19,7 +20,8 @@ public sealed record GroupRow(Group Group, int Enrolled, IRelayCommand Open, IRe
     public string Fill => $"{Enrolled} / {Group.Capacity}";
     public bool IsFull => Enrolled >= Group.Capacity;
     public Badge FullBadge => new(Fill, BadgeKind.Warn);
-    public Badge Status => Badge.Active(Group.IsActive && Group.Course?.IsActive != false);
+    public string Price => Money.Format(Group.MonthlyPrice);
+    public Badge Status => Badge.Active(Group.IsActive);
 }
 
 public sealed partial class GroupsViewModel(
@@ -48,7 +50,7 @@ public sealed partial class GroupsViewModel(
         await RunAsync(async () =>
         {
             _all = await groups.ListAsync();
-            Levels = ["Tous", .. _all.Select(g => g.Course!.Level).Where(l => !string.IsNullOrEmpty(l)).Distinct().OrderBy(Domain.Calculations.Levels.Order)];
+            Levels = ["Tous", .. _all.Select(g => g.Level).Where(l => !string.IsNullOrEmpty(l)).Distinct().OrderBy(Domain.Calculations.Levels.Order)];
             if (!Levels.Contains(SelectedLevel)) SelectedLevel = "Tous";
             ApplyFilter();
         }, notifier);
@@ -59,12 +61,12 @@ public sealed partial class GroupsViewModel(
         var today = clock.GetLocalNow().Date;
         var q = SearchText.Trim().ToLowerInvariant();
         var list = _all
-            .Where(g => SelectedLevel == "Tous" || g.Course!.Level == SelectedLevel)
+            .Where(g => SelectedLevel == "Tous" || g.Level == SelectedLevel)
             .Where(g => q.Length == 0 || $"{g.FullName} {g.Teacher?.FullName} {g.Room?.Name}".ToLowerInvariant().Contains(q))
             .ToList();
         Rows = list.Select(g => new GroupRow(g, g.Enrollments.Count(e => e.IsActiveOn(today)),
-            new AsyncRelayCommand(() => nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(g.CourseId, g.Id))),
-            new AsyncRelayCommand(() => EditAsync(g.Id, null)),
+            new AsyncRelayCommand(() => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(g.Id))),
+            new AsyncRelayCommand(() => EditAsync(g.Id)),
             new AsyncRelayCommand(() => DeleteAsync(g)))).ToList();
         CountLabel = $"{list.Count} groupe{(list.Count > 1 ? "s" : "")} affiché{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
         HasNoData = _all.Count == 0;
@@ -80,12 +82,12 @@ public sealed partial class GroupsViewModel(
     }
 
     [RelayCommand]
-    private Task Add() => EditAsync(null, null);
+    private Task Add() => EditAsync(null);
 
-    private async Task EditAsync(int? id, int? courseId)
+    private async Task EditAsync(int? id)
     {
         var dialog = services.GetRequiredService<GroupEditorDialogViewModel>();
-        if (!await RunAsync(() => dialog.InitializeAsync(id, courseId), notifier)) return;
+        if (!await RunAsync(() => dialog.InitializeAsync(id), notifier)) return;
         if (await dialogs.ShowAsync(dialog))
         {
             notifier.Info(id is null ? "Groupe créé" : "Groupe enregistré");

@@ -80,58 +80,6 @@ public sealed partial class RoomEditorDialogViewModel(ICrudService<Room> rooms) 
     }
 }
 
-/// <summary>Create or edit a course (subject × level, monthly price).</summary>
-public sealed partial class CourseEditorDialogViewModel(ICourseService courses, ICrudService<Subject> subjects, IStudentService students) : DialogViewModel
-{
-    private Course _course = new();
-
-    public override string Title => _course.Id == 0 ? "Nouveau cours" : "Modifier le cours";
-    public int? SavedId { get; private set; }
-
-    [ObservableProperty] private IReadOnlyList<Option<int>> _subjectOptions = [];
-    [ObservableProperty] private Option<int>? _selectedSubject;
-    [ObservableProperty] private IReadOnlyList<string> _levels = Options.DefaultLevels;
-    [ObservableProperty] private string _level = "";
-    [ObservableProperty] private string _price = "";
-    [ObservableProperty] private string? _description;
-    [ObservableProperty] private bool _isActive = true;
-
-    public async Task InitializeAsync(int? id)
-    {
-        if (id is { } courseId)
-        {
-            var list = await courses.ListAsync();
-            _course = list.FirstOrDefault(c => c.Id == courseId) ?? throw new BusinessException("Cours introuvable.");
-        }
-        else _course = new Course();
-        OnPropertyChanged(nameof(Title));
-
-        SubjectOptions = (await subjects.ListAsync()).Select(s => new Option<int>(s.Id, s.Name)).ToList();
-        SelectedSubject = SubjectOptions.FirstOrDefault(s => s.Value == _course.SubjectId) ?? (_course.Id == 0 ? SubjectOptions.FirstOrDefault() : null);
-        var levels = await students.LevelsAsync();
-        Levels = Options.DefaultLevels.Union(levels).Where(l => !string.IsNullOrWhiteSpace(l)).OrderBy(Domain.Calculations.Levels.Order).ToList();
-        Level = _course.Level;
-        Price = _course.Id == 0 ? "" : Money.Number(_course.MonthlyPrice);
-        Description = _course.Description;
-        IsActive = _course.IsActive;
-    }
-
-    protected override async Task<bool> OnConfirmAsync()
-    {
-        if (SelectedSubject is null) throw new BusinessException("Choisissez une matière.");
-        if (string.IsNullOrWhiteSpace(Level)) throw new BusinessException("Le niveau est obligatoire.");
-        var price = Parse.Amount(Price) ?? throw new BusinessException("Saisissez un prix mensuel valide.");
-        _course.SubjectId = SelectedSubject.Value;
-        _course.Level = Level.Trim().ToUpperInvariant();
-        _course.MonthlyPrice = price;
-        _course.Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim();
-        _course.IsActive = IsActive;
-        var saved = await courses.SaveAsync(_course);
-        SavedId = saved.Id;
-        return true;
-    }
-}
-
 /// <summary>One editable line of a group's weekly timetable.</summary>
 public sealed partial class SlotEditor : ObservableObject
 {
@@ -158,12 +106,16 @@ public sealed partial class SlotEditor : ObservableObject
             : null;
 }
 
-/// <summary>Create or edit a group: course, teacher, room, capacity and weekly timetable, with live conflict detection.</summary>
+/// <summary>
+/// Create or edit a group: subject, level, monthly price, name, teacher, room, capacity and weekly timetable,
+/// with live conflict detection.
+/// </summary>
 public sealed partial class GroupEditorDialogViewModel(
-    IGroupService groups, ICourseService courses, ITeacherService teachers, ICrudService<Room> rooms, TimeProvider clock) : DialogViewModel
+    IGroupService groups, ICrudService<Subject> subjects, IStudentService students, ITeacherService teachers, ICrudService<Room> rooms,
+    TimeProvider clock) : DialogViewModel
 {
     private Group _group = new();
-    private List<Course> _courses = [];
+    private List<Group> _allGroups = [];
     private bool _initializing;
     private int _checkVersion;
 
@@ -171,8 +123,12 @@ public sealed partial class GroupEditorDialogViewModel(
     public override double Width => 640;
     public int? SavedId { get; private set; }
 
-    [ObservableProperty] private IReadOnlyList<Option<int>> _courseOptions = [];
-    [ObservableProperty] private Option<int>? _selectedCourse;
+    [ObservableProperty] private IReadOnlyList<Option<int>> _subjectOptions = [];
+    [ObservableProperty] private Option<int>? _selectedSubject;
+    [ObservableProperty] private IReadOnlyList<string> _levels = Options.DefaultLevels;
+    [ObservableProperty] private string _level = "";
+    [ObservableProperty] private string _price = "";
+    [ObservableProperty] private string? _description;
     [ObservableProperty] private string _name = "A";
     [ObservableProperty] private IReadOnlyList<Option<int?>> _teacherOptions = [];
     [ObservableProperty] private Option<int?>? _selectedTeacher;
@@ -190,7 +146,9 @@ public sealed partial class GroupEditorDialogViewModel(
 
     public bool HasNoSlot => Slots.Count == 0;
 
-    public async Task InitializeAsync(int? groupId, int? courseId = null)
+    /// <param name="groupId">Group to edit, or null for a new group.</param>
+    /// <param name="template">For a new group: copy subject, level, price, teacher and room from this group (e.g. to create group B).</param>
+    public async Task InitializeAsync(int? groupId, Group? template = null)
     {
         _initializing = true;
         try
@@ -198,11 +156,23 @@ public sealed partial class GroupEditorDialogViewModel(
             _group = groupId is { } id ? await groups.GetAsync(id) ?? throw new BusinessException("Groupe introuvable.") : new Group();
             OnPropertyChanged(nameof(Title));
 
-            _courses = await courses.ListAsync();
-            CourseOptions = _courses.Where(c => c.IsActive || c.Id == _group.CourseId || c.Id == courseId)
-                .Select(c => new Option<int>(c.Id, c.Name)).ToList();
-            var cid = _group.Id != 0 ? _group.CourseId : courseId;
-            SelectedCourse = CourseOptions.FirstOrDefault(c => c.Value == cid) ?? (_group.Id == 0 ? CourseOptions.FirstOrDefault() : null);
+            if (_group.Id == 0 && template is not null)
+            {
+                _group.SubjectId = template.SubjectId;
+                _group.Level = template.Level;
+                _group.MonthlyPrice = template.MonthlyPrice;
+                _group.TeacherId = template.TeacherId;
+                _group.RoomId = template.RoomId;
+                _group.Capacity = template.Capacity;
+            }
+            _allGroups = await groups.ListAsync();
+            SubjectOptions = (await subjects.ListAsync()).Select(s => new Option<int>(s.Id, s.Name)).ToList();
+            SelectedSubject = SubjectOptions.FirstOrDefault(s => s.Value == _group.SubjectId) ?? (_group.Id == 0 ? SubjectOptions.FirstOrDefault() : null);
+            var levels = await students.LevelsAsync();
+            Levels = Options.DefaultLevels.Union(levels).Where(l => !string.IsNullOrWhiteSpace(l)).OrderBy(Domain.Calculations.Levels.Order).ToList();
+            Level = _group.Level;
+            Price = _group.Id == 0 && template is null ? "" : Money.Number(_group.MonthlyPrice);
+            Description = _group.Description;
 
             var period = clock.GetLocalNow().DateTime;
             TeacherOptions = [new Option<int?>(null, "Aucun"), .. (await teachers.ListAsync(period))
@@ -214,7 +184,7 @@ public sealed partial class GroupEditorDialogViewModel(
             SelectedRoom = RoomOptions.FirstOrDefault(r => r.Value == _group.RoomId) ?? RoomOptions[0];
             _slotRooms = [new Option<int?>(null, "Salle du groupe"), .. roomList.Select(r => new Option<int?>(r.Id, r.Name))];
 
-            Name = _group.Id != 0 ? _group.Name : NextName(SelectedCourse?.Value);
+            Name = _group.Id != 0 ? _group.Name : NextName();
             Capacity = _group.Capacity.ToString();
             IsActive = _group.IsActive;
 
@@ -236,9 +206,12 @@ public sealed partial class GroupEditorDialogViewModel(
         }
     }
 
-    private string NextName(int? courseId)
+    /// <summary>First free letter (A, B, C…) among the groups of the same subject and level.</summary>
+    private string NextName()
     {
-        var used = _courses.FirstOrDefault(c => c.Id == courseId)?.Groups.Select(g => g.Name).ToHashSet() ?? [];
+        var level = (Level ?? "").Trim().ToUpperInvariant();
+        var used = _allGroups.Where(g => g.SubjectId == SelectedSubject?.Value && g.Level == level && g.Id != _group.Id)
+            .Select(g => g.Name).ToHashSet();
         for (var c = 'A'; c <= 'Z'; c++)
             if (!used.Contains(c.ToString())) return c.ToString();
         return "";
@@ -278,10 +251,16 @@ public sealed partial class GroupEditorDialogViewModel(
         ScheduleCheck();
     }
 
-    partial void OnSelectedCourseChanged(Option<int>? value)
+    partial void OnSelectedSubjectChanged(Option<int>? value)
     {
         if (_initializing || _group.Id != 0) return;
-        Name = NextName(value?.Value);
+        Name = NextName();
+    }
+
+    partial void OnLevelChanged(string value)
+    {
+        if (_initializing || _group.Id != 0) return;
+        Name = NextName();
     }
 
     partial void OnSelectedTeacherChanged(Option<int?>? value) => ScheduleCheck();
@@ -292,7 +271,10 @@ public sealed partial class GroupEditorDialogViewModel(
     private Group Draft() => new()
     {
         Id = _group.Id,
-        CourseId = SelectedCourse?.Value ?? 0,
+        SubjectId = SelectedSubject?.Value ?? 0,
+        Level = (Level ?? "").Trim().ToUpperInvariant(),
+        MonthlyPrice = Parse.Amount(Price) ?? 0,
+        Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
         Name = (Name ?? "").Trim(),
         TeacherId = SelectedTeacher?.Value,
         RoomId = SelectedRoom?.Value,
@@ -336,7 +318,9 @@ public sealed partial class GroupEditorDialogViewModel(
 
     protected override async Task<bool> OnConfirmAsync()
     {
-        if (SelectedCourse is null) throw new BusinessException("Choisissez un cours.");
+        if (SelectedSubject is null) throw new BusinessException("Choisissez une matière.");
+        if (string.IsNullOrWhiteSpace(Level)) throw new BusinessException("Le niveau est obligatoire.");
+        if (Parse.Amount(Price) is not { } price || price < 0) throw new BusinessException("Saisissez un prix mensuel valide.");
         if (string.IsNullOrWhiteSpace(Name)) throw new BusinessException("Le nom du groupe est obligatoire.");
         if (!int.TryParse(Capacity?.Trim(), out var cap) || cap <= 0) throw new BusinessException("Saisissez une capacité valide (nombre de places).");
         var slots = new List<ScheduleSlot>();

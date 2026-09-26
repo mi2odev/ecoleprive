@@ -119,8 +119,8 @@ public sealed partial class DashboardViewModel(
                     new AsyncRelayCommand(() => nav.NavigateAsync<StudentsViewModel>())),
                 new("Enseignants", [new(d.TotalTeachers.ToString(), "Total"), new(d.ActiveTeachers.ToString(), "Actifs"), new(d.TeacherPaymentsDueCount.ToString(), "Paiements dus")],
                     new AsyncRelayCommand(() => nav.NavigateAsync<TeachersViewModel>())),
-                new("Cours", [new(d.ActiveCourses.ToString(), "Cours actifs"), new(d.TodaySessions.Count.ToString(), "Séances aujourd'hui"), new(d.FullGroups.ToString(), "Groupes complets")],
-                    new AsyncRelayCommand(() => nav.NavigateAsync<CoursesViewModel>())),
+                new("Groupes", [new(d.ActiveGroups.ToString(), "Groupes actifs"), new(d.TodaySessions.Count.ToString(), "Séances aujourd'hui"), new(d.FullGroups.ToString(), "Groupes complets")],
+                    new AsyncRelayCommand(() => nav.NavigateAsync<GroupsViewModel>())),
             ];
 
             var t = now.TimeOfDay;
@@ -237,7 +237,7 @@ public sealed partial class DashboardViewModel(
         OnboardingStep.Subjects => nav.NavigateAsync<SubjectsViewModel>(),
         OnboardingStep.Rooms => nav.NavigateAsync<RoomsViewModel>(),
         OnboardingStep.Teachers => nav.NavigateAsync<TeachersViewModel>(),
-        OnboardingStep.CoursesAndGroups => nav.NavigateAsync<CoursesViewModel>(),
+        OnboardingStep.CoursesAndGroups => nav.NavigateAsync<GroupsViewModel>(),
         OnboardingStep.Students => nav.NavigateAsync<StudentsViewModel>(),
         OnboardingStep.Backup => nav.NavigateAsync<SettingsViewModel>("backup"),
         _ => Task.CompletedTask,
@@ -256,7 +256,7 @@ public sealed partial class DashboardViewModel(
     private async Task LoadDemo()
     {
         if (!await dialogs.ConfirmAsync("Données de démonstration",
-                "Charger des élèves, enseignants, cours et paiements fictifs pour essayer l'application ? Vous pourrez les supprimer ensuite.",
+                "Charger des élèves, enseignants, groupes et paiements fictifs pour essayer l'application ? Vous pourrez les supprimer ensuite.",
                 "Charger", danger: false))
             return;
         if (await RunAsync(() => demo.SeedAsync(), notifier))
@@ -340,7 +340,7 @@ public sealed partial class DashboardViewModel(
         InsightLink.Student when t.Id is { } id => nav.NavigateAsync<StudentDetailViewModel>(id),
         InsightLink.Teacher when t.Id is { } id => nav.NavigateAsync<TeacherDetailViewModel>(id),
         InsightLink.TeacherPayments => nav.NavigateAsync<TeacherPaymentsViewModel>(t.Date),
-        InsightLink.Course when t.Id is { } id => nav.NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(id, t.GroupId)),
+        InsightLink.Course when (t.GroupId ?? t.Id) is { } id => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(id)),
         InsightLink.Attendance => nav.NavigateAsync<AttendanceViewModel>(new AttendanceViewModel.Target(t.Date ?? clock.GetLocalNow().Date, t.GroupId, t.SessionId)),
         InsightLink.Settings => nav.NavigateAsync<SettingsViewModel>("backup"),
         _ => Task.CompletedTask,

@@ -55,33 +55,24 @@ public sealed class SearchService(IDbContextFactory<AppDbContext> factory, TimeP
             return (new SearchHit(SearchCategory.Teacher, t.Id, title, Join(t.Subject, t.Phone, t.IsActive ? null : "Inactif"), null, rank), t.IsActive);
         }).Where(h => h.Item1.Rank >= 0));
 
-        // Groups (opened on their course page); courses without any group are listed on their own.
+        // Groups (opened on their group page).
         var groups = await db.Groups.AsNoTracking()
             .Select(g => new
             {
-                g.Id, g.Name, g.CourseId, g.Capacity, Active = g.IsActive && g.Course!.IsActive,
-                Subject = g.Course!.Subject!.Name, Short = g.Course.Subject.ShortName, g.Course.Level,
+                g.Id, g.Name, g.Capacity, Active = g.IsActive, g.MonthlyPrice,
+                Subject = g.Subject!.Name, Short = g.Subject.ShortName, g.Level,
                 Teacher = g.Teacher == null ? null : g.Teacher.FirstName + " " + g.Teacher.LastName,
                 Room = g.Room == null ? null : g.Room.Name,
                 Enrolled = g.Enrollments.Count(e => e.StartDate <= today && (e.EndDate == null || e.EndDate >= today)),
             })
             .ToListAsync(ct);
-        var courses = await db.Courses.AsNoTracking()
-            .Where(c => !c.Groups.Any())
-            .Select(c => new { c.Id, c.Level, c.MonthlyPrice, c.IsActive, Subject = c.Subject!.Name, Short = c.Subject.ShortName })
-            .ToListAsync(ct);
         Add(groups.Select(g =>
         {
             var title = $"{g.Subject} · {g.Level} {g.Name}";
             var rank = m.Rank(title, [$"{g.Subject} {g.Level}", $"{g.Short} {g.Level} {g.Name}", $"{g.Level} {g.Subject}", $"groupe {g.Name}"], []);
-            var subtitle = Join(g.Teacher, g.Room, $"{g.Enrolled}/{g.Capacity} élèves", g.Active ? null : "Inactif");
-            return (new SearchHit(SearchCategory.Group, g.Id, title, subtitle, g.CourseId, rank), g.Active);
-        }).Concat(courses.Select(c =>
-        {
-            var title = $"{c.Subject} · {c.Level}";
-            var rank = m.Rank(title, [$"{c.Short} {c.Level}", $"{c.Level} {c.Subject}"], []);
-            return (new SearchHit(SearchCategory.Group, 0, title, Join("Cours sans groupe", Money.Format(c.MonthlyPrice) + " / mois"), c.Id, rank), c.IsActive);
-        })).Where(h => h.Item1.Rank >= 0));
+            var subtitle = Join(g.Teacher, g.Room, $"{g.Enrolled}/{g.Capacity} élèves", Money.Format(g.MonthlyPrice) + " / mois", g.Active ? null : "Inactif");
+            return (new SearchHit(SearchCategory.Group, g.Id, title, subtitle, g.Id, rank), g.Active);
+        }).Where(h => h.Item1.Rank >= 0));
 
         var documents = await db.Documents.AsNoTracking()
             .Select(d => new { d.Id, d.Title, d.OriginalName, d.Category, d.OwnerType, d.OwnerId, d.CreatedAt })

@@ -19,7 +19,7 @@ public static class Billing
         var p = Period.Of(period);
         return student.Enrollments
             .Where(e => e.CoversMonth(p.Year, p.Month))
-            .Sum(e => e.Group?.Course?.MonthlyPrice ?? 0m);
+            .Sum(e => e.Group?.MonthlyPrice ?? 0m);
     }
 
     /// <summary>Amount due for the month after the student's discount.</summary>
@@ -76,7 +76,7 @@ public static class TeacherEarnings
             case CompensationType.Percentage:
             {
                 var enrolled = groups.SelectMany(g => g.Enrollments.Where(e => e.CoversMonth(p.Year, p.Month)).Select(e => (g, e))).ToList();
-                var baseAmount = enrolled.Sum(x => x.g.Course?.MonthlyPrice ?? 0);
+                var baseAmount = enrolled.Sum(x => x.g.MonthlyPrice);
                 var students = enrolled.Select(x => x.e.StudentId).Distinct().Count();
                 return new(Math.Round(baseAmount * teacher.CompensationValue / 100m, 0),
                     $"{teacher.CompensationValue:0.##} % des mensualités de {students} élève{(students > 1 ? "s" : "")}", students);

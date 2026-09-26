@@ -126,7 +126,7 @@ public class OnboardingTests
     [InlineData(OnboardingStep.Subjects, typeof(SubjectsViewModel))]
     [InlineData(OnboardingStep.Rooms, typeof(RoomsViewModel))]
     [InlineData(OnboardingStep.Teachers, typeof(TeachersViewModel))]
-    [InlineData(OnboardingStep.CoursesAndGroups, typeof(CoursesViewModel))]
+    [InlineData(OnboardingStep.CoursesAndGroups, typeof(GroupsViewModel))]
     [InlineData(OnboardingStep.Students, typeof(StudentsViewModel))]
     [InlineData(OnboardingStep.Backup, typeof(SettingsViewModel))]
     public async Task Each_step_opens_the_right_page(OnboardingStep step, Type expected)

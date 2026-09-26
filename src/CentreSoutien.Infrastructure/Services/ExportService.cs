@@ -29,9 +29,9 @@ public sealed class ExportService(IDbContextFactory<AppDbContext> factory) : IEx
             teachers.OrderBy(t => t.LastName).Select(t => Row(t.LastName, t.FirstName, t.Subject?.Name, t.Phone, t.Email, t.StartYear, Labels.Of(t.CompensationType), t.CompensationValue, t.IsActive ? "Oui" : "Non")));
 
         var groups = await db.GroupsFull().ToListAsync(ct);
-        Sheet(wb, "Groupes", ["Cours", "Groupe", "Enseignant", "Salle", "Capacité", "Inscrits", "Horaire", "Prix / mois"],
-            groups.OrderBy(g => g.FullName).Select(g => Row(g.Course?.Name, g.Name, g.Teacher?.FullName, g.Room?.Name, g.Capacity,
-                g.Enrollments.Count(e => e.IsActiveOn(DateTime.Today)), Labels.Slots(g.Slots), g.Course?.MonthlyPrice)));
+        Sheet(wb, "Groupes", ["Matière · niveau", "Groupe", "Enseignant", "Salle", "Capacité", "Inscrits", "Horaire", "Prix / mois"],
+            groups.OrderBy(g => g.FullName).Select(g => Row(g.SubjectLevel, g.Name, g.Teacher?.FullName, g.Room?.Name, g.Capacity,
+                g.Enrollments.Count(e => e.IsActiveOn(DateTime.Today)), Labels.Slots(g.Slots), g.MonthlyPrice)));
 
         var pays = await db.StudentPayments.AsNoTracking().Include(x => x.Student).ToListAsync(ct);
         Sheet(wb, "Paiements élèves", ["Reçu", "Date", "Élève", "Matricule", "Type", "Mois", "Mode", "Montant", "Note"],
@@ -45,11 +45,11 @@ public sealed class ExportService(IDbContextFactory<AppDbContext> factory) : IEx
         Sheet(wb, "Dépenses", ["Date", "Catégorie", "Description", "Fournisseur", "Mode", "Montant"],
             expenses.OrderByDescending(x => x.Date).Select(x => Row(x.Date, x.Category, x.Description, x.Supplier, Labels.Of(x.Method), x.Amount)));
 
-        var att = await db.Attendance.AsNoTracking().Include(a => a.Student).Include(a => a.Session).ThenInclude(s => s!.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject).AsSplitQuery().ToListAsync(ct);
+        var att = await db.Attendance.AsNoTracking().Include(a => a.Student).Include(a => a.Session).ThenInclude(s => s!.Group).ThenInclude(g => g!.Subject).AsSplitQuery().ToListAsync(ct);
         Sheet(wb, "Présences", ["Date", "Heure", "Groupe", "Élève", "Statut"],
             att.OrderByDescending(a => a.Session!.Date).Select(a => Row(a.Session!.Date, Labels.Time(a.Session.Start), a.Session.Group?.FullName, a.Student?.FullName, Labels.Of(a.Status))));
 
-        var grades = await db.Grades.AsNoTracking().Include(g => g.Student).Include(g => g.Exam).ThenInclude(e => e!.Group).ThenInclude(g => g!.Course).ThenInclude(c => c!.Subject).AsSplitQuery().ToListAsync(ct);
+        var grades = await db.Grades.AsNoTracking().Include(g => g.Student).Include(g => g.Exam).ThenInclude(e => e!.Group).ThenInclude(g => g!.Subject).AsSplitQuery().ToListAsync(ct);
         Sheet(wb, "Notes", ["Date", "Groupe", "Évaluation", "Élève", "Note", "Sur", "Coefficient", "Commentaire"],
             grades.OrderByDescending(g => g.Exam!.Date).Select(g => Row(g.Exam!.Date, g.Exam.Group?.FullName, g.Exam.Title, g.Student?.FullName, g.Score, g.Exam.MaxScore, g.Exam.Coefficient, g.Comment)));
 

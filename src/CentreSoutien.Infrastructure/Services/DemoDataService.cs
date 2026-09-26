@@ -13,7 +13,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
     public async Task<bool> IsDatabaseEmptyAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        return !await db.Students.AnyAsync(ct) && !await db.Teachers.AnyAsync(ct) && !await db.Courses.AnyAsync(ct);
+        return !await db.Students.AnyAsync(ct) && !await db.Teachers.AnyAsync(ct) && !await db.Groups.AnyAsync(ct);
     }
 
     public async Task SeedAsync(CancellationToken ct = default)
@@ -56,17 +56,6 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
         db.Teachers.AddRange(teachers);
         Teacher Tc(string last) => teachers.First(t => t.LastName == last);
 
-        var courses = new Dictionary<(string, string), Course>();
-        Course C(string subj, string level, decimal price)
-        {
-            if (!courses.TryGetValue((subj, level), out var c))
-            {
-                c = new Course { Subject = S(subj), Level = level, MonthlyPrice = price };
-                courses[(subj, level)] = c;
-                db.Courses.Add(c);
-            }
-            return c;
-        }
         var sat = DayOfWeek.Saturday; var sun = DayOfWeek.Sunday; var mon = DayOfWeek.Monday; var tue = DayOfWeek.Tuesday; var wed = DayOfWeek.Wednesday; var thu = DayOfWeek.Thursday;
         var groupDefs = new (string Subj, string Level, string Name, string Teacher, string Room, decimal Price, int Cap, (DayOfWeek, int, int)[] Slots)[]
         {
@@ -84,7 +73,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
         };
         var groups = groupDefs.Select(g => new Group
         {
-            Course = C(g.Subj, g.Level, g.Price), Name = g.Name, Teacher = Tc(g.Teacher), Room = Rm(g.Room), Capacity = g.Cap,
+            Subject = S(g.Subj), Level = g.Level, MonthlyPrice = g.Price, Name = g.Name, Teacher = Tc(g.Teacher), Room = Rm(g.Room), Capacity = g.Cap,
             Slots = g.Slots.Select(s => new ScheduleSlot { Day = s.Item1, Start = TimeSpan.FromHours(s.Item2), End = TimeSpan.FromHours(s.Item3) }).ToList(),
         }).ToList();
         db.Groups.AddRange(groups);
@@ -126,7 +115,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
             };
             students.Add(st);
             if (!st.IsActive) continue;
-            var available = groups.Where(g => g.Course!.Level == level).ToList();
+            var available = groups.Where(g => g.Level == level).ToList();
             foreach (var g in available)
                 if (R() < 0.5 && g.Enrollments.Count < g.Capacity)
                     g.Enrollments.Add(new Enrollment { Student = st, StartDate = st.EnrolledOn < period ? period.AddMonths(-1) : st.EnrolledOn });

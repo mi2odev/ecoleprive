@@ -12,7 +12,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Teacher> Teachers => Set<Teacher>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Room> Rooms => Set<Room>();
-    public DbSet<Course> Courses => Set<Course>();
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<ScheduleSlot> Slots => Set<ScheduleSlot>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
@@ -78,21 +77,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.HasIndex(x => x.Name).IsUnique();
         });
 
-        b.Entity<Course>(e =>
-        {
-            e.HasOne(x => x.Subject).WithMany().HasForeignKey(x => x.SubjectId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.SubjectId, x.Level }).IsUnique();
-            e.Ignore(x => x.Name);
-        });
-
         b.Entity<Group>(e =>
         {
             e.ToTable("Groups");
-            e.HasOne(x => x.Course).WithMany(c => c.Groups).HasForeignKey(x => x.CourseId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Subject).WithMany().HasForeignKey(x => x.SubjectId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.Level).HasMaxLength(20);
             e.HasOne(x => x.Teacher).WithMany(t => t.Groups).HasForeignKey(x => x.TeacherId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne(x => x.Room).WithMany().HasForeignKey(x => x.RoomId).OnDelete(DeleteBehavior.SetNull);
-            e.HasIndex(x => new { x.CourseId, x.Name }).IsUnique();
+            e.HasIndex(x => new { x.SubjectId, x.Level, x.Name }).IsUnique();
             e.Ignore(x => x.FullName);
+            e.Ignore(x => x.SubjectLevel);
         });
 
         b.Entity<ScheduleSlot>(e =>

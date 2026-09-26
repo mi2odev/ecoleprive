@@ -165,9 +165,9 @@ public class PeopleTests
         await del;
         Assert.Equal(before, profile.History.Count);
 
-        // Group row opens the course detail.
+        // Group row opens the group page.
         await ((IAsyncRelayCommand)profile.Groups[0].Open).ExecuteAsync(null);
-        Assert.IsType<CourseDetailViewModel>(nav.Current);
+        Assert.IsType<GroupDetailViewModel>(nav.Current);
     }
 
     [Fact]

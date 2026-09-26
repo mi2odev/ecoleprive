@@ -61,12 +61,12 @@ public static class PageHelp
             ["Ctrl+1 : revenir au tableau de bord", Search, Refresh]),
 
         ["students"] = new("Élèves",
-            "Liste de tous les élèves avec leur niveau, leur parent, leurs cours et le reste à payer. " +
+            "Liste de tous les élèves avec leur niveau, leur parent, leurs groupes et le reste à payer. " +
             "Cliquez sur un élève pour ouvrir sa fiche : inscriptions, paiements, notes, présences et documents.",
             [
                 "Ajouter : « Ajouter un élève », puis remplissez le nom, le niveau et le parent (existant ou nouveau).",
                 "Chercher : tapez un nom, un matricule ou le téléphone du parent ; filtrez par niveau ou par état de paiement.",
-                "Encaisser, inscrire à un cours, appliquer une remise : ouvrez la fiche de l'élève.",
+                "Encaisser, inscrire dans un groupe, appliquer une remise : ouvrez la fiche de l'élève.",
                 "« Importer » ajoute des élèves depuis un fichier Excel (un modèle est proposé) ; « Exporter » crée un fichier Excel de la liste.",
             ],
             [New + "ajouter un élève", "Ctrl+2 : ouvrir les élèves", Search, Refresh]),
@@ -84,11 +84,11 @@ public static class PageHelp
             [New + "ajouter un parent", Search, Refresh]),
 
         ["teachers"] = new("Enseignants",
-            "Liste des enseignants avec leur matière, leurs cours, leurs élèves et leur mode de rémunération " +
+            "Liste des enseignants avec leur matière, leurs groupes, leurs élèves et leur mode de rémunération " +
             "(pourcentage, par séance ou forfait mensuel). Cliquez sur un enseignant pour ouvrir sa fiche.",
             [
                 "Ajouter : « Ajouter un enseignant », puis matière et règle de rémunération.",
-                "Sur la fiche : emploi du temps, cours, élèves, gains du mois et « Enregistrer un paiement ».",
+                "Sur la fiche : emploi du temps, groupes, élèves, gains du mois et « Enregistrer un paiement ».",
                 "Un enseignant qui ne travaille plus peut être désactivé depuis sa fiche : son historique est conservé.",
                 "« Exporter » crée un fichier Excel de la liste.",
             ],
@@ -96,33 +96,23 @@ public static class PageHelp
 
         ["subjects"] = new("Matières",
             "Les matières enseignées au centre (mathématiques, physique, français…). " +
-            "Elles servent à créer les cours et à classer les enseignants.",
+            "Elles servent à créer les groupes et à classer les enseignants.",
             [
                 "Ajouter : « Ajouter une matière », avec un nom et une abréviation courte.",
                 "Cliquez sur une matière pour la modifier.",
-                "La liste indique combien de cours et d'enseignants utilisent chaque matière ; « Supprimer » retire une matière inutile.",
+                "La liste indique combien de groupes et d'enseignants utilisent chaque matière ; « Supprimer » retire une matière inutile.",
             ],
             [New + "ajouter une matière", Refresh]),
 
-        ["courses"] = new("Cours",
-            "Un cours associe une matière, un niveau, un enseignant et un prix mensuel. " +
-            "Chaque cours a un ou plusieurs groupes avec leur horaire et leur salle.",
-            [
-                "Ajouter : « Ajouter un cours », puis choisissez matière, niveau, enseignant et prix.",
-                "Cliquez sur un cours pour changer son prix, son enseignant, sa salle ou son horaire.",
-                "Sur la page du cours : ajoutez ou retirez des élèves, créez un nouveau groupe, voyez les recettes et la présence.",
-                "Les conflits d'horaire (même salle ou même enseignant) sont refusés automatiquement.",
-            ],
-            [New + "ajouter un cours", Search, Refresh]),
-
         ["groups"] = new("Groupes",
-            "Les groupes d'élèves de chaque cours : enseignant, salle, horaire, nombre d'inscrits et capacité. " +
-            "Un groupe complet est signalé.",
+            "Un groupe, c'est une classe : une matière, un niveau, un prix mensuel, un enseignant, une salle, un horaire et ses élèves " +
+            "(ex. « Mathématiques · 3AS A » à 4 500 DZD). Un groupe complet est signalé.",
             [
-                "Ajouter : « Nouveau groupe », puis choisissez le cours, la salle, les jours et les heures.",
-                "Recherchez par groupe, enseignant ou salle.",
-                "« Modifier » change l'horaire, la salle ou la capacité ; « Supprimer » retire le groupe.",
-                "Pour inscrire un élève, ouvrez sa fiche puis « Inscrire à un cours ».",
+                "Ajouter : « Nouveau groupe », puis choisissez la matière, le niveau, le prix, l'enseignant, la salle, les jours et les heures.",
+                "Cliquez sur un groupe pour ouvrir sa page : prix, enseignant, salle, horaire, élèves, recettes et présences.",
+                "Sur la page du groupe, « Nouveau groupe » crée un autre groupe de la même matière et du même niveau (groupe B…).",
+                "Pour inscrire un élève : sur la page du groupe (« Ajouter ») ou sur la fiche de l'élève (« Inscrire dans un groupe »).",
+                "Les conflits d'horaire (même salle ou même enseignant) sont refusés automatiquement.",
             ],
             [New + "nouveau groupe", Search, Refresh]),
 
@@ -143,7 +133,7 @@ public static class PageHelp
                 "Changez de semaine avec « ← Semaine précédente », « Semaine suivante → » ou « Aujourd'hui ».",
                 "Choisissez un enseignant ou une salle dans les filtres pour n'afficher que leurs créneaux.",
                 "« Nouvelle séance » ajoute une séance ponctuelle (rattrapage, séance supplémentaire).",
-                "L'horaire habituel d'un groupe se change depuis Groupes ou depuis la page du cours.",
+                "L'horaire habituel d'un groupe se change depuis la page du groupe.",
             ],
             ["Ctrl+5 : ouvrir l'emploi du temps", Refresh]),
 
@@ -226,7 +216,7 @@ public static class PageHelp
             [New + "ajouter une dépense", Refresh]),
 
         ["reports"] = new("Rapports",
-            "Le bilan du mois choisi : synthèse financière, recettes par cours et par mode de paiement, élèves avec un reste à payer, " +
+            "Le bilan du mois choisi : synthèse financière, recettes par groupe et par mode de paiement, élèves avec un reste à payer, " +
             "rémunération des enseignants, dépenses, présences et résultats par groupe.",
             [
                 "Choisissez le mois en haut de la page.",

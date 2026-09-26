@@ -20,11 +20,11 @@ public class AcademicTests
         throw new InvalidOperationException($"Dialog {typeof(T).Name} not shown (current: {host.Get<DialogHost>().Current?.GetType().Name}).");
     }
 
-    private static async Task<CourseDetailViewModel> OpenCourseAsync(TestHost host, string name, int? groupId = null)
+    private static async Task<GroupDetailViewModel> OpenGroupAsync(TestHost host, string fullName)
     {
-        var course = (await host.Get<ICourseService>().ListAsync()).First(c => c.Name == name);
-        await host.Get<Navigator>().NavigateAsync<CourseDetailViewModel>(new CourseDetailViewModel.Target(course.Id, groupId));
-        var page = host.Page<CourseDetailViewModel>();
+        var group = (await host.Get<IGroupService>().ListAsync()).First(g => g.FullName == fullName);
+        await host.Get<Navigator>().NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(group.Id));
+        var page = host.Page<GroupDetailViewModel>();
         Assert.False(page.HasError, page.Error);
         return page;
     }
@@ -40,28 +40,14 @@ public class AcademicTests
         Assert.False(subjects.HasError, subjects.Error);
         Assert.Equal(9, subjects.Rows.Count);
         var maths = subjects.Rows.Single(r => r.Name == "Mathématiques");
-        Assert.Equal(2, maths.CourseCount);
+        Assert.Equal(3, maths.CourseCount); // Maths 3AS A, 3AS B, 4AM A
         Assert.Equal(1, maths.TeacherCount);
-
-        await nav.NavigateAsync<CoursesViewModel>();
-        var courses = host.Page<CoursesViewModel>();
-        Assert.False(courses.HasError, courses.Error);
-        Assert.Equal(10, courses.Rows.Count);
-        var math3 = courses.Rows.Single(r => r.Name == "Mathématiques · 3AS");
-        Assert.Equal("A, B", math3.Groups);
-        Assert.Equal("2 groupes", math3.Schedule);
-        Assert.Contains("3AS", courses.Levels);
-        courses.SelectedLevel = "4AM";
-        Assert.All(courses.Rows, r => Assert.Equal("4AM", r.Level));
-        courses.SelectedLevel = "Tous";
-        courses.SearchText = "physique";
-        Assert.Equal(2, courses.Rows.Count);
 
         await nav.NavigateAsync<GroupsViewModel>();
         var groups = host.Page<GroupsViewModel>();
         Assert.False(groups.HasError, groups.Error);
         Assert.Equal(11, groups.Rows.Count);
-        Assert.Contains(groups.Rows, r => r.Name == "Mathématiques · 3AS B" && r.Teacher == "Karima Boudiaf" && r.Room == "Salle 1");
+        Assert.Contains(groups.Rows, r => r.Name == "Mathématiques · 3AS B" && r.Teacher == "Karima Boudiaf" && r.Room == "Salle 1" && r.Price == "4 500 DZD");
 
         await nav.NavigateAsync<RoomsViewModel>();
         var rooms = host.Page<RoomsViewModel>();
@@ -75,7 +61,7 @@ public class AcademicTests
     }
 
     [Fact]
-    public async Task Owner_creates_a_subject_a_room_and_a_course_through_dialogs()
+    public async Task Owner_creates_a_subject_a_room_and_a_group_through_dialogs()
     {
         await using var host = await UiHost.CreateAsync();
         var nav = host.Get<Navigator>();
@@ -94,7 +80,7 @@ public class AcademicTests
         Assert.Equal(10, subjects.Rows.Count);
         Assert.Contains(subjects.Rows, r => r.Name == "Économie" && r.ShortName == "Éco");
 
-        // A subject used by courses cannot be deleted.
+        // A subject used by groups cannot be deleted.
         var maths = subjects.Rows.Single(r => r.Name == "Mathématiques");
         var delete = ((IAsyncRelayCommand)maths.Delete).ExecuteAsync(null);
         await host.AnswerDialogAsync();
@@ -115,31 +101,33 @@ public class AcademicTests
         Assert.Equal(7, rooms.Rows.Count);
         Assert.Contains(rooms.Rows, r => r.Name == "Salle 5" && r.Capacity == "20 places" && r.Equipment == "Vidéoprojecteur");
 
-        await nav.NavigateAsync<CoursesViewModel>();
-        add = host.Page<CoursesViewModel>().AddCommand.ExecuteAsync(null);
-        var courseDialog = await DialogAsync<CourseEditorDialogViewModel>(host);
-        courseDialog.SelectedSubject = courseDialog.SubjectOptions.Single(s => s.Label == "Économie");
-        courseDialog.Level = "3as";
-        courseDialog.Price = "3 500";
-        await courseDialog.ConfirmCommand.ExecuteAsync(null);
+        // A group now carries its subject, level and price directly.
+        await nav.NavigateAsync<GroupsViewModel>();
+        add = host.Page<GroupsViewModel>().AddCommand.ExecuteAsync(null);
+        var groupDialog = await DialogAsync<GroupEditorDialogViewModel>(host);
+        groupDialog.SelectedSubject = groupDialog.SubjectOptions.Single(s => s.Label == "Économie");
+        groupDialog.Level = "3as";
+        await groupDialog.ConfirmCommand.ExecuteAsync(null);
+        Assert.Contains("prix", groupDialog.Error, StringComparison.OrdinalIgnoreCase); // price is required
+        groupDialog.Price = "3 500";
+        Assert.Equal("A", groupDialog.Name);
+        await groupDialog.ConfirmCommand.ExecuteAsync(null);
         await add;
-        Assert.False(courseDialog.HasError, courseDialog.Error);
+        Assert.False(groupDialog.HasError, groupDialog.Error);
+        Assert.Contains(host.Page<GroupsViewModel>().Rows, r => r.Name == "Économie · 3AS A" && r.Price == "3 500 DZD");
 
-        var detail = host.Page<CourseDetailViewModel>();
-        Assert.False(detail.HasError, detail.Error);
-        Assert.Equal("Économie · 3AS", detail.Name);
-        Assert.False(detail.HasGroup);
+        var detail = await OpenGroupAsync(host, "Économie · 3AS A");
         Assert.Equal("3 500", detail.Price);
         Assert.NotEmpty(detail.Eligible);
+        Assert.Empty(detail.Enrolled);
     }
 
     [Fact]
-    public async Task Course_detail_changes_price_teacher_and_room_immediately()
+    public async Task Group_page_changes_price_teacher_and_room_immediately()
     {
         await using var host = await UiHost.CreateAsync();
-        var detail = await OpenCourseAsync(host, "Mathématiques · 3AS");
-        Assert.Equal(["A", "B"], detail.GroupOptions.Select(g => g.Label));
-        Assert.Equal("A", detail.SelectedGroup!.Label);
+        var detail = await OpenGroupAsync(host, "Mathématiques · 3AS A");
+        Assert.Equal("Mathématiques · 3AS A", detail.Name);
         Assert.Contains("Karima Boudiaf", detail.Subtitle);
         Assert.Equal("Sam. 9h–11h, Mar. 17h–19h", detail.Schedule);
         Assert.StartsWith("Recettes · Septembre 2026", detail.RevenueTitle);
@@ -149,7 +137,9 @@ public class AcademicTests
         detail.Price = "5 000";
         await detail.Saving;
         Assert.False(detail.HasError, detail.Error);
-        Assert.Equal(5000, (await host.Get<ICourseService>().ListAsync()).Single(c => c.Name == "Mathématiques · 3AS").MonthlyPrice);
+        var all = await host.Get<IGroupService>().ListAsync();
+        Assert.Equal(5000, all.Single(g => g.FullName == "Mathématiques · 3AS A").MonthlyPrice);
+        Assert.Equal(4500, all.Single(g => g.FullName == "Mathématiques · 3AS B").MonthlyPrice); // each group has its own price
         Assert.Equal("Prix mis à jour", host.Get<Notifier>().Message);
 
         // Teacher without conflict (Hakim Zitouni teaches Sunday/Thursday).
@@ -174,17 +164,24 @@ public class AcademicTests
         Assert.False(detail.HasError, detail.Error);
         Assert.Equal("Salle 4", (await host.Get<IGroupService>().GetAsync(detail.GroupId!.Value))!.Room!.Name);
 
-        // Switching group keeps the page and shows the other group's settings.
-        detail.SelectedGroup = detail.GroupOptions.Single(g => g.Label == "B");
-        Assert.Equal("Salle 1", detail.SelectedRoom!.Label);
-        Assert.Equal("Karima Boudiaf", detail.SelectedTeacher!.Label);
+        // "Nouveau groupe" from this page creates group C of the same subject and level, pre-filled.
+        var create = detail.NewGroupCommand.ExecuteAsync(null);
+        var dialog = await DialogAsync<GroupEditorDialogViewModel>(host);
+        Assert.Equal("Mathématiques", dialog.SelectedSubject!.Label);
+        Assert.Equal("3AS", dialog.Level);
+        Assert.Equal("5 000", dialog.Price);
+        Assert.Equal("C", dialog.Name);
+        await dialog.ConfirmCommand.ExecuteAsync(null);
+        await create;
+        Assert.False(dialog.HasError, dialog.Error);
+        Assert.Equal("Mathématiques · 3AS C", host.Page<GroupDetailViewModel>().Name);
     }
 
     [Fact]
-    public async Task Course_detail_adds_and_removes_a_student()
+    public async Task Group_page_adds_and_removes_a_student()
     {
         await using var host = await UiHost.CreateAsync();
-        var detail = await OpenCourseAsync(host, "Physique · 2AS");
+        var detail = await OpenGroupAsync(host, "Physique · 2AS A");
         Assert.NotEmpty(detail.Eligible);
         var before = detail.Enrolled.Count;
         if (detail.IsFull)
@@ -232,8 +229,10 @@ public class AcademicTests
         var add = groups.AddCommand.ExecuteAsync(null);
         var dialog = await DialogAsync<GroupEditorDialogViewModel>(host);
         Assert.Equal(640, dialog.Width);
-        dialog.SelectedCourse = dialog.CourseOptions.Single(c => c.Label == "Physique · 3AS");
-        Assert.Equal("B", dialog.Name);
+        dialog.SelectedSubject = dialog.SubjectOptions.Single(c => c.Label == "Physique");
+        dialog.Level = "3AS";
+        dialog.Price = "4 500";
+        Assert.Equal("B", dialog.Name); // Physique 3AS A exists
         dialog.SelectedTeacher = dialog.TeacherOptions.Single(t => t.Label == "Aucun");
         dialog.SelectedRoom = dialog.RoomOptions.Single(r => r.Label.StartsWith("Salle 4"));
         dialog.Capacity = "10";
@@ -259,7 +258,9 @@ public class AcademicTests
         // Second group in Salle 1 on Saturday 9h–11h: Mathématiques 3AS A is already there.
         add = groups.AddCommand.ExecuteAsync(null);
         var clash = await DialogAsync<GroupEditorDialogViewModel>(host);
-        clash.SelectedCourse = clash.CourseOptions.Single(c => c.Label == "Physique · 3AS");
+        clash.SelectedSubject = clash.SubjectOptions.Single(c => c.Label == "Physique");
+        clash.Level = "3AS";
+        clash.Price = "4 500";
         clash.SelectedTeacher = clash.TeacherOptions.Single(t => t.Label == "Aucun");
         clash.SelectedRoom = clash.RoomOptions.Single(r => r.Label.StartsWith("Salle 1"));
         clash.AddSlotCommand.Execute(null);
@@ -291,25 +292,37 @@ public class AcademicTests
     }
 
     [Fact]
-    public async Task Course_detail_navigates_to_attendance_and_back_to_courses()
+    public async Task Group_page_navigates_to_attendance_and_back_and_protects_groups_with_students()
     {
         await using var host = await UiHost.CreateAsync();
-        var detail = await OpenCourseAsync(host, "Anglais · 3AS");
+        var nav = host.Get<Navigator>();
+        await nav.NavigateAsync<GroupsViewModel>();
+        var detail = await OpenGroupAsync(host, "Anglais · 3AS A");
         var groupId = detail.GroupId;
         await detail.OpenAttendanceCommand.ExecuteAsync(null);
         var attendance = host.Page<AttendanceViewModel>();
         Assert.Equal(new AttendanceViewModel.Target(host.Clock.Now.Date, groupId), attendance.LastParameter);
 
-        detail = await OpenCourseAsync(host, "Anglais · 3AS");
+        await nav.NavigateAsync<GroupsViewModel>();
+        detail = await OpenGroupAsync(host, "Anglais · 3AS A");
         await detail.BackCommand.ExecuteAsync(null);
-        Assert.IsType<CoursesViewModel>(host.Get<Navigator>().Current);
+        Assert.IsType<GroupsViewModel>(host.Get<Navigator>().Current);
 
-        // A course with enrollments cannot be deleted.
-        detail = await OpenCourseAsync(host, "Anglais · 3AS");
-        var delete = detail.DeleteCourseCommand.ExecuteAsync(null);
+        // A group with enrollments cannot be deleted.
+        detail = await OpenGroupAsync(host, "Anglais · 3AS A");
+        var delete = detail.DeleteGroupCommand.ExecuteAsync(null);
         await host.AnswerDialogAsync();
         await delete;
         Assert.True(detail.HasError);
         Assert.Same(detail, host.Get<Navigator>().Current);
+    }
+
+    [Fact]
+    public async Task Sidebar_has_no_courses_page_anymore()
+    {
+        await using var host = await UiHost.CreateAsync(demo: false);
+        var labels = host.Get<CentreSoutien.Presentation.ViewModels.Shell.ShellViewModel>().NavGroups.SelectMany(g => g.Items).Select(i => i.Label).ToList();
+        Assert.DoesNotContain("Cours", labels);
+        Assert.Contains("Groupes", labels);
     }
 }

@@ -15,7 +15,7 @@ public sealed class OnboardingService(IDbContextFactory<AppDbContext> factory) :
         var hasSubjects = await db.Subjects.AnyAsync(ct);
         var hasRooms = await db.Rooms.AnyAsync(ct);
         var hasTeachers = await db.Teachers.AnyAsync(ct);
-        var hasCourses = await db.Courses.AnyAsync(ct);
+        var hasCourses = await db.Groups.AnyAsync(ct);
         var hasScheduledGroup = await db.Slots.AnyAsync(ct);
         var hasStudents = await db.Students.AnyAsync(ct);
         var hasEnrollments = await db.Enrollments.AnyAsync(ct);
@@ -33,7 +33,7 @@ public sealed class OnboardingService(IDbContextFactory<AppDbContext> factory) :
             new(OnboardingStep.Subjects, "Matières créées", "Mathématiques, Physique, Français…", hasSubjects),
             new(OnboardingStep.Rooms, "Salles créées", "Les salles de cours et leur capacité.", hasRooms),
             new(OnboardingStep.Teachers, "Enseignants ajoutés", "Avec leur mode de rémunération.", hasTeachers),
-            new(OnboardingStep.CoursesAndGroups, "Cours et groupes créés", "Un cours, ses groupes et au moins un créneau dans l'emploi du temps.", hasCourses && hasScheduledGroup),
+            new(OnboardingStep.CoursesAndGroups, "Groupes créés", "Au moins un groupe (matière, niveau, prix) avec un créneau dans l'emploi du temps.", hasCourses && hasScheduledGroup),
             new(OnboardingStep.Students, "Élèves inscrits", "Ajoutez-les un par un ou importez-les depuis Excel, puis inscrivez-les dans un groupe.", hasEnrollments),
             new(OnboardingStep.Backup, "Première sauvegarde effectuée", "Une copie chiffrée de vos données, à garder aussi sur une clé USB.", settings?.LastBackupAt is not null),
         ];

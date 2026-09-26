@@ -60,9 +60,9 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
 
         // Example row (to be replaced by real students).
         var example = ctx.Groups.Take(2).ToList();
-        var exampleLevel = example.FirstOrDefault()?.Group.Course?.Level ?? "3AS";
+        var exampleLevel = example.FirstOrDefault()?.Group.Level ?? "3AS";
         var exampleGroups = example.Count > 0
-            ? string.Join("; ", example.Where(g => g.Group.Course?.Level == exampleLevel).Select(g => g.Label))
+            ? string.Join("; ", example.Where(g => g.Group.Level == exampleLevel).Select(g => g.Label))
             : "Mathématiques 3AS A; Physique 3AS A";
         object?[] values =
         [
@@ -406,7 +406,7 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
         /// <summary>Students planned into the group by earlier rows of the file.</summary>
         public int Planned { get; set; }
         public bool IsFull => Active + Planned >= Group.Capacity;
-        public string Label => $"{Group.Course?.Subject?.Name} {Group.Course?.Level} {Group.Name}";
+        public string Label => $"{Group.Subject?.Name} {Group.Level} {Group.Name}";
     }
 
     private sealed class Context
@@ -427,10 +427,10 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
     {
         var today = clock.GetLocalNow().Date;
         var groups = await db.Groups.AsNoTracking()
-            .Include(g => g.Course).ThenInclude(c => c!.Subject)
+            .Include(g => g.Subject)
             .Include(g => g.Enrollments)
             .AsSplitQuery()
-            .Where(g => g.IsActive && g.Course!.IsActive)
+            .Where(g => g.IsActive && g.IsActive)
             .ToListAsync(ct);
         var ctx = new Context
         {
@@ -438,18 +438,18 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
             Students = await db.Students.AsNoTracking().Select(s => new ExistingStudent(s.Id, s.Matricule, s.FirstName, s.LastName, s.BirthDate)).ToListAsync(ct),
             Parents = await db.Parents.AsNoTracking().ToListAsync(ct),
             Groups = groups
-                .OrderBy(g => g.Course!.Subject!.Name).ThenBy(g => Levels.Order(g.Course!.Level)).ThenBy(g => g.Name)
+                .OrderBy(g => g.Subject!.Name).ThenBy(g => Levels.Order(g.Level)).ThenBy(g => g.Name)
                 .Select(g => new GroupInfo(g, g.Enrollments.Count(e => e.IsActiveOn(today)))).ToList(),
             Discounts = await db.Discounts.AsNoTracking().OrderBy(d => d.Name).ToListAsync(ct),
-            Levels = await db.Courses.Select(c => c.Level).Union(db.Students.Select(s => s.Level)).ToListAsync(ct),
+            Levels = await db.Groups.Select(g => g.Level).Union(db.Students.Select(s => s.Level)).ToListAsync(ct),
         };
         ctx.Levels.RemoveAll(string.IsNullOrWhiteSpace);
 
         foreach (var g in ctx.Groups)
         {
-            var subject = g.Group.Course!.Subject;
+            var subject = g.Group.Subject;
             var names = new[] { subject?.Name, subject?.ShortName }.Select(TextKey.Compact).Where(n => n.Length > 0).Distinct().ToList();
-            var level = TextKey.Compact(g.Group.Course.Level);
+            var level = TextKey.Compact(g.Group.Level);
             var name = TextKey.Compact(g.Group.Name);
             foreach (var n in names)
             {
@@ -535,7 +535,7 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
                     warnings.Add($"Groupe complet : {g.Group.FullName} ({g.Group.Capacity} places), élève non inscrit");
                     continue;
                 }
-                if (!string.Equals(g.Group.Course?.Level, d.Level, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(g.Group.Level, d.Level, StringComparison.OrdinalIgnoreCase))
                     warnings.Add($"Le groupe {g.Group.FullName} n'est pas du niveau {d.Level}");
                 groups.Add(g.Group);
                 if (import) g.Planned++;

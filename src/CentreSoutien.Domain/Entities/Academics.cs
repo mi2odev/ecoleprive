@@ -22,27 +22,16 @@ public class Room : Entity
     public override string ToString() => Name;
 }
 
-/// <summary>A subject taught at a level with a monthly price, e.g. "Mathématiques · 3AS" at 4 500 DZD.</summary>
-public class Course : Entity
+/// <summary>
+/// A class: a subject taught at a level, with its monthly price, teacher, room, capacity, timetable and students,
+/// e.g. "Mathématiques · 3AS A" at 4 500 DZD. (Older versions had a separate "course" level above groups.)
+/// </summary>
+public class Group : Entity
 {
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
     public string Level { get; set; } = "";
     public decimal MonthlyPrice { get; set; }
-    public string? Description { get; set; }
-    public bool IsActive { get; set; } = true;
-
-    public List<Group> Groups { get; set; } = [];
-
-    public string Name => $"{Subject?.Name ?? "?"} · {Level}";
-    public override string ToString() => Name;
-}
-
-/// <summary>A class section of a course, with its own teacher, room, capacity, timetable and students.</summary>
-public class Group : Entity
-{
-    public int CourseId { get; set; }
-    public Course? Course { get; set; }
     public string Name { get; set; } = "A";
     public int? TeacherId { get; set; }
     public Teacher? Teacher { get; set; }
@@ -50,12 +39,15 @@ public class Group : Entity
     public Room? Room { get; set; }
     public int Capacity { get; set; } = 12;
     public bool IsActive { get; set; } = true;
+    public string? Description { get; set; }
 
     public List<ScheduleSlot> Slots { get; set; } = [];
     public List<Enrollment> Enrollments { get; set; } = [];
     public List<Session> Sessions { get; set; } = [];
 
-    public string FullName => Course is null ? Name : $"{Course.Subject?.Name ?? "?"} · {Course.Level} {Name}";
+    /// <summary>"Mathématiques · 3AS" — subject and level without the group letter.</summary>
+    public string SubjectLevel => $"{Subject?.Name ?? "?"} · {Level}";
+    public string FullName => $"{SubjectLevel} {Name}".TrimEnd();
     public override string ToString() => FullName;
 }
 

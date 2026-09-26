@@ -101,7 +101,7 @@ public sealed partial class ReportsViewModel(
             var summary = Summary.Concat(SummaryCosts).Select(k => (k.Label, k.Value)).ToList();
             List<PrintTable> tables =
             [
-                new("Par cours", ["Cours", "Attendu", "Encaissé", "Taux"], ByCourse.Select(c => Row(c.Course, c.Expected, c.Collected, c.Rate)).ToList(), [1, 2, 3]),
+                new("Par groupe", ["Groupe", "Attendu", "Encaissé", "Taux"], ByCourse.Select(c => Row(c.Course, c.Expected, c.Collected, c.Rate)).ToList(), [1, 2, 3]),
                 new("Par mode de paiement", ["Mode", "Montant", "Part"], ByMethod.Select(m => Row(m.Label, m.Amount, m.Share)).ToList(), [1, 2]),
                 new("Dépenses par catégorie", ["Catégorie", "Montant", "Part"], ByCategory.Select(m => Row(m.Label, m.Amount, m.Share)).ToList(), [1, 2]),
                 new("Élèves avec un reste à payer", ["Élève", "Niveau", "Reste", "Téléphone parent"], Unpaid.Select(u => Row(u.Name, u.Level, u.Balance, u.Phone)).ToList(), [2]),

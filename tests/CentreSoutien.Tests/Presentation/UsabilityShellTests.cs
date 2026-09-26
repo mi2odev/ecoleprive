@@ -12,7 +12,7 @@ public class UsabilityShellTests
 {
     private static readonly string[] AllNavKeys =
     [
-        "dashboard", "students", "parents", "teachers", "subjects", "courses", "groups", "rooms", "schedule", "sessions",
+        "dashboard", "students", "parents", "teachers", "subjects", "groups", "rooms", "schedule", "sessions",
         "attendance", "grades", "exams", "payments", "tpayments", "expenses", "reports", "documents", "settings", "account",
     ];
 
@@ -104,7 +104,7 @@ public class UsabilityShellTests
 
         // Every page listed as having a primary action maps it to its Add command.
         foreach (var type in new[] { typeof(StudentsViewModel), typeof(ParentsViewModel), typeof(TeachersViewModel), typeof(SubjectsViewModel),
-                     typeof(CoursesViewModel), typeof(GroupsViewModel), typeof(RoomsViewModel), typeof(ExpensesViewModel), typeof(ExamsViewModel),
+                     typeof(GroupsViewModel), typeof(RoomsViewModel), typeof(ExpensesViewModel), typeof(ExamsViewModel),
                      typeof(SessionsViewModel), typeof(DocumentsViewModel) })
         {
             await nav.NavigateAsync(type);

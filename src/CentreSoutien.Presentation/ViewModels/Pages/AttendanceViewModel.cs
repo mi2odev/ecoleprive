@@ -202,7 +202,7 @@ public sealed partial class AttendanceViewModel(
         var sheet = await attendance.GetSheetAsync(item.Id);
         var s = sheet.Session;
         SessionName = s.Group!.FullName;
-        _course = s.Group.Course?.Subject?.Name ?? s.Group.FullName;
+        _course = s.Group.Subject?.Name ?? s.Group.FullName;
         _sessionDate = s.Date;
         SessionDetails = string.Join(" · ", new[]
         {

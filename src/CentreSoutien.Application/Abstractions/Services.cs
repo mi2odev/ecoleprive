@@ -57,18 +57,12 @@ public interface ITeacherService
     Task DeleteAsync(int id, CancellationToken ct = default);
 }
 
-public interface ICourseService
-{
-    Task<List<Course>> ListAsync(CancellationToken ct = default);
-    Task<CourseDetail?> GetDetailAsync(int id, DateTime period, CancellationToken ct = default);
-    Task<Course> SaveAsync(Course course, CancellationToken ct = default);
-    Task DeleteAsync(int id, CancellationToken ct = default);
-}
-
 public interface IGroupService
 {
     Task<List<Group>> ListAsync(CancellationToken ct = default);
     Task<Group?> GetAsync(int id, CancellationToken ct = default);
+    /// <summary>Everything the group page shows: the group (teacher, room, slots, students), revenue and attendance of the month.</summary>
+    Task<GroupDetail?> GetDetailAsync(int id, DateTime period, CancellationToken ct = default);
     /// <summary>Saves the group and replaces its timetable slots. Rejects room/teacher overlaps.</summary>
     Task<Group> SaveAsync(Group group, IEnumerable<ScheduleSlot> slots, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);

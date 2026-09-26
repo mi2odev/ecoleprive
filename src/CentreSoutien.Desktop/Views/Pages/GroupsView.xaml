@@ -31,6 +31,7 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="1.6*" />
                             <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="80" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
@@ -39,7 +40,8 @@
                         <TextBlock Grid.Column="2" Text="Salle" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="3" Text="Horaire" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="4" Text="Inscrits" Style="{StaticResource ColumnHeader}" />
-                        <TextBlock Grid.Column="5" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Prix / mois" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="6" Text="Statut" Style="{StaticResource ColumnHeader}" />
                         <!-- Keeps header columns aligned with the row actions. -->
                         <StackPanel Grid.Column="6" Orientation="Horizontal" Visibility="Hidden">
                             <TextBlock Text="Modifier" FontSize="12" Margin="12,0" />
@@ -68,6 +70,7 @@
                                         <ColumnDefinition Width="90" />
                                         <ColumnDefinition Width="1.6*" />
                                         <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="100" />
                                         <ColumnDefinition Width="80" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
@@ -79,10 +82,11 @@
                                                Visibility="{Binding IsFull, Converter={StaticResource BoolToCollapsed}}" />
                                     <ContentControl Grid.Column="4" Content="{Binding FullBadge}" Focusable="False" VerticalAlignment="Center"
                                                     Visibility="{Binding IsFull, Converter={StaticResource BoolToVisible}}" ToolTip="Groupe complet" />
-                                    <ContentControl Grid.Column="5" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
-                                    <StackPanel Grid.Column="6" Orientation="Horizontal">
+                                    <TextBlock Grid.Column="5" Text="{Binding Price}" Style="{StaticResource Body}" />
+                                    <ContentControl Grid.Column="6" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="7" Orientation="Horizontal">
                                         <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="12,0"
-                                                ToolTip="Modifier l'enseignant, la salle, la capacité et les horaires" />
+                                                ToolTip="Modifier la matière, le niveau, le prix, l'enseignant, la salle, la capacité et les horaires" />
                                         <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}"
                                                 ToolTip="Supprimer le groupe et son emploi du temps" />
                                     </StackPanel>

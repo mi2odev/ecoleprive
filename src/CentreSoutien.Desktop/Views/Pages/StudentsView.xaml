@@ -44,7 +44,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Élève" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="1" Text="Niveau" Style="{StaticResource ColumnHeader}" />
-                        <TextBlock Grid.Column="2" Text="Cours" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Matières" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="3" Text="Parent" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="4" Text="Reste à payer" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="5" Text="{Binding MonthLabel}" Style="{StaticResource ColumnHeader}" />

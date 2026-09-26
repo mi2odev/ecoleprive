@@ -258,7 +258,7 @@ public class AcademicDocumentsTests
 
         var empty = new ReportCardData(student, DocumentPeriod.Month(new DateTime(2026, 9, 1)), "2026–2027", [], null, AttendanceSummary.Empty, 20, 10, 2);
         var card = Text(AcademicDocumentPages.ReportCard(empty, new CenterSettings(), null, new DateTime(2026, 9, 26)));
-        Assert.Contains("Aucun cours suivi", card);
+        Assert.Contains("Aucun groupe suivi", card);
         Assert.Contains("Aucune séance relevée", card);
     }
 }

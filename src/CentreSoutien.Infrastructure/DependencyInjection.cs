@@ -38,7 +38,6 @@ public static class DependencyInjection
         services.AddSingleton<IStudentService, StudentService>();
         services.AddSingleton<IParentService, ParentService>();
         services.AddSingleton<ITeacherService, TeacherService>();
-        services.AddSingleton<ICourseService, CourseService>();
         services.AddSingleton<IGroupService, GroupService>();
         services.AddSingleton<IScheduleService, ScheduleService>();
         services.AddSingleton<ISessionService, SessionService>();
