@@ -23,11 +23,11 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Début *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 09:00" ui:Enter.Command="{Binding ConfirmCommand}" />
+                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 09:00" ui:TimeInput.Enabled="True" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Fin *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding End, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 11:00" ui:Enter.Command="{Binding ConfirmCommand}" />
+                <TextBox Text="{Binding End, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 11:00" ui:TimeInput.Enabled="True" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 

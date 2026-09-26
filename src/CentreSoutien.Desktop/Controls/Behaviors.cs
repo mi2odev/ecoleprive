@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using CentreSoutien.Presentation.Core;
 
 namespace CentreSoutien.Desktop.Controls;
 
@@ -91,5 +92,71 @@ public static class Enter
             cmd.Execute(null);
             e.Handled = true;
         }
+    }
+}
+
+/// <summary>
+/// Hour field ("09:00"): clicking or tabbing in selects the whole time so typing replaces it, the ":" is added
+/// automatically after the hour, and the value is tidied to hh:mm when leaving the field ("9h" → "09:00").
+/// </summary>
+public static class TimeInput
+{
+    public static readonly DependencyProperty EnabledProperty = DependencyProperty.RegisterAttached(
+        "Enabled", typeof(bool), typeof(TimeInput), new PropertyMetadata(false, OnChanged));
+
+    public static bool GetEnabled(DependencyObject d) => (bool)d.GetValue(EnabledProperty);
+    public static void SetEnabled(DependencyObject d, bool value) => d.SetValue(EnabledProperty, value);
+
+    private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not TextBox box) return;
+        box.GotKeyboardFocus -= OnFocus;
+        box.PreviewMouseLeftButtonDown -= OnMouseDown;
+        box.PreviewTextInput -= OnTextInput;
+        box.LostKeyboardFocus -= OnLeave;
+        DataObject.RemovePastingHandler(box, OnPaste);
+        if (e.NewValue is not true) return;
+        box.MaxLength = 5;
+        box.GotKeyboardFocus += OnFocus;
+        box.PreviewMouseLeftButtonDown += OnMouseDown;
+        box.PreviewTextInput += OnTextInput;
+        box.LostKeyboardFocus += OnLeave;
+        DataObject.AddPastingHandler(box, OnPaste);
+    }
+
+    private static void OnFocus(object sender, KeyboardFocusChangedEventArgs e) => ((TextBox)sender).SelectAll();
+
+    // A click would otherwise place the caret (and undo the SelectAll): the first click only focuses and selects.
+    private static void OnMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var box = (TextBox)sender;
+        if (box.IsKeyboardFocusWithin) return;
+        e.Handled = true;
+        box.Focus();
+    }
+
+    private static void OnTextInput(object sender, TextCompositionEventArgs e)
+    {
+        e.Handled = true;
+        Type((TextBox)sender, e.Text);
+    }
+
+    private static void OnPaste(object sender, DataObjectPastingEventArgs e)
+    {
+        e.CancelCommand();
+        if (e.DataObject.GetData(DataFormats.UnicodeText) is string text) Type((TextBox)sender, text);
+    }
+
+    private static void Type(TextBox box, string input)
+    {
+        if (!input.Any(char.IsAsciiDigit)) return;
+        box.Text = Parse.TimeMask(box.Text, box.SelectionStart, box.SelectionLength, input);
+        box.CaretIndex = box.Text.Length;
+    }
+
+    private static void OnLeave(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        var box = (TextBox)sender;
+        if (Parse.Time(box.Text) is { } t && Parse.Time(t) != box.Text) box.Text = Parse.Time(t);
     }
 }

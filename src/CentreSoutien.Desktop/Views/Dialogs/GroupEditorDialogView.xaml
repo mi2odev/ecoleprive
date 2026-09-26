@@ -86,8 +86,8 @@
                                         <ColumnDefinition Width="60" />
                                     </Grid.ColumnDefinitions>
                                     <ComboBox ItemsSource="{Binding Days}" SelectedItem="{Binding Day}" DisplayMemberPath="Label" Margin="0,0,8,0" />
-                                    <TextBox Grid.Column="1" Text="{Binding Start, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 09:00" Margin="0,0,8,0" />
-                                    <TextBox Grid.Column="2" Text="{Binding End, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 11:00" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" Text="{Binding Start, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 09:00" ui:TimeInput.Enabled="True" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="2" Text="{Binding End, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 11:00" ui:TimeInput.Enabled="True" Margin="0,0,8,0" />
                                     <ComboBox Grid.Column="3" ItemsSource="{Binding Rooms}" SelectedItem="{Binding Room}" DisplayMemberPath="Label" Margin="0,0,8,0" />
                                     <Button Grid.Column="4" Content="Retirer" Command="{Binding RemoveCommand}" Style="{StaticResource LinkButton}" HorizontalAlignment="Right" />
                                 </Grid>

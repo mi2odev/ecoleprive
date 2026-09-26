@@ -125,6 +125,22 @@ public static class Parse
     public static string Time(TimeSpan t) => t.ToString(@"hh\:mm");
 
     /// <summary>
+    /// Time typing mask: the text after <paramref name="input"/> replaces the selection, keeping digits only and
+    /// adding the ":" by itself — "9" → "09:", "14" → "14:", "1430" → "14:30".
+    /// </summary>
+    public static string TimeMask(string current, int selectionStart, int selectionLength, string input)
+    {
+        selectionStart = Math.Clamp(selectionStart, 0, current.Length);
+        selectionLength = Math.Clamp(selectionLength, 0, current.Length - selectionStart);
+        var typed = current.Remove(selectionStart, selectionLength).Insert(selectionStart, input);
+        var digits = new string(typed.Where(char.IsAsciiDigit).ToArray());
+        if (digits.Length == 0) return "";
+        if (digits[0] > '2') digits = "0" + digits; // no hour starts with 3–9: "9" is 09
+        if (digits.Length > 4) digits = digits[..4];
+        return digits.Length == 1 ? digits : digits[..2] + ":" + digits[2..];
+    }
+
+    /// <summary>
     /// Parses a typed date, day first: "15/03/2010", "15-3-2010", "15.03.10", "15032010", "150310", or ISO "2010-03-15".
     /// Two-digit years: 00–(current year) → 20xx, otherwise 19xx. Returns null when the text is not a valid date.
     /// </summary>
