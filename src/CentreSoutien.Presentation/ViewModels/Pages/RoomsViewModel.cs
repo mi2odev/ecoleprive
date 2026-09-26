@@ -20,6 +20,8 @@ public sealed partial class RoomsViewModel(
     [ObservableProperty] private IReadOnlyList<RoomRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private string _nowLabel = "";
+    /// <summary>No room recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
 
     public override async Task LoadAsync(object? parameter)
     {
@@ -40,6 +42,7 @@ public sealed partial class RoomsViewModel(
                     new AsyncRelayCommand(() => EditAsync(r.Id)),
                     new AsyncRelayCommand(() => DeleteAsync(r)));
             }).ToList();
+            HasNoData = list.Count == 0;
             var active = list.Count(r => r.IsActive);
             var free = availability.Values.Count(a => a.IsFree);
             CountLabel = $"{list.Count} salle{(list.Count > 1 ? "s" : "")} · {free} libre{(free > 1 ? "s" : "")} sur {active} en ce moment";

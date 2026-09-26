@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:PaymentsViewModel}">
     <StackPanel>
@@ -66,8 +67,20 @@
                                 <TextBlock Grid.Column="4" Text="Statut" Style="{StaticResource ColumnHeader}" />
                             </Grid>
                         </Border>
-                        <TextBlock Text="Aucun élève ne correspond au filtre." Style="{StaticResource EmptyText}"
-                                   Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                        <ui:EmptyState Title="Aucune mensualité ce mois-ci" Glyph="&#xE8C7;"
+                                       Message="Cette page suit, mois par mois, ce que chaque élève doit, a payé et reste à payer. Elle se remplit dès que des élèves sont inscrits dans des groupes."
+                                       Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                            <StackPanel Style="{StaticResource EmptyActions}">
+                                <Button Content="Aller aux élèves" Command="{Binding OpenStudentsCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                        ToolTip="Ajouter, importer ou inscrire des élèves" />
+                                <Button Content="Encaisser un paiement" Command="{Binding CollectCommand}" Style="{StaticResource SecondaryButton}" />
+                            </StackPanel>
+                        </ui:EmptyState>
+                        <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                                       Message="Aucun élève ne correspond à la recherche ou au statut choisi."
+                                       Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                            <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                        </ui:EmptyState>
                         <ItemsControl ItemsSource="{Binding Rows}" VirtualizingPanel.IsVirtualizing="True">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:PayLine}">
@@ -81,7 +94,8 @@
                                                 <ColumnDefinition Width="80" />
                                                 <ColumnDefinition Width="80" />
                                             </Grid.ColumnDefinitions>
-                                            <Button Command="{Binding Open}" Style="{StaticResource InkLinkButton}" HorizontalAlignment="Left" Margin="0,0,10,0">
+                                            <Button Command="{Binding Open}" Style="{StaticResource InkLinkButton}" HorizontalAlignment="Left" Margin="0,0,10,0"
+                                                    ToolTip="{Binding Item.FullName}">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <TextBlock Background="Transparent" Cursor="Hand" TextTrimming="CharacterEllipsis" FontSize="13">
@@ -95,6 +109,7 @@
                                             <TextBlock Grid.Column="3" Text="{Binding Rest}" Style="{StaticResource Body}" />
                                             <ContentControl Grid.Column="4" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
                                             <Button Grid.Column="5" Content="Encaisser" Command="{Binding Collect}" Style="{StaticResource InkLinkButton}" FontSize="12"
+                                                    ToolTip="Encaisser le reste à payer de cet élève"
                                                     Visibility="{Binding CanCollect, Converter={StaticResource BoolToVisible}}" />
                                         </Grid>
                                     </Border>
@@ -168,8 +183,11 @@
                         <TextBlock Grid.Column="6" Text="Montant" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun reçu émis ce mois-ci." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Receipts, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun reçu émis ce mois-ci" Glyph="&#xE8A5;"
+                               Message="Chaque paiement encaissé produit un reçu numéroté, que vous pouvez réimprimer ou annuler ici."
+                               Visibility="{Binding HasNoReceipts, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Encaisser un paiement" Command="{Binding CollectCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Receipts}" VirtualizingPanel.IsVirtualizing="True">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:PayReceiptLine}">
@@ -187,8 +205,8 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Number}" Style="{StaticResource Body}" />
                                     <TextBlock Grid.Column="1" Text="{Binding Date}" Style="{StaticResource Muted}" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Student}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Kind}" Style="{StaticResource Muted}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Student}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" ToolTip="{Binding Student}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Kind}" Style="{StaticResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Kind}" />
                                     <TextBlock Grid.Column="4" Text="{Binding Month}" Style="{StaticResource Muted}" />
                                     <TextBlock Grid.Column="5" Text="{Binding Method}" Style="{StaticResource Muted}" />
                                     <TextBlock Grid.Column="6" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
@@ -233,8 +251,11 @@
                         <TextBlock Grid.Column="4" Text="Bénéficiaires" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucune remise définie." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding DiscountLines, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucune remise définie" Glyph="&#xE8EF;"
+                               Message="Créez les remises du centre (fratrie, cas social, enfant du personnel…) en pourcentage ou en montant fixe, puis appliquez-les depuis la fiche de l'élève."
+                               Visibility="{Binding HasNoDiscounts, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Nouvelle remise" Command="{Binding AddDiscountCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding DiscountLines}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:DiscountLine}">
@@ -307,8 +328,9 @@
                         <TextBlock Grid.Column="5" Text="{Binding SelectionLabel}" Style="{StaticResource ColumnHeader}" HorizontalAlignment="Right" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun impayé pour ce mois : rien à relancer." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Reminders, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Rien à relancer" Glyph="&#xE73E;"
+                               Message="Aucun impayé pour ce mois. Les élèves qui n'ont pas tout réglé apparaîtront ici avec un message prêt à envoyer aux parents."
+                               Visibility="{Binding HasNoReminders, Converter={StaticResource BoolToVisible}}" />
                 <ItemsControl ItemsSource="{Binding Reminders}" VirtualizingPanel.IsVirtualizing="True">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:ReminderLine}">

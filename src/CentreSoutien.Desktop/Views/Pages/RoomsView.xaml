@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:RoomsViewModel}">
     <StackPanel>
@@ -35,8 +36,11 @@
                         <TextBlock Grid.Column="5" Text="Statut" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucune salle. Ajoutez les salles du centre pour planifier les groupes." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucune salle pour l'instant" Glyph="&#xE80F;"
+                               Message="Ajoutez les salles du centre avec leur capacité : elles sont attribuées aux groupes, et deux cours ne peuvent pas avoir lieu dans la même salle au même moment."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Ajouter une salle" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:RoomRow}">

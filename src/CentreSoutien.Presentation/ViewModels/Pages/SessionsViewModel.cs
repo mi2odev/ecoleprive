@@ -38,6 +38,10 @@ public sealed partial class SessionsViewModel(
     [ObservableProperty] private int _sessionCount;
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private bool _isEmpty;
+    /// <summary>No session at all this week (before the status filter).</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>The week has sessions but the status filter hides all of them.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSelectedStatusChanged(Option<SessionStatus?>? value) => ApplyFilter();
 
@@ -72,7 +76,13 @@ public sealed partial class SessionsViewModel(
         SessionCount = list.Count;
         CountLabel = $"{_all.Count} séance{(_all.Count > 1 ? "s" : "")} cette semaine";
         IsEmpty = list.Count == 0;
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
     }
+
+    /// <summary>Shows every status again.</summary>
+    [RelayCommand]
+    private void ClearFilters() => SelectedStatus = StatusFilters[0];
 
     private SessionRow ToRow(Session s)
     {

@@ -44,6 +44,10 @@ public sealed partial class StudentsViewModel(
     [ObservableProperty] private IReadOnlyList<StudentRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private string _monthLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
     partial void OnSelectedLevelChanged(string value) => ApplyFilter();
@@ -80,6 +84,17 @@ public sealed partial class StudentsViewModel(
             .ToList();
         Rows = list.Select(s => new StudentRow(s, new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(s.Id)))).ToList();
         CountLabel = $"{list.Count} élève{(list.Count > 1 ? "s" : "")} affiché{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
+    }
+
+    /// <summary>Clears the search and the level / payment filters.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        SelectedLevel = "Tous";
+        SelectedState = "Tous";
     }
 
     [RelayCommand]

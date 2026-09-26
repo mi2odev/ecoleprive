@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:GroupEditorDialogViewModel}">
     <UserControl.Resources>
@@ -20,11 +21,11 @@
             <StackPanel>
                 <TextBlock Text="Cours *" Style="{StaticResource FieldLabel}" />
                 <ComboBox ItemsSource="{Binding CourseOptions}" SelectedItem="{Binding SelectedCourse}" DisplayMemberPath="Label" MaxDropDownHeight="320"
-                          IsTextSearchEnabled="True" TextSearch.TextPath="Label" />
+                          IsTextSearchEnabled="True" TextSearch.TextPath="Label" ui:FocusOnShow.Enabled="True" />
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="Nom du groupe *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="A" />
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="ex. A" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </Grid>
         <UniformGrid Columns="3" Margin="0,0,-16,0">
@@ -37,14 +38,15 @@
                 <ComboBox ItemsSource="{Binding RoomOptions}" SelectedItem="{Binding SelectedRoom}" DisplayMemberPath="Label" MaxDropDownHeight="320" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
-                <TextBlock Text="Capacité (élèves)" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Capacity, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="Capacité (élèves) *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Capacity, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 20" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 
         <!-- Weekly timetable -->
         <DockPanel Margin="0,4,0,8">
-            <Button DockPanel.Dock="Right" Content="Ajouter un créneau" Command="{Binding AddSlotCommand}" Style="{StaticResource LinkButton}" FontSize="13" />
+            <Button DockPanel.Dock="Right" Content="Ajouter un créneau" Command="{Binding AddSlotCommand}" Style="{StaticResource LinkButton}" FontSize="13"
+                    ToolTip="Ajouter un jour et des horaires de cours (les conflits de salle ou d'enseignant sont signalés)" />
             <TextBlock Text="Emploi du temps hebdomadaire" Style="{StaticResource BodyStrong}" />
         </DockPanel>
         <Border Style="{StaticResource Card}" Margin="0,0,0,12">
@@ -79,8 +81,8 @@
                                         <ColumnDefinition Width="60" />
                                     </Grid.ColumnDefinitions>
                                     <ComboBox ItemsSource="{Binding Days}" SelectedItem="{Binding Day}" DisplayMemberPath="Label" Margin="0,0,8,0" />
-                                    <TextBox Grid.Column="1" Text="{Binding Start, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="09:00" Margin="0,0,8,0" />
-                                    <TextBox Grid.Column="2" Text="{Binding End, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="11:00" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="1" Text="{Binding Start, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 09:00" Margin="0,0,8,0" />
+                                    <TextBox Grid.Column="2" Text="{Binding End, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="ex. 11:00" Margin="0,0,8,0" />
                                     <ComboBox Grid.Column="3" ItemsSource="{Binding Rooms}" SelectedItem="{Binding Room}" DisplayMemberPath="Label" Margin="0,0,8,0" />
                                     <Button Grid.Column="4" Content="Retirer" Command="{Binding RemoveCommand}" Style="{StaticResource LinkButton}" HorizontalAlignment="Right" />
                                 </Grid>
@@ -107,5 +109,6 @@
         </Border>
 
         <CheckBox Content="Groupe actif (planifié et proposé aux inscriptions)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

@@ -15,15 +15,16 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="Nom de la salle *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" />
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Tag="ex. Salle 1" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Grid.Column="2">
-                <TextBlock Text="Capacité (places)" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Capacity, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Text="Capacité (places) *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Capacity, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 25" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </Grid>
         <TextBlock Text="Équipement" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Equipment, UpdateSourceTrigger=PropertyChanged}" Tag="Tableau blanc, vidéoprojecteur…" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Equipment, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Tableau blanc, vidéoprojecteur…" Margin="0,0,0,14" ui:Enter.Command="{Binding ConfirmCommand}" />
         <CheckBox Content="Salle disponible (proposée pour les groupes)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

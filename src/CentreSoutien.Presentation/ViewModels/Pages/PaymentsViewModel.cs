@@ -107,6 +107,13 @@ public sealed partial class PaymentsViewModel(
     [ObservableProperty] private string _dueDateLabel = "";
     /// <summary>"Tout sélectionner" checkbox; null when only some rows are selected.</summary>
     [ObservableProperty] private bool? _allRemindersSelected = true;
+    /// <summary>No student is billed for the selected month ("Mensualités" tab empty state).</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>Students are billed but the search / status filter hides all of them.</summary>
+    [ObservableProperty] private bool _hasNoResults;
+    [ObservableProperty] private bool _hasNoReceipts;
+    [ObservableProperty] private bool _hasNoDiscounts;
+    [ObservableProperty] private bool _hasNoReminders;
 
     public bool IsMonthly => Tab == "monthly";
     public bool IsReceipts => Tab == "receipts";
@@ -181,7 +188,21 @@ public sealed partial class PaymentsViewModel(
             new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(r.StudentId)),
             new AsyncRelayCommand(() => CollectAsync(r.StudentId)))).ToList();
         CountLabel = $"{list.Count} élève{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
     }
+
+    /// <summary>Clears the search and the payment status filter.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        SelectedFilter = "Tous";
+    }
+
+    /// <summary>Empty-state shortcut: the students page (to add or import students).</summary>
+    [RelayCommand]
+    private Task OpenStudents() => nav.NavigateAsync<StudentsViewModel>();
 
     private async Task LoadReceiptsAsync()
     {
@@ -195,6 +216,7 @@ public sealed partial class PaymentsViewModel(
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)),
             new AsyncRelayCommand(() => DeleteReceiptAsync(p)))).ToList();
         ReceiptsTotal = $"{list.Count} reçu{(list.Count > 1 ? "s" : "")} · {Money.Format(list.Sum(p => p.Amount))}";
+        HasNoReceipts = list.Count == 0;
     }
 
     private async Task LoadDiscountsAsync(List<StudentListItem> studentList)
@@ -208,6 +230,7 @@ public sealed partial class PaymentsViewModel(
                 new AsyncRelayCommand(() => EditDiscountAsync(d)),
                 new AsyncRelayCommand(() => DeleteDiscountAsync(d, n)));
         }).ToList();
+        HasNoDiscounts = DiscountLines.Count == 0;
     }
 
     [RelayCommand]
@@ -331,6 +354,7 @@ public sealed partial class PaymentsViewModel(
             return line;
         }).ToList();
         Reminders = lines;
+        HasNoReminders = lines.Count == 0;
         var total = lines.Sum(l => l.Item.Balance);
         RemindersSummary = lines.Count == 0
             ? "Aucun impayé pour ce mois"

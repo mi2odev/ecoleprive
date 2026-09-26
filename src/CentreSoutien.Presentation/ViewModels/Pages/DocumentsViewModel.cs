@@ -32,6 +32,10 @@ public sealed partial class DocumentsViewModel(
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private IReadOnlyList<DocumentLine> _rows = [];
     [ObservableProperty] private string _countLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSelectedFilterChanged(Option<DocumentOwnerType?>? value) => ApplyFilter();
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -82,6 +86,16 @@ public sealed partial class DocumentsViewModel(
                 new AsyncRelayCommand(() => DeleteAsync(d)));
         }).ToList();
         CountLabel = $"{list.Count} document{(list.Count > 1 ? "s" : "")}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
+    }
+
+    /// <summary>Clears the search and the owner filter.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        SelectedFilter = Filters[0];
     }
 
     private Task OpenOwnerAsync(Document d) => (d.OwnerType, d.OwnerId) switch

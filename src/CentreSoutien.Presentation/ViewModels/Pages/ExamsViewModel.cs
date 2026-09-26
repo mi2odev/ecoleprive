@@ -36,6 +36,10 @@ public sealed partial class ExamsViewModel(
     [ObservableProperty] private IReadOnlyList<ExamRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private string _averageHeader = "Moyenne";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSelectedGroupChanged(Option<int?>? value) { if (!_loading) ApplyFilter(); }
     partial void OnSelectedTypeChanged(Option<ExamType?>? value) { if (!_loading) ApplyFilter(); }
@@ -75,6 +79,25 @@ public sealed partial class ExamsViewModel(
             .ToList();
         Rows = list.Select(ToRow).ToList();
         CountLabel = $"{list.Count} évaluation{(list.Count > 1 ? "s" : "")}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
+    }
+
+    /// <summary>Shows every group and every type again.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        _loading = true;
+        try
+        {
+            SelectedGroup = GroupOptions.FirstOrDefault();
+            SelectedType = TypeFilters[0];
+        }
+        finally
+        {
+            _loading = false;
+        }
+        ApplyFilter();
     }
 
     private ExamRow ToRow(Exam e)

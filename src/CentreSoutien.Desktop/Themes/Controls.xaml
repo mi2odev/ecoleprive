@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:core="clr-namespace:CentreSoutien.Presentation.Core;assembly=CentreSoutien.Presentation"
                     xmlns:conv="clr-namespace:CentreSoutien.Desktop.Converters"
+                    xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
     <sys:Boolean x:Key="True">True</sys:Boolean>
@@ -9,6 +10,8 @@
     <!-- ===== Typography (direction B · Marine: Public Sans + Newsreader) ===== -->
     <FontFamily x:Key="SansFont">pack://application:,,,/Assets/Fonts/#Public Sans</FontFamily>
     <FontFamily x:Key="SerifFont">pack://application:,,,/Assets/Fonts/#Newsreader Display</FontFamily>
+    <!-- Icon glyphs: Segoe Fluent Icons (Windows 11), falling back to Segoe MDL2 Assets (Windows 10). -->
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <CornerRadius x:Key="Radius">6</CornerRadius>
     <CornerRadius x:Key="RadiusSmall">4</CornerRadius>
 
@@ -757,6 +760,213 @@
                 </Setter>
             </Trigger>
         </Style.Triggers>
+    </Style>
+
+    <!-- ===== Menus ("Plus…" button, context menus) ===== -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource PanelBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="4" />
+        <Setter Property="FontFamily" Value="{StaticResource SansFont}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{StaticResource RadiusSmall}" Padding="{TemplateBinding Padding}">
+                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- Menu entry: optional glyph (Icon = a Segoe icon character), header, shortcut text. Hover = sunk background. -->
+    <Style TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="MinWidth" Value="210" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="500" />
+        <Setter Property="ToolTipService.Placement" Value="Right" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="{StaticResource RadiusSmall}" Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="MenuIcon" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter x:Name="IconHost" ContentSource="Icon" Width="16" Margin="0,0,10,0" VerticalAlignment="Center"
+                                              TextElement.FontFamily="{StaticResource IconFont}" TextElement.FontSize="14"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                            <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Margin="18,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MutedBrush}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="IconHost" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="DangerMenuItem" TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+        <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
+    </Style>
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Margin="6,4" Background="{DynamicResource LineBrush}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- "Plus ▾" button: a normal click opens its ContextMenu underneath (ui:DropDown). -->
+    <Style x:Key="MoreButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Content" Value="Plus" />
+        <Setter Property="ToolTip" Value="Autres actions" />
+        <Setter Property="ui:DropDown.OpenOnClick" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusSmall}"
+                            Padding="{TemplateBinding Padding}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ContentPresenter VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" RecognizesAccessKey="True" />
+                            <Path Data="M 0 0 L 4 4 L 8 0" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" Margin="8,1,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- Square glyph-only button (Content = a Segoe icon character). Always give it a ToolTip. -->
+    <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="ToolTipService.InitialShowDelay" Value="300" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusSmall}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.75" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Empty states ===== -->
+    <!-- Glyph, title, explanation, then the call-to-action buttons given as content. -->
+    <Style TargetType="ui:EmptyState">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Padding" Value="24,34" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ui:EmptyState">
+                    <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}">
+                        <StackPanel HorizontalAlignment="Center" MaxWidth="480">
+                            <Border Width="48" Height="48" CornerRadius="24" Background="{DynamicResource SunkBrush}" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                <TextBlock Text="{TemplateBinding Glyph}" FontFamily="{StaticResource IconFont}" FontSize="20" Foreground="{DynamicResource MutedBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="{TemplateBinding Title}" FontFamily="{StaticResource SerifFont}" FontSize="19" Foreground="{DynamicResource InkBrush}"
+                                       TextAlignment="Center" TextWrapping="Wrap" />
+                            <TextBlock x:Name="Msg" Text="{TemplateBinding Message}" FontSize="13" Foreground="{DynamicResource MutedBrush}"
+                                       TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,0" />
+                            <ContentPresenter x:Name="Actions" HorizontalAlignment="Center" Margin="0,18,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="Actions" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Message" Value="{x:Null}">
+                            <Setter TargetName="Msg" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- Row of call-to-action buttons inside an empty state. -->
+    <Style x:Key="EmptyActions" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ===== Forms ===== -->
+    <!-- Legend under a form whose labels mark required fields with " *". -->
+    <Style x:Key="RequiredLegend" TargetType="TextBlock">
+        <Setter Property="Text" Value="* champ obligatoire" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="Margin" Value="0,10,0,0" />
+    </Style>
+    <!-- Keyboard shortcut hint ("Raccourcis : P présent · A absent…"). -->
+    <Style x:Key="ShortcutLegend" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style TargetType="ToolTip">

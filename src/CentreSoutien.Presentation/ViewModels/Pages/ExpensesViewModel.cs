@@ -31,6 +31,10 @@ public sealed partial class ExpensesViewModel(
     [ObservableProperty] private string _selectedCategory = AllCategories;
     [ObservableProperty] private IReadOnlyList<ExpenseLine> _rows = [];
     [ObservableProperty] private string _totalLabel = "";
+    /// <summary>No expense recorded for the selected month.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>The month has expenses but the category filter hides all of them.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     private DateTime Month => SelectedMonth?.Value ?? Period.Of(clock.GetLocalNow().DateTime);
 
@@ -81,7 +85,13 @@ public sealed partial class ExpensesViewModel(
             new AsyncRelayCommand(() => EditAsync(e)),
             new AsyncRelayCommand(() => DeleteAsync(e)))).ToList();
         TotalLabel = $"{list.Count} dépense{(list.Count > 1 ? "s" : "")} · {Money.Format(list.Sum(e => e.Amount))}";
+        HasNoData = _month.Count == 0;
+        HasNoResults = _month.Count > 0 && list.Count == 0;
     }
+
+    /// <summary>Shows every category again.</summary>
+    [RelayCommand]
+    private void ClearFilters() => SelectedCategory = AllCategories;
 
     [RelayCommand]
     private Task Add() => EditAsync(null);

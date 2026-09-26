@@ -57,6 +57,12 @@ public sealed partial class GradesViewModel(
     [ObservableProperty] private string _scaleLabel = "";
     [ObservableProperty] private IReadOnlyList<StudentAverageRow> _groupAverages = [];
     [ObservableProperty] private bool _hasNoAverage;
+    /// <summary>No active group yet: grades cannot be entered before groups exist.</summary>
+    [ObservableProperty] private bool _hasNoGroup;
+
+    /// <summary>Empty-state shortcut: the groups page (to create a group).</summary>
+    [RelayCommand]
+    private Task OpenGroups() => services.GetRequiredService<INavigator>().NavigateAsync<GroupsViewModel>();
 
     async partial void OnSelectedGroupChanged(Option<int>? value)
     {
@@ -89,6 +95,7 @@ public sealed partial class GradesViewModel(
                 GroupOptions = list.Where(g => g.IsActive || g.Id == groupId).Select(g => new Option<int>(g.Id, g.FullName)).ToList();
                 var keep = groupId ?? SelectedGroup?.Value;
                 SelectedGroup = GroupOptions.FirstOrDefault(g => g.Value == keep) ?? GroupOptions.FirstOrDefault();
+                HasNoGroup = GroupOptions.Count == 0;
             }
             finally
             {

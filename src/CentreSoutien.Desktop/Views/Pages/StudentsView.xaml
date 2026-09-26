@@ -11,7 +11,8 @@
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
                 <Button Content="Importer" Command="{Binding ImportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
                         ToolTip="Importer une liste d'élèves depuis Excel" />
-                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Enregistrer la liste affichée dans un fichier Excel" />
                 <Button Content="Ajouter un élève" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <StackPanel>
@@ -49,8 +50,20 @@
                         <TextBlock Grid.Column="5" Text="{Binding MonthLabel}" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun élève ne correspond à la recherche." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun élève pour l'instant" Glyph="&#xE716;"
+                               Message="Ici vous retrouvez tous les élèves du centre : niveau, cours suivis, parent et état des paiements du mois. Ajoutez vos élèves un par un ou importez toute une liste depuis Excel."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <StackPanel Style="{StaticResource EmptyActions}">
+                        <Button Content="Ajouter un élève" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" />
+                        <Button Content="Importer depuis Excel" Command="{Binding ImportCommand}" Style="{StaticResource SecondaryButton}"
+                                ToolTip="Importer une liste d'élèves (avec parents et groupes) depuis un fichier Excel" />
+                    </StackPanel>
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucun élève ne correspond à la recherche ou aux filtres choisis."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}" VirtualizingPanel.IsVirtualizing="True">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:StudentRow}">
@@ -67,13 +80,13 @@
                                     <StackPanel Orientation="Horizontal">
                                         <ui:Avatar Size="30" Initials="{Binding Initials}" />
                                         <StackPanel Margin="10,0,12,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" ToolTip="{Binding Name}" />
                                             <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <TextBlock Grid.Column="1" Text="{Binding Level}" Style="{StaticResource Body}" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Courses}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Parent}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Courses}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Courses}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Parent}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Item.ParentName}" />
                                     <TextBlock Grid.Column="4" Text="{Binding Balance}" Style="{StaticResource Body}" />
                                     <ContentControl Grid.Column="5" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
                                 </Grid>

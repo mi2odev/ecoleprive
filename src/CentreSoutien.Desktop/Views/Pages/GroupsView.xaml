@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:GroupsViewModel}">
     <StackPanel>
@@ -46,8 +47,16 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun groupe ne correspond à la recherche." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun groupe pour l'instant" Glyph="&#xE902;"
+                               Message="Un groupe réunit les élèves d'un cours avec un enseignant, une salle et des horaires. Créez vos groupes pour pouvoir inscrire les élèves, générer les séances et faire l'appel."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Créer un groupe" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucun groupe ne correspond à la recherche ou au niveau choisi."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:GroupRow}">
@@ -62,18 +71,20 @@
                                         <ColumnDefinition Width="80" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Teacher}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Room}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
-                                    <TextBlock Grid.Column="3" Text="{Binding Schedule}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" ToolTip="{Binding Name}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Teacher}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Teacher}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Room}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Room}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Schedule}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Schedule}" />
                                     <TextBlock Grid.Column="4" Text="{Binding Fill}" Style="{StaticResource Body}"
                                                Visibility="{Binding IsFull, Converter={StaticResource BoolToCollapsed}}" />
                                     <ContentControl Grid.Column="4" Content="{Binding FullBadge}" Focusable="False" VerticalAlignment="Center"
                                                     Visibility="{Binding IsFull, Converter={StaticResource BoolToVisible}}" ToolTip="Groupe complet" />
                                     <ContentControl Grid.Column="5" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="6" Orientation="Horizontal">
-                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="12,0" />
-                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}" />
+                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="12,0"
+                                                ToolTip="Modifier l'enseignant, la salle, la capacité et les horaires" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}"
+                                                ToolTip="Supprimer le groupe et son emploi du temps" />
                                     </StackPanel>
                                 </Grid>
                             </Button>

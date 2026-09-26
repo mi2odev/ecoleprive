@@ -22,24 +22,40 @@
         </DockPanel>
 
         <!-- Direct actions -->
+        <!-- Most used actions stay visible; the others are grouped in "Plus". -->
         <WrapPanel Margin="0,0,0,22">
-            <Button Content="Enregistrer un paiement" Command="{Binding RecordPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button Content="Modifier" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Emploi du temps" Command="{Binding OpenScheduleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Ajouter un document" Command="{Binding AddDocumentCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Command="{Binding ToggleActiveCommand}" Margin="0,0,8,8">
-                <Button.Style>
-                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                        <Setter Property="Content" Value="Rendre inactif" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                <Setter Property="Content" Value="Réactiver" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
+            <Button Content="Enregistrer un paiement" Command="{Binding RecordPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                    ToolTip="Enregistrer un versement à l'enseignant pour le mois" />
+            <Button Content="Modifier" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                    ToolTip="Modifier la fiche : coordonnées, matière, rémunération, photo" />
+            <Button Content="Emploi du temps" Command="{Binding OpenScheduleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                    ToolTip="Voir la semaine de cours de l'enseignant" />
+            <Button Style="{StaticResource MoreButton}" Content="Plus" Margin="0,0,8,8"
+                    ToolTip="Autres actions : document, statut, suppression">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Ajouter un document" Command="{Binding AddDocumentCommand}" Icon="&#xE8A5;"
+                                  ToolTip="Joindre un fichier à la fiche (contrat, diplôme, pièce d'identité…)" />
+                        <Separator />
+                        <MenuItem Command="{Binding ToggleActiveCommand}" Icon="&#xE7E8;">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                    <Setter Property="Header" Value="Rendre inactif" />
+                                    <Setter Property="ToolTip" Value="L'enseignant n'est plus compté dans les paiements du mois" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                            <Setter Property="Header" Value="Réactiver" />
+                                            <Setter Property="ToolTip" Value="L'enseignant est de nouveau compté dans les paiements du mois" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+                        <MenuItem Header="Supprimer l'enseignant" Command="{Binding DeleteCommand}" Style="{StaticResource DangerMenuItem}" Icon="&#xE74D;"
+                                  ToolTip="Supprimer définitivement la fiche de l'enseignant" />
+                    </ContextMenu>
+                </Button.ContextMenu>
             </Button>
-            <Button Content="Supprimer" Command="{Binding DeleteCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
 
         <Grid>

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:SessionEditorDialogViewModel}">
     <UserControl.Resources>
@@ -13,7 +14,7 @@
     <StackPanel>
         <TextBlock Text="Groupe *" Style="{StaticResource FieldLabel}" />
         <ComboBox ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label"
-                  IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" Margin="0,0,0,14" />
+                  IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" Margin="0,0,0,14" ui:FocusOnShow.Enabled="True" />
 
         <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
@@ -22,11 +23,11 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Début *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Tag="09:00" />
+                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 09:00" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Fin *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding End, UpdateSourceTrigger=PropertyChanged}" Tag="11:00" />
+                <TextBox Text="{Binding End, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 11:00" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 
@@ -45,6 +46,7 @@
         <ListBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,10" />
 
         <TextBlock Text="Sujet de la séance (facultatif)" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Topic, UpdateSourceTrigger=PropertyChanged}" Tag="Ex. Suites numériques, révision du chapitre 3" />
+        <TextBox Text="{Binding Topic, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Suites numériques, révision du chapitre 3" ui:Enter.Command="{Binding ConfirmCommand}" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>
