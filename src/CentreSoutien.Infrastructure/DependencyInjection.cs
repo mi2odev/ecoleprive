@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddSingleton<IReportService, ReportService>();
         services.AddSingleton<IExportService, ExportService>();
         services.AddSingleton<IDocumentService, DocumentService>();
+        services.AddSingleton<IAcademicDocumentsService, AcademicDocumentsService>();
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<IDemoDataService, DemoDataService>();
         services.AddSingleton<ICrudService<Subject>, SubjectService>();

@@ -245,6 +245,14 @@ public sealed partial class StudentDetailViewModel(
     }
 
     [RelayCommand]
+    private async Task PrintDocuments()
+    {
+        var dialog = services.GetRequiredService<PrintDocumentsDialogViewModel>();
+        if (!await RunAsync(() => dialog.InitializeForStudentAsync(Id), notifier)) return;
+        if (await dialogs.ShowAsync(dialog)) notifier.Info("Document envoyé à l'impression");
+    }
+
+    [RelayCommand]
     private async Task ToggleActive()
     {
         if (_student is null) return;

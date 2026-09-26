@@ -212,6 +212,15 @@ public sealed partial class GradesViewModel(
     }
 
     [RelayCommand]
+    private async Task PrintReportCards()
+    {
+        if (SelectedGroup is not { } group) return;
+        var dialog = services.GetRequiredService<PrintDocumentsDialogViewModel>();
+        if (!await RunAsync(() => dialog.InitializeForGroupAsync(group.Value), notifier)) return;
+        if (await dialogs.ShowAsync(dialog)) notifier.Info($"{dialog.PrintedPageCount} bulletin(s) envoyé(s) à l'impression");
+    }
+
+    [RelayCommand]
     private async Task NewExam()
     {
         var dialog = services.GetRequiredService<ExamEditorDialogViewModel>();

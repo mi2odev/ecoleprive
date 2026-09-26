@@ -1,0 +1,33 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.PrintDocumentsDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:PrintDocumentsDialogViewModel}">
+    <StackPanel>
+        <TextBlock Text="{Binding SubjectLabel}" Style="{StaticResource FieldLabel}" />
+        <TextBlock Text="{Binding SubjectName}" Style="{StaticResource BodyStrong}" Margin="0,0,0,16" />
+
+        <StackPanel Visibility="{Binding ShowTypes, Converter={StaticResource BoolToVisible}}">
+            <TextBlock Text="Document" Style="{StaticResource FieldLabel}" />
+            <ListBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,6" />
+        </StackPanel>
+        <TextBlock Text="{Binding Hint}" Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+        <StackPanel Visibility="{Binding ShowPeriod, Converter={StaticResource BoolToVisible}}">
+            <TextBlock Text="Période" Style="{StaticResource FieldLabel}" />
+            <ComboBox ItemsSource="{Binding Periods}" SelectedItem="{Binding SelectedPeriod}" DisplayMemberPath="Label"
+                      MaxDropDownHeight="320" Margin="0,0,0,14" />
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding ShowAppreciation, Converter={StaticResource BoolToVisible}}">
+            <TextBlock Text="{Binding AppreciationLabel}" Style="{StaticResource FieldLabel}" />
+            <TextBox Text="{Binding Appreciation, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}"
+                     Tag="Ex. Élève sérieux et appliqué, bons progrès ce mois-ci." />
+        </StackPanel>
+
+        <TextBlock Text="Choisissez « Microsoft Print to PDF » dans la fenêtre d'impression pour obtenir un fichier PDF."
+                   Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,14,0,0" />
+    </StackPanel>
+</UserControl>
