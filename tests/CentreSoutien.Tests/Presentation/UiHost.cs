@@ -59,12 +59,19 @@ public sealed class FakePlatform : IFilePicker, IShell, IPrintService, IThemeSer
     public string? NextFolder { get; set; }
     public List<string> Opened { get; } = [];
     public List<string> Printed { get; } = [];
+    /// <summary>Pages of every <see cref="PrintPages"/> job, in order.</summary>
+    public List<(string Job, IReadOnlyList<PrintPage> Pages)> PrintedPages { get; } = [];
 
     public string? OpenFile(string title, string filter) => NextOpenFile;
     public string? SaveFile(string title, string defaultName, string filter) => NextSaveFile;
     public string? PickFolder(string title) => NextFolder;
     public void Open(string path) => Opened.Add(path);
     public void Reveal(string path) => Opened.Add(path);
+    public void PrintPages(string jobName, CenterSettings settings, string? logoPath, IReadOnlyList<PrintPage> pages)
+    {
+        Printed.Add(jobName);
+        PrintedPages.Add((jobName, pages));
+    }
     public void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath) => Printed.Add(payment.ReceiptNumber);
     public void PrintReport(string title, string subtitle, CenterSettings settings, IReadOnlyList<(string Label, string Value)> summary, IReadOnlyList<PrintTable> tables) => Printed.Add(title);
     public AppTheme Current { get; private set; }

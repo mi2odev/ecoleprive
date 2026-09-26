@@ -82,6 +82,60 @@ public sealed class PrintService : IPrintService
         Print(doc, title);
     }
 
+    public void PrintPages(string jobName, CenterSettings settings, string? logoPath, IReadOnlyList<PrintPage> pages)
+    {
+        if (pages.Count == 0) return;
+        var doc = NewDocument();
+        var first = true;
+        foreach (var page in pages)
+        {
+            var blocks = new List<Block>();
+            if (page.ShowHeader) blocks.Add(Header(settings, logoPath));
+            var title = new Paragraph { Margin = new Thickness(0, 18, 0, 2) };
+            title.Inlines.Add(new Run(page.Title) { FontFamily = Serif, FontSize = 24 });
+            blocks.Add(title);
+            if (!string.IsNullOrWhiteSpace(page.Subtitle))
+                blocks.Add(new Paragraph(new Run(page.Subtitle)) { Foreground = Muted, Margin = new Thickness(0, 0, 0, 12) });
+            foreach (var b in page.Blocks) blocks.Add(Render(b));
+
+            // Each page starts on a new sheet.
+            if (!first) blocks[0].BreakPageBefore = true;
+            first = false;
+            foreach (var b in blocks) doc.Blocks.Add(b);
+        }
+        Print(doc, jobName);
+    }
+
+    private static Block Render(PrintBlock block) => block switch
+    {
+        PrintHeading h => new Paragraph(new Run(h.Text) { FontFamily = Serif, FontSize = 16 }) { Margin = new Thickness(0, 16, 0, 6) },
+        PrintParagraph p => new Paragraph(new Run(p.Text))
+        {
+            Foreground = p.Muted ? Muted : Ink,
+            FontWeight = p.Bold ? FontWeights.SemiBold : FontWeights.Normal,
+            FontSize = p.Size,
+            TextAlignment = p.Center ? TextAlignment.Center : p.AlignRight ? TextAlignment.Right : TextAlignment.Left,
+            Margin = new Thickness(0, 0, 0, 8),
+            LineHeight = p.Size * 1.5,
+        },
+        PrintFields f => KeyValueTable(f.Rows),
+        PrintTableBlock t => DataTable(t.Table),
+        PrintSpacer s => new Paragraph { Margin = new Thickness(0, s.Height, 0, 0), FontSize = 1 },
+        PrintSignature sig => new Paragraph(new Run(sig.Label)) { Margin = new Thickness(0, 32, 0, 40), TextAlignment = TextAlignment.Right, Foreground = Muted },
+        _ => new Paragraph(),
+    };
+
+    private static Table DataTable(PrintTable pt)
+    {
+        var table = new Table { CellSpacing = 0, BorderBrush = Line, BorderThickness = new Thickness(0, 1, 0, 0) };
+        foreach (var _ in pt.Headers) table.Columns.Add(new TableColumn());
+        var group = new TableRowGroup();
+        group.Rows.Add(Row(pt.Headers, pt.RightAligned, header: true));
+        foreach (var r in pt.Rows) group.Rows.Add(Row(r, pt.RightAligned, header: false));
+        table.RowGroups.Add(group);
+        return table;
+    }
+
     private static FlowDocument NewDocument() => new()
     {
         FontFamily = Sans,
