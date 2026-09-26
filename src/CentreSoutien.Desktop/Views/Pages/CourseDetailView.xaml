@@ -1,0 +1,182 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.CourseDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:CourseDetailViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="Cell" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,20,16" />
+        </Style>
+        <Style x:Key="StatCard" TargetType="Border" BasedOn="{StaticResource PaddedCard}">
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+    </UserControl.Resources>
+    <StackPanel>
+        <Button Content="← Cours" Command="{Binding BackCommand}" Style="{StaticResource BackButton}" Margin="0,0,0,22" />
+
+        <!-- Header -->
+        <StackPanel Margin="0,0,0,18">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Name}" Style="{StaticResource H1}" />
+                <Border Height="22" Padding="8,0" CornerRadius="11" Background="{DynamicResource SunkBrush}" VerticalAlignment="Center" Margin="12,6,0,0"
+                        Visibility="{Binding IsInactive, Converter={StaticResource BoolToVisible}}">
+                    <TextBlock Text="Inactif" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" />
+                </Border>
+            </StackPanel>
+            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <!-- Group selector -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <TextBlock Text="Groupe" Style="{StaticResource Muted}" Margin="0,0,10,4" VerticalAlignment="Center"
+                       Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
+            <ListBox ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" VerticalAlignment="Center" />
+            <Button Content="Nouveau groupe" Command="{Binding NewGroupCommand}" Style="{StaticResource LinkButton}" FontSize="13" Margin="8,0,0,4" />
+        </StackPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.5*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Left column ===== -->
+            <StackPanel>
+                <!-- Settings (2 x 2) -->
+                <Border Style="{StaticResource PaddedCard}" Padding="20,18,0,2" Margin="0,0,0,16">
+                    <UniformGrid Columns="2">
+                        <StackPanel Style="{StaticResource Cell}">
+                            <TextBlock Text="{Binding PriceLabel}" Style="{StaticResource FieldLabel}" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Enregistrer" Command="{Binding SavePriceCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="6,0,0,0" />
+                                <TextBox Text="{Binding Price}" ui:Enter.Command="{Binding SavePriceCommand}" />
+                            </DockPanel>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Cell}">
+                            <TextBlock Text="Enseignant" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding TeacherOptions}" SelectedItem="{Binding SelectedTeacher}" DisplayMemberPath="Label"
+                                      IsEnabled="{Binding HasGroup}" MaxDropDownHeight="320" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Cell}">
+                            <TextBlock Text="Salle" Style="{StaticResource FieldLabel}" />
+                            <ComboBox ItemsSource="{Binding RoomOptions}" SelectedItem="{Binding SelectedRoom}" DisplayMemberPath="Label"
+                                      IsEnabled="{Binding HasGroup}" MaxDropDownHeight="320" />
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Cell}">
+                            <TextBlock Text="Horaire" Style="{StaticResource FieldLabel}" />
+                            <Border MinHeight="36" Padding="10,0,12,0" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}">
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="Modifier" Command="{Binding EditGroupCommand}" Style="{StaticResource LinkButton}" Margin="8,0,0,0" />
+                                    <TextBlock Text="{Binding Schedule}" Style="{StaticResource Body}" ToolTip="{Binding Schedule}" />
+                                </DockPanel>
+                            </Border>
+                        </StackPanel>
+                    </UniformGrid>
+                </Border>
+
+                <!-- Enrolled students -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}" Padding="20,12">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" IsEnabled="{Binding HasGroup}">
+                                    <ComboBox ItemsSource="{Binding Eligible}" SelectedItem="{Binding SelectedEligible}" DisplayMemberPath="Label" Width="220" MinHeight="32"
+                                              IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" ToolTip="Élèves du même niveau non inscrits à ce cours" />
+                                    <Button Content="Ajouter" Command="{Binding AddStudentCommand}" Style="{StaticResource SmallPrimaryButton}" Margin="6,0,0,0" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource H2}" VerticalAlignment="Center">
+                                    <Run Text="Élèves inscrits · " /><Run Text="{Binding Fill, Mode=OneWay}" />
+                                </TextBlock>
+                            </DockPanel>
+                        </Border>
+                        <TextBlock Text="Aucun élève inscrit dans ce groupe." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding Enrolled, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Enrolled}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:CourseStudentRow}">
+                                    <Border Style="{StaticResource TableRow}" Padding="20,9" MinHeight="40">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Content="{Binding Name}" Command="{Binding Open}" Style="{StaticResource InkLinkButton}" FontWeight="Medium"
+                                                    HorizontalAlignment="Left" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Matricule}" Style="{StaticResource Muted}" />
+                                            <ContentControl Grid.Column="2" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
+                                            <Button Grid.Column="3" Content="Retirer" Command="{Binding Remove}" Style="{StaticResource LinkButton}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== Right column ===== -->
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding RevenueTitle}" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Collected}" Style="{StaticResource Kpi}" Margin="0,10,0,10" />
+                        <TextBlock Text="{Binding Expected}" Style="{StaticResource Muted}" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="Taux de présence" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding AttendanceRate}" Style="{StaticResource Kpi}" Margin="0,10,0,10" />
+                        <Button Content="Voir les présences" Command="{Binding OpenAttendanceCommand}" Style="{StaticResource LinkButton}" FontSize="13" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Fill}" Style="{StaticResource Small}" />
+                            <TextBlock Text="Capacité" Style="{StaticResource Small}" />
+                        </DockPanel>
+                        <Border Height="6" CornerRadius="3" Background="{DynamicResource SunkBrush}" ClipToBounds="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding CapacityShare, Converter={StaticResource ShareToStar}}" />
+                                    <ColumnDefinition Width="{Binding CapacityRest, Converter={StaticResource ShareToStar}}" />
+                                </Grid.ColumnDefinitions>
+                                <Rectangle>
+                                    <Rectangle.Style>
+                                        <Style TargetType="Rectangle">
+                                            <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFull}" Value="True">
+                                                    <Setter Property="Fill" Value="{DynamicResource WarnBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Rectangle.Style>
+                                </Rectangle>
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="Groupe complet" Style="{StaticResource Small}" Foreground="{DynamicResource WarnBrush}" Margin="0,8,0,0"
+                                   Visibility="{Binding IsFull, Converter={StaticResource BoolToVisible}}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- Actions -->
+        <WrapPanel Margin="0,6,0,0">
+            <Button Content="Modifier le cours" Command="{Binding EditCourseCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+            <Button Content="Modifier le groupe" Command="{Binding EditGroupCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                    Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
+            <Button Content="Supprimer le groupe" Command="{Binding DeleteGroupCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,8"
+                    Visibility="{Binding HasGroup, Converter={StaticResource BoolToVisible}}" />
+            <Button Content="Supprimer le cours" Command="{Binding DeleteCourseCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,8" />
+        </WrapPanel>
+    </StackPanel>
+</UserControl>

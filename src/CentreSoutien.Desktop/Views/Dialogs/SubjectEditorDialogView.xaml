@@ -1,0 +1,17 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.SubjectEditorDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:SubjectEditorDialogViewModel}">
+    <StackPanel>
+        <TextBlock Text="Nom de la matière *" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Margin="0,0,0,14" />
+        <TextBlock Text="Abréviation (emploi du temps, listes)" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding ShortName, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Maths" Margin="0,0,0,14" />
+        <TextBlock Text="Description" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" />
+    </StackPanel>
+</UserControl>
