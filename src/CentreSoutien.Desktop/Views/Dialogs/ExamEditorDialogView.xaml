@@ -17,7 +17,7 @@
                   IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" Margin="0,0,0,14" />
 
         <TextBlock Text="Intitulé *" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding ExamTitle, UpdateSourceTrigger=PropertyChanged}" Tag="Ex. Test 2, Devoir de synthèse" ui:FocusOnShow.Enabled="True" Margin="0,0,0,14" />
+        <TextBox Text="{Binding ExamTitle, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Test 2, Devoir de synthèse" ui:FocusOnShow.Enabled="True" Margin="0,0,0,14" ui:Enter.Command="{Binding ConfirmCommand}" />
 
         <TextBlock Text="Type" Style="{StaticResource FieldLabel}" />
         <ListBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,10" />
@@ -29,15 +29,16 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Noté sur *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding MaxScore, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding MaxScore, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 20" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Coefficient *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Coefficient, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Coefficient, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 1" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 
         <TextBlock Text="Remarques (facultatif)" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" />
+        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Tag="Chapitres concernés, consignes…" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

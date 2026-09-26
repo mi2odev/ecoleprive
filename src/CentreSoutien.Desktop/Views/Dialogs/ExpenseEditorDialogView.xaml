@@ -9,21 +9,23 @@
     <StackPanel>
         <UniformGrid Columns="2" Margin="0,0,0,14">
             <StackPanel Margin="0,0,8,0">
-                <TextBlock Text="Date" Style="{StaticResource FieldLabel}" />
+                <TextBlock Text="Date *" Style="{StaticResource FieldLabel}" />
                 <DatePicker SelectedDate="{Binding Date}" />
             </StackPanel>
             <StackPanel Margin="8,0,0,0">
-                <TextBlock Text="Catégorie" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" />
+                <TextBlock Text="Catégorie *" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"
+                          ToolTip="Choisissez une catégorie ou tapez-en une nouvelle" />
             </StackPanel>
         </UniformGrid>
         <TextBlock Text="Description" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="Ex. Loyer d'octobre, ramettes de papier…" ui:FocusOnShow.Enabled="True" />
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Loyer d'octobre, ramettes de papier…" ui:FocusOnShow.Enabled="True" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="Fournisseur (facultatif)" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
-        <TextBox Text="{Binding Supplier, UpdateSourceTrigger=PropertyChanged}" />
-        <TextBlock Text="Montant (DZD)" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
-        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" />
+        <TextBox Text="{Binding Supplier, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Librairie El Nour" ui:Enter.Command="{Binding ConfirmCommand}" />
+        <TextBlock Text="Montant (DZD) *" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
+        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" Tag="ex. 12 000" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="Mode de paiement" Style="{StaticResource FieldLabel}" Margin="0,16,0,6" />
         <ListBox ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

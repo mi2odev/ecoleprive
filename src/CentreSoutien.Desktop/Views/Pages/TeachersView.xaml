@@ -9,7 +9,8 @@
     <StackPanel>
         <DockPanel Margin="0,0,0,22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Enregistrer la liste affichée dans un fichier Excel" />
                 <Button Content="Ajouter un enseignant" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <StackPanel>
@@ -46,8 +47,16 @@
                         <TextBlock Grid.Column="6" Text="Statut" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun enseignant ne correspond à la recherche." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun enseignant pour l'instant" Glyph="&#xE77B;"
+                               Message="Enregistrez vos enseignants avec leur matière et leur mode de rémunération (pourcentage, par séance ou fixe) : leurs gains du mois sont ensuite calculés automatiquement."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Ajouter un enseignant" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucun enseignant ne correspond à la recherche ou au filtre choisi."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:TeacherListRow}">
@@ -65,14 +74,14 @@
                                     <StackPanel Orientation="Horizontal">
                                         <ui:Avatar Size="30" Initials="{Binding Initials}" />
                                         <StackPanel Margin="10,0,12,0" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" ToolTip="{Binding Name}" />
                                             <TextBlock Text="{Binding Phone}" Style="{StaticResource Small}" />
                                         </StackPanel>
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding Subject}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Subject}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Subject}" />
                                     <TextBlock Grid.Column="2" Text="{Binding Groups}" Style="{StaticResource Body}" />
                                     <TextBlock Grid.Column="3" Text="{Binding Students}" Style="{StaticResource Body}" />
-                                    <TextBlock Grid.Column="4" Text="{Binding Rule}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Rule}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Rule}" />
                                     <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Earnings}" Style="{StaticResource Body}" Margin="0,0,8,0" />
                                         <ContentControl Content="{Binding PayState}" Focusable="False" VerticalAlignment="Center" />

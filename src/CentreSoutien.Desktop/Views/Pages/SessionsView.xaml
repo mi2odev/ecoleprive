@@ -3,12 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:SessionsViewModel}">
     <StackPanel>
         <DockPanel Margin="0,0,0,22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Button Content="Générer depuis l'emploi du temps" Command="{Binding GenerateCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Générer depuis l'emploi du temps" Command="{Binding GenerateCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Crée les séances de la semaine d'après les horaires des groupes (les séances existantes sont conservées)" />
                 <Button Content="Nouvelle séance" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <StackPanel>
@@ -28,8 +30,23 @@
         </DockPanel>
 
         <Border Style="{StaticResource Card}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisible}}">
-            <TextBlock Text="Aucune séance pour cette semaine. Utilisez « Générer depuis l'emploi du temps » pour créer les séances prévues."
-                       Style="{StaticResource EmptyText}" />
+            <Grid>
+                <ui:EmptyState Title="Aucune séance cette semaine" Glyph="&#xE787;"
+                               Message="Les séances sont les cours réellement donnés, jour par jour : c'est sur elles que l'on fait l'appel. Créez celles de la semaine à partir de l'emploi du temps, ou ajoutez une séance exceptionnelle."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <StackPanel Style="{StaticResource EmptyActions}">
+                        <Button Content="Générer depuis l'emploi du temps" Command="{Binding GenerateCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                ToolTip="Crée les séances de la semaine d'après les horaires des groupes" />
+                        <Button Content="Nouvelle séance" Command="{Binding AddCommand}" Style="{StaticResource SecondaryButton}"
+                                ToolTip="Séance exceptionnelle (rattrapage, cours supplémentaire…)" />
+                    </StackPanel>
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucune séance de la semaine n'a ce statut."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Afficher toutes les séances" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
+            </Grid>
         </Border>
 
         <ItemsControl ItemsSource="{Binding Days}" Focusable="False">

@@ -58,6 +58,25 @@ public sealed partial class AttendanceStudentRow : ObservableObject
 
     [ObservableProperty] private AttendanceStatus? _status;
 
+    /// <summary>Keyboard shortcut of the attendance sheet: P présent, A absent, R retard, E excusé (case-insensitive).</summary>
+    public static AttendanceStatus? StatusForKey(string? key) => key?.Trim().ToUpperInvariant() switch
+    {
+        "P" => AttendanceStatus.Present,
+        "A" => AttendanceStatus.Absent,
+        "R" => AttendanceStatus.Late,
+        "E" => AttendanceStatus.Excused,
+        _ => null,
+    };
+
+    /// <summary>Sets the status from a shortcut letter (see <see cref="StatusForKey"/>); other letters are refused.</summary>
+    [RelayCommand(CanExecute = nameof(CanMarkKey))]
+    private void MarkKey(string? key)
+    {
+        if (StatusForKey(key) is { } s) Status = s;
+    }
+
+    private bool CanMarkKey(string? key) => StatusForKey(key) is not null;
+
     partial void OnStatusChanged(AttendanceStatus? value)
     {
         Sync();
@@ -210,6 +229,25 @@ public sealed partial class AttendanceViewModel(
         counts.Add(new("Non saisis", Rows.Count(r => r.Status is null)));
         Counts = counts;
     }
+
+    /// <summary>Empty-state action: creates the day's sessions from the timetable (useful after the timetable was changed).</summary>
+    [RelayCommand]
+    private async Task GenerateDay()
+    {
+        var day = (Day ?? clock.GetLocalNow().DateTime).Date;
+        var created = 0;
+        if (!await RunAsync(async () => created = await sessions.GenerateAsync(day, day), notifier)) return;
+        notifier.Info(created == 0 ? "Aucun cours prévu à l'emploi du temps ce jour-là" : $"{created} séance{(created > 1 ? "s" : "")} créée{(created > 1 ? "s" : "")}");
+        await LoadDayAsync(null, null);
+    }
+
+    /// <summary>Empty-state shortcut: the weekly timetable.</summary>
+    [RelayCommand]
+    private Task OpenSchedule() => services.GetRequiredService<INavigator>().NavigateAsync<ScheduleViewModel>();
+
+    /// <summary>Empty-state shortcut: the sessions page of the selected day's week (to create an ad hoc session).</summary>
+    [RelayCommand]
+    private Task OpenSessions() => services.GetRequiredService<INavigator>().NavigateAsync<SessionsViewModel>(Day);
 
     [RelayCommand]
     private void AllPresent()

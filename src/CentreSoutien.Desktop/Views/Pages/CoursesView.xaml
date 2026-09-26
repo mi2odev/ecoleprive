@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:CoursesViewModel}">
     <StackPanel>
@@ -40,8 +41,16 @@
                         <TextBlock Grid.Column="5" Text="Prix / mois" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun cours ne correspond à la recherche." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun cours pour l'instant" Glyph="&#xE7BE;"
+                               Message="Un cours associe une matière, un niveau et un prix mensuel (ex. Mathématiques 3AS). Créez ensuite un ou plusieurs groupes pour chaque cours."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Ajouter un cours" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucun cours ne correspond à la recherche ou au niveau choisi."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:CourseRow}">

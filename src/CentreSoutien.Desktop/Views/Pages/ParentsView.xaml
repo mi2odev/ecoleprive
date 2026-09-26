@@ -9,7 +9,8 @@
     <StackPanel>
         <DockPanel Margin="0,0,0,22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
-                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Enregistrer la liste affichée dans un fichier Excel" />
                 <Button Content="Ajouter un parent" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
             <StackPanel>
@@ -45,8 +46,16 @@
                             <TextBlock Grid.Column="3" Text="{Binding MonthLabel, StringFormat=Reste · {0}}" Style="{StaticResource ColumnHeader}" />
                         </Grid>
                     </Border>
-                    <TextBlock Text="Aucun parent ne correspond à la recherche." Style="{StaticResource EmptyText}"
-                               Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                    <ui:EmptyState Title="Aucun parent pour l'instant" Glyph="&#xE716;"
+                                   Message="Les parents et tuteurs des élèves, avec leurs coordonnées et le reste à payer de la famille. Un parent peut aussi être créé directement depuis la fiche d'un élève."
+                                   Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                        <Button Content="Ajouter un parent" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                    </ui:EmptyState>
+                    <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucun parent ne correspond à la recherche."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                     <ItemsControl ItemsSource="{Binding Rows}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ParentListRow}">
@@ -65,7 +74,7 @@
                                                     <Run Text="{Binding Relation, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Phone, Mode=OneWay}" />
                                                 </TextBlock>
                                             </StackPanel>
-                                            <TextBlock Grid.Column="1" Text="{Binding Children}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Children}" Style="{StaticResource Muted}" Margin="0,0,12,0" ToolTip="{Binding Children}" />
                                             <TextBlock Grid.Column="2" Text="{Binding ChildCountLabel}" Style="{StaticResource Body}" />
                                             <TextBlock Grid.Column="3" Text="{Binding Balance}" Style="{StaticResource Body}" />
                                         </Grid>

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ExpensesViewModel}">
     <StackPanel>
@@ -43,8 +44,16 @@
                         <TextBlock Grid.Column="5" Text="Montant" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucune dépense pour cette période." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucune dépense ce mois-ci" Glyph="&#xE8C7;"
+                               Message="Notez les frais du centre (loyer, électricité, fournitures…) : ils sont déduits des recettes pour calculer le bénéfice du mois dans le tableau de bord et les rapports."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Ajouter une dépense" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+                </ui:EmptyState>
+                <ui:EmptyState Title="Aucun résultat" Glyph="&#xE721;" Padding="20,26"
+                               Message="Aucune dépense de cette catégorie pour le mois choisi."
+                               Visibility="{Binding HasNoResults, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Réinitialiser les filtres" Command="{Binding ClearFiltersCommand}" Style="{StaticResource InkLinkButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Rows}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:ExpenseLine}">

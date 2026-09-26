@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:TeacherPaymentsViewModel}">
     <StackPanel>
@@ -45,8 +46,12 @@
                         <TextBlock Grid.Column="7" Text="Dernier paiement" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun enseignant actif." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Lines, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun enseignant actif" Glyph="&#xE77B;"
+                               Message="Ce tableau calcule ce que vous devez à chaque enseignant pour le mois, selon sa règle de rémunération, et suit les versements. Ajoutez d'abord vos enseignants."
+                               Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
+                    <Button Content="Aller aux enseignants" Command="{Binding OpenTeachersCommand}" Style="{StaticResource PrimaryButton}"
+                            ToolTip="Ajouter un enseignant et sa rémunération" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Lines}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:TeacherPayLine}">
@@ -110,8 +115,9 @@
                         <TextBlock Grid.Column="5" Text="Montant" Style="{StaticResource ColumnHeader}" />
                     </Grid>
                 </Border>
-                <TextBlock Text="Aucun versement enregistré." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding History, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun versement enregistré" Glyph="&#xE8C7;" Padding="20,24"
+                               Message="Les versements apparaissent ici après un clic sur « Payer » dans le tableau du mois."
+                               Visibility="{Binding HasNoHistory, Converter={StaticResource BoolToVisible}}" />
                 <ItemsControl ItemsSource="{Binding History}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:TeacherPayHistoryLine}">

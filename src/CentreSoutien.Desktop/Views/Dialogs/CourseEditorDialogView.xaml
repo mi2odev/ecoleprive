@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:CourseEditorDialogViewModel}">
     <UserControl.Resources>
@@ -13,19 +14,22 @@
     <StackPanel>
         <TextBlock Text="Matière *" Style="{StaticResource FieldLabel}" />
         <ComboBox ItemsSource="{Binding SubjectOptions}" SelectedItem="{Binding SelectedSubject}" DisplayMemberPath="Label" MaxDropDownHeight="320"
-                  IsTextSearchEnabled="True" TextSearch.TextPath="Label" Margin="0,0,0,14" />
+                  IsTextSearchEnabled="True" TextSearch.TextPath="Label" Margin="0,0,0,14" ui:FocusOnShow.Enabled="True" />
         <UniformGrid Columns="2" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Niveau *" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding Levels}" Text="{Binding Level, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" />
+                <ComboBox ItemsSource="{Binding Levels}" Text="{Binding Level, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"
+                          ToolTip="Choisissez un niveau ou tapez-le (ex. 3AS, 4AM)" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Prix mensuel *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 4 500" />
+                <TextBox Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 4 500" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
         <TextBlock Text="Description" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,14"
+                 Tag="Programme, public visé… (facultatif)" />
         <CheckBox Content="Cours actif (proposé aux inscriptions)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

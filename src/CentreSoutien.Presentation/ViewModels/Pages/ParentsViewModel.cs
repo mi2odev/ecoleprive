@@ -45,6 +45,10 @@ public sealed partial class ParentsViewModel(
     [ObservableProperty] private IReadOnlyList<ParentListRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private string _monthLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     // Selected parent (right column).
     [ObservableProperty] private bool _hasSelection;
@@ -92,7 +96,13 @@ public sealed partial class ParentsViewModel(
             return row;
         }).ToList();
         CountLabel = $"{list.Count} parent{(list.Count > 1 ? "s" : "")} affiché{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
     }
+
+    /// <summary>Clears the search.</summary>
+    [RelayCommand]
+    private void ClearFilters() => SearchText = "";
 
     private async Task SelectAsync(int? id)
     {

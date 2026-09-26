@@ -15,34 +15,36 @@
         <UniformGrid Columns="2" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Nom complet *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" />
+                <TextBox Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Tag="ex. Karim Benali" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Lien avec l'élève" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding Relations}" Text="{Binding Relation, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" />
+                <ComboBox ItemsSource="{Binding Relations}" Text="{Binding Relation, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"
+                          ToolTip="Père, mère, tuteur… ou tapez un autre lien" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Téléphone" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 0661 23 45 67" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Téléphone 2" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Phone2, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Phone2, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 0550 12 34 56" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="E-mail" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Tag="ex. parent@exemple.dz" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Profession" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Profession, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Profession, UpdateSourceTrigger=PropertyChanged}" Tag="facultatif" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 
         <TextBlock Text="Adresse" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" Tag="ex. 12 rue des Frères Bouadou, Alger" ui:Enter.Command="{Binding ConfirmCommand}" />
 
         <TextBlock Text="Notes" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,6" />
+        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,6" Tag="Remarques (facultatif)" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

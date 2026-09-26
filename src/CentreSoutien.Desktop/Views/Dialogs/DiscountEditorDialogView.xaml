@@ -8,14 +8,15 @@
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:DiscountEditorDialogViewModel}">
     <StackPanel>
         <TextBlock Text="Nom *" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Ex. Fratrie, Cas social, Enfant du personnel" ui:FocusOnShow.Enabled="True" />
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Fratrie, Cas social, Enfant du personnel" ui:FocusOnShow.Enabled="True" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="Type" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
         <ListBox ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
-        <TextBlock Text="Valeur" Style="{StaticResource FieldLabel}" Margin="0,10,0,6" />
-        <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="160" HorizontalAlignment="Left" />
+        <TextBlock Text="Valeur *" Style="{StaticResource FieldLabel}" Margin="0,10,0,6" />
+        <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Width="160" HorizontalAlignment="Left" Tag="ex. 10" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="{Binding ValueHint}" Style="{StaticResource Small}" Margin="0,6,0,0" />
         <TextBlock Text="Notes" Style="{StaticResource FieldLabel}" Margin="0,14,0,6" />
         <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Tag="Conditions d'attribution (facultatif)" />
         <CheckBox Content="Remise active (proposée lors de l'attribution)" IsChecked="{Binding IsActive}" Margin="0,16,0,0" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

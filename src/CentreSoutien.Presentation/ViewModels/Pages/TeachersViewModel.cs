@@ -40,6 +40,10 @@ public sealed partial class TeachersViewModel(
     [ObservableProperty] private IReadOnlyList<TeacherListRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
     [ObservableProperty] private string _monthLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSelectedFilterChanged(string value) => ApplyFilter();
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -68,6 +72,16 @@ public sealed partial class TeachersViewModel(
             .ToList();
         Rows = list.Select(t => new TeacherListRow(t, new AsyncRelayCommand(() => nav.NavigateAsync<TeacherDetailViewModel>(t.Id)))).ToList();
         CountLabel = $"{list.Count} enseignant{(list.Count > 1 ? "s" : "")} affiché{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
+    }
+
+    /// <summary>Clears the search and the active / inactive filter.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        SelectedFilter = "Tous";
     }
 
     [RelayCommand]

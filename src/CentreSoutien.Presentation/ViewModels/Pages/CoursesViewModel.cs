@@ -35,6 +35,10 @@ public sealed partial class CoursesViewModel(
     [ObservableProperty] private string _selectedLevel = "Tous";
     [ObservableProperty] private IReadOnlyList<CourseRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
     partial void OnSelectedLevelChanged(string value) => ApplyFilter();
@@ -60,6 +64,16 @@ public sealed partial class CoursesViewModel(
             .ToList();
         Rows = list.Select(c => ToRow(c, today, nav)).ToList();
         CountLabel = $"{list.Count} cours affiché{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && list.Count == 0;
+    }
+
+    /// <summary>Clears the search and the level filter.</summary>
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        SelectedLevel = "Tous";
     }
 
     public static CourseRow ToRow(Course c, DateTime today, INavigator nav)

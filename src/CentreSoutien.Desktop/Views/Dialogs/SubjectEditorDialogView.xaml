@@ -8,10 +8,11 @@
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:SubjectEditorDialogViewModel}">
     <StackPanel>
         <TextBlock Text="Nom de la matière *" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Margin="0,0,0,14" Tag="ex. Mathématiques" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="Abréviation (emploi du temps, listes)" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding ShortName, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Maths" Margin="0,0,0,14" />
+        <TextBox Text="{Binding ShortName, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Maths" Margin="0,0,0,14" ui:Enter.Command="{Binding ConfirmCommand}" />
         <TextBlock Text="Description" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" />
+        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Tag="facultatif" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

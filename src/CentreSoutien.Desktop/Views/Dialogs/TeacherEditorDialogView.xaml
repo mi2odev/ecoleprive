@@ -22,19 +22,19 @@
         <UniformGrid Columns="2" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Prénom *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" />
+                <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True" Tag="ex. Nadia" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Nom *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}" Tag="ex. Haddad" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Téléphone" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 0661 23 45 67" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="E-mail" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Tag="ex. enseignant@exemple.dz" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Matière" Style="{StaticResource FieldLabel}" />
@@ -42,23 +42,24 @@
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Au centre depuis (année)" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding StartYear, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Text="{Binding StartYear, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 2021" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Type de rémunération" Style="{StaticResource FieldLabel}" />
                 <ComboBox ItemsSource="{Binding CompensationTypes}" SelectedItem="{Binding SelectedCompensation}" DisplayMemberPath="Label" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
-                <TextBlock Text="{Binding ValueLabel}" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding CompensationValue, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Style="{StaticResource FieldLabel}"><Run Text="{Binding ValueLabel, Mode=OneWay}" /><Run Text=" *" /></TextBlock>
+                <TextBox Text="{Binding CompensationValue, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding ConfirmCommand}" />
             </StackPanel>
         </UniformGrid>
 
         <TextBlock Text="Adresse" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" Tag="facultatif" ui:Enter.Command="{Binding ConfirmCommand}" />
 
         <TextBlock Text="Notes" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,14" />
+        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" Margin="0,0,0,14" Tag="Remarques (facultatif)" />
         <CheckBox Content="Enseignant actif (compté dans les paiements du mois)" IsChecked="{Binding IsActive}" Margin="0,0,0,6" />
+        <TextBlock Style="{StaticResource RequiredLegend}" />
     </StackPanel>
 </UserControl>

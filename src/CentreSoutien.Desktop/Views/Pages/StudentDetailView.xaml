@@ -22,28 +22,63 @@
         </DockPanel>
 
         <!-- Direct actions -->
+        <!-- Most used actions stay visible; the others are grouped in "Plus". -->
         <WrapPanel Margin="0,0,0,22">
-            <Button Content="Ajouter un paiement" Command="{Binding AddPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button Content="Modifier l'élève" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Inscrire à un cours" Command="{Binding EnrollCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Changer de groupe" Command="{Binding ChangeGroupCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Appliquer une remise" Command="{Binding ApplyDiscountCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Ajouter un document" Command="{Binding AddDocumentCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
-            <Button Content="Documents imprimables" Command="{Binding PrintDocumentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
-                    ToolTip="Bulletin, certificat de scolarité, attestation de présence" />
-            <Button Command="{Binding ToggleActiveCommand}" Margin="0,0,8,8">
+            <Button Content="Ajouter un paiement" Command="{Binding AddPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                    ToolTip="Encaisser une mensualité ou des frais ; le reçu est imprimé" />
+            <Button Content="Modifier l'élève" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                    ToolTip="Modifier la fiche : identité, niveau, parent, remise, photo" />
+            <!-- Enrolled: change group; not enrolled yet: the same command opens the enrollment. -->
+            <Button Command="{Binding ChangeGroupCommand}" Margin="0,0,8,8">
                 <Button.Style>
                     <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-                        <Setter Property="Content" Value="Rendre inactif" />
+                        <Setter Property="Content" Value="Changer de groupe" />
+                        <Setter Property="ToolTip" Value="Passer l'élève dans un autre groupe du même cours" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsActive}" Value="False">
-                                <Setter Property="Content" Value="Réactiver" />
+                            <DataTrigger Binding="{Binding HasNoEnrollment}" Value="True">
+                                <Setter Property="Content" Value="Inscrire à un cours" />
+                                <Setter Property="ToolTip" Value="Inscrire l'élève dans un groupe" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Button.Style>
             </Button>
-            <Button Content="Supprimer" Command="{Binding DeleteCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,8" />
+            <Button Content="Documents imprimables" Command="{Binding PrintDocumentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
+                    ToolTip="Bulletin, certificat de scolarité, attestation de présence" />
+            <Button Style="{StaticResource MoreButton}" Content="Plus" Margin="0,0,8,8"
+                    ToolTip="Autres actions : inscription à un autre cours, remise, document, statut, suppression">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Inscrire à un autre cours" Command="{Binding EnrollCommand}" Icon="&#xE710;"
+                                  ToolTip="Ajouter une inscription dans un groupe (l'élève garde ses autres cours)" />
+                        <MenuItem Header="Changer de groupe" Command="{Binding ChangeGroupCommand}" Icon="&#xE8AB;"
+                                  ToolTip="Passer l'élève dans un autre groupe" />
+                        <MenuItem Header="Appliquer une remise" Command="{Binding ApplyDiscountCommand}" Icon="&#xE8EF;"
+                                  ToolTip="Fratrie, cas social… la remise s'applique aux prochaines mensualités" />
+                        <MenuItem Header="Ajouter un document" Command="{Binding AddDocumentCommand}" Icon="&#xE8A5;"
+                                  ToolTip="Joindre un fichier à la fiche (certificat, pièce d'identité…)" />
+                        <MenuItem Header="Saisir une note" Command="{Binding EnterGradesCommand}" Icon="&#xE7BE;"
+                                  ToolTip="Ouvrir la saisie des notes du groupe de l'élève" />
+                        <Separator />
+                        <MenuItem Command="{Binding ToggleActiveCommand}" Icon="&#xE7E8;">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                    <Setter Property="Header" Value="Rendre inactif" />
+                                    <Setter Property="ToolTip" Value="L'élève n'est plus facturé ni compté ; ses inscriptions en cours sont terminées" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                            <Setter Property="Header" Value="Réactiver" />
+                                            <Setter Property="ToolTip" Value="L'élève est de nouveau facturé et compté dans les effectifs" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                        </MenuItem>
+                        <MenuItem Header="Supprimer l'élève" Command="{Binding DeleteCommand}" Style="{StaticResource DangerMenuItem}" Icon="&#xE74D;"
+                                  ToolTip="Supprimer définitivement l'élève et tout son historique" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
         </WrapPanel>
 
         <!-- Tabs -->
@@ -73,8 +108,11 @@
                                 <TextBlock Text="Inscriptions" Style="{StaticResource H2}" />
                             </DockPanel>
                         </Border>
-                        <TextBlock Text="Aucune inscription en cours." Style="{StaticResource EmptyText}"
-                                   Visibility="{Binding HasNoEnrollment, Converter={StaticResource BoolToVisible}}" />
+                        <ui:EmptyState Title="Aucune inscription en cours" Glyph="&#xE7BE;" Padding="20,22"
+                                       Message="Inscrivez l'élève dans un groupe pour qu'il soit facturé et apparaisse sur les feuilles de présence."
+                                       Visibility="{Binding HasNoEnrollment, Converter={StaticResource BoolToVisible}}">
+                            <Button Content="Inscrire à un cours" Command="{Binding EnrollCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                        </ui:EmptyState>
                         <ItemsControl ItemsSource="{Binding Enrollments}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:EnrollmentRow}">
@@ -223,8 +261,11 @@
         <!-- ===== Payments ===== -->
         <Border Style="{StaticResource Card}" Visibility="{Binding IsPayments, Converter={StaticResource BoolToVisible}}">
             <StackPanel>
-                <TextBlock Text="Aucun paiement enregistré." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Payments, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun paiement enregistré" Glyph="&#xE8C7;"
+                               Message="Les paiements de l'élève et leurs reçus apparaîtront ici."
+                               Visibility="{Binding Payments, Converter={StaticResource NullToVisible}}">
+                    <Button Content="Ajouter un paiement" Command="{Binding AddPaymentCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                </ui:EmptyState>
                 <ItemsControl ItemsSource="{Binding Payments}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:PaymentHistoryRow}">
@@ -259,8 +300,9 @@
         <!-- ===== Documents ===== -->
         <Border Style="{StaticResource Card}" Visibility="{Binding IsDocuments, Converter={StaticResource BoolToVisible}}">
             <StackPanel>
-                <TextBlock Text="Aucun document." Style="{StaticResource EmptyText}"
-                           Visibility="{Binding Documents, Converter={StaticResource NullToVisible}}" />
+                <ui:EmptyState Title="Aucun document" Glyph="&#xE8A5;"
+                               Message="Joignez à la fiche les pièces de l'élève : certificat de scolarité, photo d'identité, autorisation…"
+                               Visibility="{Binding Documents, Converter={StaticResource NullToVisible}}" />
                 <ItemsControl ItemsSource="{Binding Documents}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:DocumentRow}">

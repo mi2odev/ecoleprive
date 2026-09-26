@@ -27,6 +27,10 @@ public sealed partial class SubjectsViewModel(
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private IReadOnlyList<SubjectRow> _rows = [];
     [ObservableProperty] private string _countLabel = "";
+    /// <summary>Nothing recorded yet: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    /// <summary>There is data, but the current search / filters hide all of it.</summary>
+    [ObservableProperty] private bool _hasNoResults;
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
@@ -57,7 +61,13 @@ public sealed partial class SubjectsViewModel(
         var q = SearchText.Trim().ToLowerInvariant();
         Rows = _all.Where(s => q.Length == 0 || $"{s.Name} {s.ShortName}".ToLowerInvariant().Contains(q)).ToList();
         CountLabel = $"{_all.Count} matière{(_all.Count > 1 ? "s" : "")}";
+        HasNoData = _all.Count == 0;
+        HasNoResults = _all.Count > 0 && Rows.Count == 0;
     }
+
+    /// <summary>Clears the search.</summary>
+    [RelayCommand]
+    private void ClearFilters() => SearchText = "";
 
     [RelayCommand]
     private Task Add() => EditAsync(null);

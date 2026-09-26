@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:AttendanceViewModel}">
     <UserControl.Resources>
@@ -88,8 +89,17 @@
             <!-- Empty state -->
             <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top"
                     Visibility="{Binding HasSheet, Converter={StaticResource BoolToCollapsed}}">
-                <TextBlock Text="Aucune séance prévue ce jour-là. Choisissez une autre date ou créez une séance depuis l'écran Séances."
-                           Style="{StaticResource EmptyText}" />
+                <ui:EmptyState Title="Aucune séance ce jour-là" Glyph="&#xE787;"
+                               Message="L'appel se fait séance par séance. Les séances du jour sont créées d'après l'emploi du temps des groupes : si un groupe a cours ce jour-là, générez ses séances ; sinon choisissez une autre date ou créez une séance exceptionnelle.">
+                    <StackPanel Style="{StaticResource EmptyActions}">
+                        <Button Content="Générer les séances du jour" Command="{Binding GenerateDayCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                                ToolTip="Crée les séances de ce jour à partir de l'emploi du temps" />
+                        <Button Content="Emploi du temps" Command="{Binding OpenScheduleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                                ToolTip="Voir ou compléter les horaires des groupes" />
+                        <Button Content="Séances" Command="{Binding OpenSessionsCommand}" Style="{StaticResource SecondaryButton}"
+                                ToolTip="Créer une séance exceptionnelle (rattrapage…)" />
+                    </StackPanel>
+                </ui:EmptyState>
             </Border>
 
             <!-- Attendance sheet -->
@@ -102,8 +112,10 @@
                                 <Button Content="{Binding NotifyParentsLabel}" Command="{Binding NotifyParentsCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0"
                                         ToolTip="Messages d'absence à envoyer aux parents (WhatsApp ou copie)"
                                         Visibility="{Binding CanNotifyParents, Converter={StaticResource BoolToVisible}}" />
-                                <Button Content="Tous présents" Command="{Binding AllPresentCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
-                                <Button Content="Enregistrer" Command="{Binding SaveCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                                <Button Content="Tous présents" Command="{Binding AllPresentCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0"
+                                        ToolTip="Marquer tout le groupe présent, puis corriger les absents un par un" />
+                                <Button Content="Enregistrer" Command="{Binding SaveCommand}" Style="{StaticResource SmallPrimaryButton}"
+                                        ToolTip="Enregistrer les présences de la séance" />
                             </StackPanel>
                             <StackPanel Margin="0,0,12,0">
                                 <TextBlock Text="{Binding SessionName}" FontFamily="{StaticResource SerifFont}" FontSize="21" Foreground="{DynamicResource InkBrush}"
@@ -113,97 +125,115 @@
                         </DockPanel>
                     </Border>
                     <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,12">
-                        <ItemsControl ItemsSource="{Binding Counts}" Focusable="False">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:AttendanceCount}">
-                                    <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,0,20,0">
-                                        <Run Text="{Binding Label, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Value, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource ShortcutLegend}" VerticalAlignment="Center" Margin="16,0,0,0"
+                                       ToolTip="Cliquez sur un élève (ou utilisez Tab), puis tapez la lettre : la ligne suivante est sélectionnée automatiquement. Flèches haut / bas pour se déplacer."
+                                       Visibility="{Binding HasNoStudent, Converter={StaticResource BoolToCollapsed}}">
+                                <Run Text="Raccourcis :" /> <Run Text="P" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><Run Text=" présent · " /><Run Text="A" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><Run Text=" absent · " /><Run Text="R" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><Run Text=" retard · " /><Run Text="E" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" /><Run Text=" excusé" />
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding Counts}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:AttendanceCount}">
+                                        <TextBlock FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,0,20,0">
+                                            <Run Text="{Binding Label, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Value, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
                     </Border>
                     <TextBlock Text="Aucun élève inscrit dans ce groupe à cette date." Style="{StaticResource EmptyText}"
                                Visibility="{Binding HasNoStudent, Converter={StaticResource BoolToVisible}}" />
                     <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:AttendanceStudentRow}">
-                                <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,9">
-                                    <DockPanel>
-                                        <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding Choices}" Focusable="False" VerticalAlignment="Center">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type vm:AttendanceChoice}">
-                                                    <Button x:Name="Btn" Command="{Binding Select}" Style="{StaticResource PlainButton}" Margin="4,0,0,0">
-                                                        <Border x:Name="Bd" Height="30" Padding="12,0" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1"
-                                                                BorderBrush="{DynamicResource LineBrush}" Background="Transparent">
-                                                            <TextBlock x:Name="T" Text="{Binding Label}" FontSize="12.5" VerticalAlignment="Center"
-                                                                       Foreground="{DynamicResource MutedBrush}" />
-                                                        </Border>
-                                                    </Button>
-                                                    <DataTemplate.Triggers>
-                                                        <Trigger SourceName="Btn" Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
-                                                        </Trigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsOn}" Value="True" />
-                                                                <Condition Binding="{Binding Kind}" Value="Ok" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource OkBrush}" />
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource OkSoftBrush}" />
-                                                            <Setter TargetName="T" Property="Foreground" Value="{DynamicResource OkBrush}" />
-                                                            <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
-                                                        </MultiDataTrigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsOn}" Value="True" />
-                                                                <Condition Binding="{Binding Kind}" Value="Bad" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BadBrush}" />
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BadSoftBrush}" />
-                                                            <Setter TargetName="T" Property="Foreground" Value="{DynamicResource BadBrush}" />
-                                                            <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
-                                                        </MultiDataTrigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsOn}" Value="True" />
-                                                                <Condition Binding="{Binding Kind}" Value="Warn" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource WarnBrush}" />
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WarnSoftBrush}" />
-                                                            <Setter TargetName="T" Property="Foreground" Value="{DynamicResource WarnBrush}" />
-                                                            <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
-                                                        </MultiDataTrigger>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsOn}" Value="True" />
-                                                                <Condition Binding="{Binding Kind}" Value="Neutral" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
-                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
-                                                            <Setter TargetName="T" Property="Foreground" Value="{DynamicResource InkBrush}" />
-                                                            <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
-                                                        </MultiDataTrigger>
-                                                    </DataTemplate.Triggers>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
-                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
-                                            <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
-                                        </StackPanel>
-                                    </DockPanel>
+                                <!-- Focusable row: P / A / R / E mark the student and move to the next row (ui:RowKeys). -->
+                                <Border x:Name="Row" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,9" Background="Transparent"
+                                        Focusable="True" FocusVisualStyle="{x:Null}" ui:RowKeys.Command="{Binding MarkKeyCommand}">
+                                    <Grid>
+                                        <Rectangle x:Name="FocusBar" Width="3" HorizontalAlignment="Left" Margin="-20,-9,0,-9" Fill="{DynamicResource AccentBrush}" Visibility="Collapsed" />
+                                        <DockPanel>
+                                            <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding Choices}" Focusable="False" VerticalAlignment="Center">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type vm:AttendanceChoice}">
+                                                        <Button x:Name="Btn" Command="{Binding Select}" Style="{StaticResource PlainButton}" Margin="4,0,0,0">
+                                                            <Border x:Name="Bd" Height="30" Padding="12,0" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1"
+                                                                    BorderBrush="{DynamicResource LineBrush}" Background="Transparent">
+                                                                <TextBlock x:Name="T" Text="{Binding Label}" FontSize="12.5" VerticalAlignment="Center"
+                                                                           Foreground="{DynamicResource MutedBrush}" />
+                                                            </Border>
+                                                        </Button>
+                                                        <DataTemplate.Triggers>
+                                                            <Trigger SourceName="Btn" Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
+                                                            </Trigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsOn}" Value="True" />
+                                                                    <Condition Binding="{Binding Kind}" Value="Ok" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource OkBrush}" />
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource OkSoftBrush}" />
+                                                                <Setter TargetName="T" Property="Foreground" Value="{DynamicResource OkBrush}" />
+                                                                <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
+                                                            </MultiDataTrigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsOn}" Value="True" />
+                                                                    <Condition Binding="{Binding Kind}" Value="Bad" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource BadBrush}" />
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BadSoftBrush}" />
+                                                                <Setter TargetName="T" Property="Foreground" Value="{DynamicResource BadBrush}" />
+                                                                <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
+                                                            </MultiDataTrigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsOn}" Value="True" />
+                                                                    <Condition Binding="{Binding Kind}" Value="Warn" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource WarnBrush}" />
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource WarnSoftBrush}" />
+                                                                <Setter TargetName="T" Property="Foreground" Value="{DynamicResource WarnBrush}" />
+                                                                <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
+                                                            </MultiDataTrigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsOn}" Value="True" />
+                                                                    <Condition Binding="{Binding Kind}" Value="Neutral" />
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
+                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                                                                <Setter TargetName="T" Property="Foreground" Value="{DynamicResource InkBrush}" />
+                                                                <Setter TargetName="T" Property="FontWeight" Value="SemiBold" />
+                                                            </MultiDataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" ToolTip="{Binding Name}" />
+                                                <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Grid>
                                 </Border>
+                                <DataTemplate.Triggers>
+                                    <Trigger SourceName="Row" Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter TargetName="Row" Property="Background" Value="{DynamicResource SunkBrush}" />
+                                        <Setter TargetName="FocusBar" Property="Visibility" Value="Visible" />
+                                    </Trigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

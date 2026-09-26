@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
              xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:GradesViewModel}">
     <UserControl.Resources>
@@ -28,9 +29,9 @@
             <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label"
                       Width="320" VerticalAlignment="Top" Margin="0,0,12,0" MaxDropDownHeight="320" IsTextSearchEnabled="True" TextSearch.TextPath="Label" />
             <Button DockPanel.Dock="Right" Content="+ Nouvel examen" Command="{Binding NewExamCommand}" Style="{StaticResource LinkButton}"
-                    VerticalAlignment="Top" Margin="12,8,0,0" />
+                    VerticalAlignment="Top" Margin="12,8,0,0" ToolTip="Créer une évaluation (test, devoir, examen) pour ce groupe" />
             <Button DockPanel.Dock="Right" Content="Imprimer les bulletins du groupe" Command="{Binding PrintReportCardsCommand}" Style="{StaticResource LinkButton}"
-                    VerticalAlignment="Top" Margin="12,8,0,0" />
+                    VerticalAlignment="Top" Margin="12,8,0,0" ToolTip="Bulletins de tous les élèves du groupe : moyennes, rang, appréciation" />
             <ListBox ItemsSource="{Binding ExamOptions}" SelectedItem="{Binding SelectedExam}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
         </DockPanel>
 
@@ -42,8 +43,17 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
+                <Border Style="{StaticResource Card}" Visibility="{Binding HasNoGroup, Converter={StaticResource BoolToVisible}}">
+                    <ui:EmptyState Title="Aucun groupe pour l'instant" Glyph="&#xE902;"
+                                   Message="Les notes se saisissent par groupe et par évaluation. Créez d'abord vos groupes et inscrivez-y les élèves.">
+                        <Button Content="Aller aux groupes" Command="{Binding OpenGroupsCommand}" Style="{StaticResource PrimaryButton}" />
+                    </ui:EmptyState>
+                </Border>
                 <Border Style="{StaticResource Card}" Visibility="{Binding HasNoExam, Converter={StaticResource BoolToVisible}}">
-                    <TextBlock Text="Aucune évaluation pour ce groupe. Créez-en une avec « Nouvel examen »." Style="{StaticResource EmptyText}" />
+                    <ui:EmptyState Title="Aucune évaluation pour ce groupe" Glyph="&#xE7BE;"
+                                   Message="Créez un test, un devoir ou un examen avec son barème et son coefficient, puis saisissez les notes des élèves : les moyennes et les bulletins sont calculés automatiquement.">
+                        <Button Content="Créer une évaluation" Command="{Binding NewExamCommand}" Style="{StaticResource PrimaryButton}" />
+                    </ui:EmptyState>
                 </Border>
 
                 <!-- Grade entry sheet -->

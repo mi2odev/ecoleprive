@@ -46,6 +46,13 @@ public sealed partial class TeacherPaymentsViewModel(
     [ObservableProperty] private IReadOnlyList<TeacherPayLine> _lines = [];
     [ObservableProperty] private IReadOnlyList<TeacherPayHistoryLine> _history = [];
     [ObservableProperty] private bool _historyForMonthOnly = true;
+    /// <summary>No active teacher to pay: the page shows its "getting started" empty state.</summary>
+    [ObservableProperty] private bool _hasNoData;
+    [ObservableProperty] private bool _hasNoHistory;
+
+    /// <summary>Empty-state shortcut: the teachers page (to add a teacher).</summary>
+    [RelayCommand]
+    private Task OpenTeachers() => nav.NavigateAsync<TeachersViewModel>();
 
     private DateTime Month => SelectedMonth?.Value ?? Period.Of(clock.GetLocalNow().DateTime);
 
@@ -85,6 +92,7 @@ public sealed partial class TeacherPaymentsViewModel(
         Lines = _rows.Select(r => new TeacherPayLine(r,
             new AsyncRelayCommand(() => nav.NavigateAsync<TeacherDetailViewModel>(r.TeacherId)),
             new AsyncRelayCommand(() => PayAsync(r.TeacherId)))).ToList();
+        HasNoData = _rows.Count == 0;
         await LoadHistoryAsync();
     }, notifier);
 
@@ -96,6 +104,7 @@ public sealed partial class TeacherPaymentsViewModel(
         History = list.Select(p => new TeacherPayHistoryLine(p.Id, p.Date.ToString("dd/MM/yyyy"), p.Teacher?.FullName ?? "—",
             Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount), p.Note,
             new AsyncRelayCommand(() => DeleteAsync(p)))).ToList();
+        HasNoHistory = History.Count == 0;
     }
 
     private async Task PayAsync(int teacherId)
