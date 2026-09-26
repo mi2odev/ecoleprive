@@ -1,0 +1,156 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.GradesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:GradesViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="ScoreBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsInvalid}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource BadBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource BadBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel>
+                <TextBlock Text="Saisie des notes par groupe" Style="{StaticResource Muted}" />
+                <TextBlock Text="Notes" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Margin="0,0,0,18">
+            <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label"
+                      Width="320" VerticalAlignment="Top" Margin="0,0,12,0" MaxDropDownHeight="320" IsTextSearchEnabled="True" TextSearch.TextPath="Label" />
+            <Button DockPanel.Dock="Right" Content="+ Nouvel examen" Command="{Binding NewExamCommand}" Style="{StaticResource LinkButton}"
+                    VerticalAlignment="Top" Margin="12,8,0,0" />
+            <ListBox ItemsSource="{Binding ExamOptions}" SelectedItem="{Binding SelectedExam}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
+        </DockPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.7*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <Border Style="{StaticResource Card}" Visibility="{Binding HasNoExam, Converter={StaticResource BoolToVisible}}">
+                    <TextBlock Text="Aucune évaluation pour ce groupe. Créez-en une avec « Nouvel examen »." Style="{StaticResource EmptyText}" />
+                </Border>
+
+                <!-- Grade entry sheet -->
+                <Border Style="{StaticResource Card}" Visibility="{Binding HasExam, Converter={StaticResource BoolToVisible}}">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ExamTitle}" Style="{StaticResource H2}" />
+                                <TextBlock Text="{Binding ExamDetails}" Style="{StaticResource Muted}" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource TableHeader}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1.4*" />
+                                    <ColumnDefinition Width="110" />
+                                    <ColumnDefinition Width="2*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Élève" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="1" Text="{Binding ScoreHeader}" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="2" Text="Commentaire" Style="{StaticResource ColumnHeader}" Margin="12,0,0,0" />
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="Aucun élève inscrit dans ce groupe à la date de l'évaluation." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding HasNoStudent, Converter={StaticResource BoolToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Rows}" Focusable="False" KeyboardNavigation.TabNavigation="Continue">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:GradeEntryRow}">
+                                    <Border Style="{StaticResource TableRow}" Padding="20,6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.4*" />
+                                                <ColumnDefinition Width="110" />
+                                                <ColumnDefinition Width="2*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                                <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
+                                            </StackPanel>
+                                            <TextBox Grid.Column="1" Text="{Binding Score, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource ScoreBox}"
+                                                     Tag="—" Width="90" HorizontalAlignment="Left" />
+                                            <TextBox Grid.Column="2" Text="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" Tag="Commentaire (facultatif)" Margin="12,0,0,0" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <DockPanel Margin="20,14,20,16">
+                            <Button DockPanel.Dock="Right" Content="Enregistrer les notes" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}"
+                                    VerticalAlignment="Top" />
+                            <TextBlock Text="{Binding Error}" Style="{StaticResource ErrorText}" Margin="0,0,16,0" VerticalAlignment="Center"
+                                       Visibility="{Binding HasError, Converter={StaticResource BoolToVisible}}" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <!-- Exam summary -->
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16" Visibility="{Binding HasExam, Converter={StaticResource BoolToVisible}}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,14">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding ScaleLabel}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                            <TextBlock Text="Résultats" Style="{StaticResource H2}" />
+                        </DockPanel>
+                        <ItemsControl ItemsSource="{Binding Summary}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Group averages -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding ScaleLabel}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                                <TextBlock Text="Moyennes du groupe" Style="{StaticResource H2}" />
+                            </DockPanel>
+                        </Border>
+                        <TextBlock Text="Aucun élève inscrit." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding HasNoAverage, Converter={StaticResource BoolToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding GroupAverages}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:StudentAverageRow}">
+                                    <Border Style="{StaticResource TableRow}" MinHeight="0">
+                                        <DockPanel>
+                                            <TextBlock x:Name="Avg" DockPanel.Dock="Right" Text="{Binding Average}" Style="{StaticResource Body}" FontWeight="SemiBold" />
+                                            <StackPanel Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Body}" />
+                                                <TextBlock Text="{Binding Matricule}" Style="{StaticResource Small}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Passing}" Value="False">
+                                            <Setter TargetName="Avg" Property="Foreground" Value="{DynamicResource BadBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>

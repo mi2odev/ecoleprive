@@ -1,0 +1,187 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.ScheduleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ScheduleViewModel}">
+    <UserControl.Resources>
+        <!-- Transparent clickable wrapper: the visual is drawn by the data template (so data triggers can restyle it). -->
+        <Style x:Key="BlockButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" Padding="3,0">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="BlockTemplate" DataType="{x:Type vm:ScheduleBlock}">
+            <Button x:Name="Btn" Command="{Binding Open}" Style="{StaticResource BlockButton}" Height="{Binding Height}"
+                    Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}" ToolTip="Ouvrir le cours">
+                <Border x:Name="Bd" Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                        CornerRadius="{StaticResource RadiusSmall}" Padding="8,6" ClipToBounds="True" TextElement.Foreground="{DynamicResource InkBrush}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="30" />
+                        <TextBlock FontSize="11.5" Opacity="0.75" TextTrimming="CharacterEllipsis" Margin="0,2,0,0">
+                            <Run Text="{Binding Time, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Room, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding Teacher}" FontSize="11.5" Opacity="0.75" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
+            </Button>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="Btn" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
+                </Trigger>
+                <DataTrigger Binding="{Binding IsLive}" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter TargetName="Bd" Property="TextElement.Foreground" Value="{DynamicResource OnAccentBrush}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LaneTemplate" DataType="{x:Type vm:ScheduleLane}">
+            <ItemsControl ItemsSource="{Binding Blocks}" ItemTemplate="{StaticResource BlockTemplate}" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+            </ItemsControl>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DayTemplate" DataType="{x:Type vm:ScheduleDay}">
+            <DockPanel>
+                <Border x:Name="Head" DockPanel.Dock="Top" Height="40" Padding="10,0" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1,0,0,1"
+                        Background="Transparent">
+                    <TextBlock x:Name="HeadText" Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" />
+                </Border>
+                <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="1,0,0,0">
+                    <Grid Height="{Binding DataContext.GridHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" ClipToBounds="True">
+                        <Rectangle x:Name="TodayBg" Fill="{DynamicResource SunkBrush}" Opacity="0.5" Visibility="Collapsed" />
+                        <!-- Hour lines every 52 px. -->
+                        <ItemsControl ItemsSource="{Binding DataContext.Hours, RelativeSource={RelativeSource AncestorType=UserControl}}" IsHitTestVisible="False" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:HourMark}">
+                                    <Border Height="52" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <!-- Blocks, overlapping slots side by side in lanes. -->
+                        <ItemsControl ItemsSource="{Binding Lanes}" ItemTemplate="{StaticResource LaneTemplate}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Rows="1" Columns="{Binding LaneCount}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                        <!-- Current time. -->
+                        <Rectangle Height="2" VerticalAlignment="Top" Fill="{DynamicResource BadBrush}" IsHitTestVisible="False"
+                                   Visibility="{Binding ShowNow, Converter={StaticResource BoolToVisible}}">
+                            <Rectangle.RenderTransform>
+                                <TranslateTransform Y="{Binding NowTop}" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                    </Grid>
+                </Border>
+            </DockPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                    <Setter TargetName="Head" Property="Background" Value="{DynamicResource SunkBrush}" />
+                    <Setter TargetName="HeadText" Property="FontWeight" Value="SemiBold" />
+                    <Setter TargetName="HeadText" Property="Foreground" Value="{DynamicResource InkBrush}" />
+                    <Setter TargetName="TodayBg" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="← Semaine précédente" Command="{Binding PreviousWeekCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Aujourd'hui" Command="{Binding ThisWeekCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Semaine suivante →" Command="{Binding NextWeekCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,16,0" />
+                <Button Content="Nouvelle séance" Command="{Binding NewSessionCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding WeekLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Emploi du temps" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <ComboBox ItemsSource="{Binding Teachers}" SelectedItem="{Binding SelectedTeacher}" DisplayMemberPath="Label" Width="260" Margin="0,0,12,0" />
+            <ComboBox ItemsSource="{Binding Rooms}" SelectedItem="{Binding SelectedRoom}" DisplayMemberPath="Label" Width="220" />
+            <TextBlock Text="Aucun créneau ne correspond aux filtres." Style="{StaticResource Muted}" Margin="16,0,0,0"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisible}}" />
+        </StackPanel>
+
+        <Border Style="{StaticResource Card}" ClipToBounds="True">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="OnGridMouseWheel">
+                <Grid MinWidth="980">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="56" />
+                        <ColumnDefinition Width="{Binding Days[0].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[1].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[2].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[3].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[4].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[5].Weight, Converter={StaticResource ShareToStar}, FallbackValue=*}" />
+                        <ColumnDefinition Width="{Binding Days[6].Weight, Converter={StaticResource ShareToStar}, FallbackValue=0}" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Hours column -->
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top" Height="40" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" />
+                        <ItemsControl ItemsSource="{Binding Hours}" Height="{Binding GridHeight}" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:HourMark}">
+                                    <TextBlock Text="{Binding Label}" Width="48" Margin="0,4,0,0" TextAlignment="Right" FontSize="11" Foreground="{DynamicResource MutedBrush}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+
+                    <ContentControl Grid.Column="1" Content="{Binding Days[0]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[0].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="2" Content="{Binding Days[1]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[1].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="3" Content="{Binding Days[2]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[2].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="4" Content="{Binding Days[3]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[3].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="5" Content="{Binding Days[4]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[4].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="6" Content="{Binding Days[5]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[5].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                    <ContentControl Grid.Column="7" Content="{Binding Days[6]}" ContentTemplate="{StaticResource DayTemplate}" Focusable="False"
+                                    Visibility="{Binding Days[6].IsVisible, Converter={StaticResource BoolToVisible}, FallbackValue=Collapsed}" />
+                </Grid>
+            </ScrollViewer>
+        </Border>
+    </StackPanel>
+</UserControl>
