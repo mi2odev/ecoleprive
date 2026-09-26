@@ -17,10 +17,35 @@
         UseLayoutRounding="True" SnapsToDevicePixels="True">
     <Window.Resources>
         <views:ViewLocator x:Key="ViewLocator" />
+        <!-- Result line of the search palette: highlighted when selected with the arrow keys. -->
+        <Style x:Key="SearchResultButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="{StaticResource RadiusSmall}" Padding="12,8" Margin="8,0">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SunkBrush}" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding Dialogs.Current.CancelCommand}" />
         <KeyBinding Key="L" Modifiers="Control" Command="{Binding LockNowCommand}" />
+        <KeyBinding Key="K" Modifiers="Control" Command="{Binding OpenSearchCommand}" />
     </Window.InputBindings>
 
     <Grid>
@@ -152,8 +177,10 @@
             <DockPanel>
                 <Border DockPanel.Dock="Top" Height="60" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource BgBrush}" Padding="28,0">
                     <DockPanel VerticalAlignment="Center" LastChildFill="False">
-                        <TextBox DockPanel.Dock="Left" Width="320" Tag="Rechercher un élève (Entrée)"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding SearchCommand}" />
+                        <!-- Opens the search palette on click (or on Enter after typing). -->
+                        <TextBox x:Name="HeaderSearch" DockPanel.Dock="Left" Width="320" Tag="Rechercher…  (Ctrl+K)" Cursor="Hand"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding SearchCommand}"
+                                 PreviewMouseLeftButtonDown="HeaderSearch_OnPreviewMouseLeftButtonDown" />
                         <Button DockPanel.Dock="Right" Content="Verrouiller" Command="{Binding LockNowCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34"
                                 ToolTip="Verrouiller l'application (Ctrl+L)" />
                         <Button DockPanel.Dock="Right" Content="{Binding ThemeLabel}" Command="{Binding ToggleThemeCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Margin="0,0,14,0" />
@@ -166,6 +193,74 @@
                 </ScrollViewer>
             </DockPanel>
         </DockPanel>
+
+        <!-- ===================== SEARCH PALETTE (Ctrl+K) ===================== -->
+        <Grid x:Name="SearchOverlay" Visibility="{Binding Search.IsOpen, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource OverlayBrush}"
+              Panel.ZIndex="35" KeyboardNavigation.TabNavigation="Cycle" MouseLeftButtonDown="SearchOverlay_OnMouseLeftButtonDown">
+            <Grid.InputBindings>
+                <KeyBinding Key="Escape" Command="{Binding Search.CloseCommand}" />
+                <KeyBinding Key="Down" Command="{Binding Search.MoveDownCommand}" />
+                <KeyBinding Key="Up" Command="{Binding Search.MoveUpCommand}" />
+                <KeyBinding Key="Enter" Command="{Binding Search.ActivateCommand}" />
+            </Grid.InputBindings>
+            <Border Style="{StaticResource Card}" Width="640" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,72,0,0" Padding="0"
+                    DataContext="{Binding Search}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="60" ShadowDepth="20" Opacity="0.2" Color="#000000" />
+                </Border.Effect>
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Padding="16,16,16,14" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1">
+                        <TextBox x:Name="SearchBox" Style="{StaticResource LargeTextBox}" FontSize="16" MinHeight="46"
+                                 Tag="Élève, parent, enseignant, groupe, document, n° de reçu…"
+                                 Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" ui:FocusOnShow.Enabled="True">
+                            <!-- Instance bindings win over the TextBox's own Up/Down/Enter handling. -->
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Escape" Command="{Binding CloseCommand}" />
+                                <KeyBinding Key="Down" Command="{Binding MoveDownCommand}" />
+                                <KeyBinding Key="Up" Command="{Binding MoveUpCommand}" />
+                                <KeyBinding Key="Enter" Command="{Binding ActivateCommand}" />
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </Border>
+                    <Border DockPanel.Dock="Bottom" Padding="18,9" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0">
+                        <TextBlock Style="{StaticResource Small}" Text="↑ ↓ pour choisir · Entrée pour ouvrir · Échap pour fermer" />
+                    </Border>
+                    <Grid>
+                        <TextBlock Style="{StaticResource EmptyText}" Visibility="{Binding ShowHint, Converter={StaticResource BoolToVisible}}"
+                                   Text="Tapez un nom (les accents ne comptent pas), un matricule, un numéro de téléphone, un cours ou un numéro de reçu." />
+                        <TextBlock Style="{StaticResource EmptyText}" Visibility="{Binding ShowNoResult, Converter={StaticResource BoolToVisible}}">
+                            <Run Text="Aucun résultat pour « " /><Run Text="{Binding Query, Mode=OneWay}" /><Run Text=" »." />
+                        </TextBlock>
+                        <ScrollViewer x:Name="SearchScroller" MaxHeight="440"
+                                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Visibility="{Binding HasResults, Converter={StaticResource BoolToVisible}}">
+                            <ItemsControl ItemsSource="{Binding Groups}" Margin="0,6,0,10" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type shell:SearchResultGroup}">
+                                        <StackPanel Margin="0,4,0,2">
+                                            <TextBlock Text="{Binding Caption}" Style="{StaticResource ColumnHeader}" FontSize="11" Margin="20,6,20,4" />
+                                            <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="{x:Type shell:SearchResultItem}">
+                                                        <Button Command="{Binding OpenCommand}" Style="{StaticResource SearchResultButton}">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrong}" FontSize="14" />
+                                                                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Small}" Margin="0,2,0,0"
+                                                                           Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVisible}}" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </DockPanel>
+            </Border>
+        </Grid>
 
         <!-- ===================== LOCK SCREEN ===================== -->
         <Grid Visibility="{Binding ShowLock, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}" Panel.ZIndex="50"

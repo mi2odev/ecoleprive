@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddSingleton<IDocumentService, DocumentService>();
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<IDemoDataService, DemoDataService>();
+        services.AddSingleton<IImportService, ImportService>();
+        services.AddSingleton<ISearchService, SearchService>();
         services.AddSingleton<ICrudService<Subject>, SubjectService>();
         services.AddSingleton<ICrudService<Room>, RoomService>();
         services.AddSingleton<ICrudService<Discount>, DiscountService>();

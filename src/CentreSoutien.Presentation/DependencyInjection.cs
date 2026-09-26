@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddSingleton<LoginViewModel>();
         services.AddSingleton<LockViewModel>();
         services.AddSingleton<ChangePasswordViewModel>();
+        services.AddSingleton<SearchViewModel>();
         services.AddSingleton<ShellViewModel>();
 
         foreach (var type in typeof(DependencyInjection).Assembly.GetTypes())

@@ -9,6 +9,8 @@
     <StackPanel>
         <DockPanel Margin="0,0,0,22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="Importer" Command="{Binding ImportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Importer une liste d'élèves depuis Excel" />
                 <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
                 <Button Content="Ajouter un élève" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>
