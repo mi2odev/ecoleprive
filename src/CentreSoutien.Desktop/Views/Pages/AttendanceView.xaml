@@ -99,6 +99,9 @@
                     <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,16">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="{Binding NotifyParentsLabel}" Command="{Binding NotifyParentsCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0"
+                                        ToolTip="Messages d'absence à envoyer aux parents (WhatsApp ou copie)"
+                                        Visibility="{Binding CanNotifyParents, Converter={StaticResource BoolToVisible}}" />
                                 <Button Content="Tous présents" Command="{Binding AllPresentCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
                                 <Button Content="Enregistrer" Command="{Binding SaveCommand}" Style="{StaticResource SmallPrimaryButton}" />
                             </StackPanel>

@@ -25,6 +25,7 @@
                 <RadioButton Content="Mensualités" IsChecked="{Binding IsMonthly, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="monthly" Style="{StaticResource TabRadio}" />
                 <RadioButton Content="Reçus" IsChecked="{Binding IsReceipts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="receipts" Style="{StaticResource TabRadio}" />
                 <RadioButton Content="Remises" IsChecked="{Binding IsDiscounts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="discounts" Style="{StaticResource TabRadio}" />
+                <RadioButton Content="Relances" IsChecked="{Binding IsReminders, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="reminders" Style="{StaticResource TabRadio}" />
             </StackPanel>
         </Border>
 
@@ -265,6 +266,89 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== Relances ===== -->
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsReminders, Converter={StaticResource BoolToVisible}}">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="Copier toutes les relances" Command="{Binding CopyAllRemindersCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
+                            <Button Content="Exporter la liste (Excel)" Command="{Binding ExportRemindersCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
+                            <Button Content="Imprimer les lettres de relance" Command="{Binding PrintReminderLettersCommand}" Style="{StaticResource SmallPrimaryButton}" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Style="{StaticResource H2}">
+                                <Run Text="Relances · " /><Run Text="{Binding MonthLabel, Mode=OneWay}" />
+                            </TextBlock>
+                            <TextBlock Style="{StaticResource Small}" Margin="0,4,0,0" TextWrapping="Wrap">
+                                <Run Text="{Binding RemindersSummary, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding DueDateLabel, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="210" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox IsChecked="{Binding AllRemindersSelected}" VerticalAlignment="Center" ToolTip="Tout sélectionner" />
+                        <TextBlock Grid.Column="1" Text="Élève" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Parent" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Reste" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Retard" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="{Binding SelectionLabel}" Style="{StaticResource ColumnHeader}" HorizontalAlignment="Right" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun impayé pour ce mois : rien à relancer." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Reminders, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Reminders}" VirtualizingPanel.IsVirtualizing="True">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ReminderLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="34" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="210" />
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Button Content="{Binding Name}" Command="{Binding Open}" Style="{StaticResource InkLinkButton}" HorizontalAlignment="Left" FontWeight="Medium" />
+                                        <TextBlock Text="{Binding Details}" Style="{StaticResource Small}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock Text="{Binding Parent}" Style="{StaticResource Body}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Phone}" Style="{StaticResource Small}" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="3" Text="{Binding Rest}" Style="{StaticResource BodyStrong}" />
+                                    <StackPanel Grid.Column="4" VerticalAlignment="Center">
+                                        <ContentControl Content="{Binding Delay}" Focusable="False" HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding DelayLabel}" Style="{StaticResource Small}" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                        <Button Content="Copier le message" Command="{Binding Copy}" ToolTip="{Binding Message}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="WhatsApp" Command="{Binding WhatsApp}" IsEnabled="{Binding CanWhatsApp}" Style="{StaticResource LinkButton}" Margin="0,0,12,0"
+                                                ToolTip="Ouvre la conversation WhatsApp avec le message prêt à envoyer" />
+                                        <Button Content="SMS" Command="{Binding Sms}" ToolTip="{Binding ShortMessage}" Style="{StaticResource LinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="« WhatsApp » ouvre WhatsApp Desktop (ou le navigateur) avec le message ; « SMS » copie un texte court à coller dans votre téléphone. Les textes se modifient dans Paramètres → Messages aux parents."
+                           Style="{StaticResource Small}" TextWrapping="Wrap" Margin="20,12" />
             </StackPanel>
         </Border>
     </StackPanel>

@@ -32,6 +32,7 @@ public sealed partial class SettingsViewModel(
         new("remun", "Rémunération enseignants"),
         new("eval", "Présences et notes"),
         new("recus", "Reçus"),
+        new("messages", "Messages aux parents"),
         new("backup", "Sauvegarde et export"),
         new("app", "Langue et thème"),
         new("sec", "Sécurité"),
@@ -67,15 +68,53 @@ public sealed partial class SettingsViewModel(
     public bool IsRemun => Section == "remun";
     public bool IsEval => Section == "eval";
     public bool IsRecus => Section == "recus";
+    public bool IsMessages => Section == "messages";
     public bool IsBackup => Section == "backup";
     public bool IsApp => Section == "app";
     public bool IsSecurity => Section == "sec";
 
     partial void OnSelectedSectionChanged(Option<string>? value)
     {
-        foreach (var p in new[] { nameof(Section), nameof(IsCentre), nameof(IsTarifs), nameof(IsRemun), nameof(IsEval), nameof(IsRecus), nameof(IsBackup), nameof(IsApp), nameof(IsSecurity) })
+        foreach (var p in new[] { nameof(Section), nameof(IsCentre), nameof(IsTarifs), nameof(IsRemun), nameof(IsEval), nameof(IsRecus), nameof(IsMessages), nameof(IsBackup), nameof(IsApp), nameof(IsSecurity) })
             OnPropertyChanged(p);
     }
+
+    // ----- Messages aux parents -----
+
+    /// <summary>"{parent} nom du parent · {eleve} …" shown under the templates.</summary>
+    public string PlaceholderHelp => MessageTemplates.PlaceholderHelp;
+
+    // Bound to the template boxes (the Form properties do not notify, the previews must follow the typing).
+    [ObservableProperty] private string _paymentTemplate = "";
+    [ObservableProperty] private string _absenceTemplate = "";
+    [ObservableProperty] private string _paymentPreview = "";
+    [ObservableProperty] private string _absencePreview = "";
+
+    partial void OnPaymentTemplateChanged(string value)
+    {
+        Form.PaymentReminderTemplate = value;
+        UpdatePreviews();
+    }
+
+    partial void OnAbsenceTemplateChanged(string value)
+    {
+        Form.AbsenceMessageTemplate = value;
+        UpdatePreviews();
+    }
+
+    /// <summary>Example messages for a fictitious student, so the owner sees the result while editing.</summary>
+    private void UpdatePreviews()
+    {
+        var month = Period.Of(clock.GetLocalNow().DateTime);
+        PaymentPreview = MessageTemplates.PaymentReminder(Form, "M. Benali", "Yacine Benali", month, 4500, 2000);
+        AbsencePreview = MessageTemplates.AbsenceNotice(Form, "M. Benali", "Yacine Benali", "Mathématiques", clock.GetLocalNow().DateTime.Date);
+    }
+
+    [RelayCommand]
+    private void ResetPaymentTemplate() => PaymentTemplate = CenterSettings.DefaultPaymentReminderTemplate;
+
+    [RelayCommand]
+    private void ResetAbsenceTemplate() => AbsenceTemplate = CenterSettings.DefaultAbsenceMessageTemplate;
 
     public string DatabaseLabel => system.DatabaseEncrypted ? "Chiffrée (SQLCipher, AES-256)" : "Non chiffrée";
     public string KeyProtection => system.KeyProtection;
@@ -103,6 +142,9 @@ public sealed partial class SettingsViewModel(
                 SelectedLockDelay = LockDelays.First(o => o.Value == s.AutoLockMinutes);
                 SelectedSessionTimeout = SessionTimeouts.First(o => o.Value == s.SessionTimeoutMinutes);
                 SelectedTheme = Themes.First(t => t.Value == s.Theme);
+                PaymentTemplate = s.PaymentReminderTemplate;
+                AbsenceTemplate = s.AbsenceMessageTemplate;
+                UpdatePreviews();
                 CanLoadDemo = await demo.IsDatabaseEmptyAsync();
             }
             finally
@@ -172,6 +214,11 @@ public sealed partial class SettingsViewModel(
             f.Currency = string.IsNullOrWhiteSpace(f.Currency) ? "DZD" : f.Currency.Trim().ToUpperInvariant();
             if (f.NextReceiptNumber < 1) throw new BusinessException("Le prochain numéro de reçu doit être positif.");
             if (f.BackupRetentionCount < 1) throw new BusinessException("Conservez au moins une sauvegarde.");
+            f.PaymentReminderTemplate = string.IsNullOrWhiteSpace(PaymentTemplate) ? CenterSettings.DefaultPaymentReminderTemplate : PaymentTemplate.Trim();
+            f.AbsenceMessageTemplate = string.IsNullOrWhiteSpace(AbsenceTemplate) ? CenterSettings.DefaultAbsenceMessageTemplate : AbsenceTemplate.Trim();
+            var cc = new string((f.PhoneCountryCode ?? "").Where(char.IsAsciiDigit).ToArray());
+            if (cc.Length is < 1 or > 4) throw new BusinessException("Indicatif téléphonique invalide (ex. 213 pour l'Algérie).");
+            f.PhoneCountryCode = cc;
 
             // Keep values changed elsewhere since the page was opened (backup stamps, receipt numbers issued meanwhile).
             var current = await settings.GetAsync();

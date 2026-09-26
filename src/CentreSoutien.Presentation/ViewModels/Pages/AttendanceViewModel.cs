@@ -3,8 +3,10 @@ using CentreSoutien.Application.Models;
 using CentreSoutien.Domain.Entities;
 using CentreSoutien.Domain.Enums;
 using CentreSoutien.Presentation.Core;
+using CentreSoutien.Presentation.ViewModels.Dialogs;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CentreSoutien.Presentation.ViewModels.Pages;
 
@@ -71,12 +73,17 @@ public sealed partial class AttendanceStudentRow : ObservableObject
 public sealed record AttendanceCount(string Label, int Value);
 
 public sealed partial class AttendanceViewModel(
-    ISessionService sessions, IAttendanceService attendance, INotifier notifier, TimeProvider clock) : PageViewModel
+    ISessionService sessions, IAttendanceService attendance, ISettingsService settings, DialogHost dialogs, INotifier notifier, TimeProvider clock,
+    IServiceProvider services) : PageViewModel
 {
     /// <summary>Navigation parameter: open the attendance sheet of a group on a date (or a specific session).</summary>
     public sealed record Target(DateTime Date, int? GroupId = null, int? SessionId = null);
 
     private bool _loading;
+    /// <summary>Students recorded as absent in the database for the selected session (what parents can be told about).</summary>
+    private List<int> _savedAbsents = [];
+    private string _course = "";
+    private DateTime _sessionDate;
 
     public override string NavKey => "attendance";
     public override string Title => "Présences";
@@ -92,6 +99,22 @@ public sealed partial class AttendanceViewModel(
     [ObservableProperty] private IReadOnlyList<AttendanceStudentRow> _rows = [];
     [ObservableProperty] private bool _hasNoStudent;
     [ObservableProperty] private IReadOnlyList<AttendanceCount> _counts = [];
+    [ObservableProperty] private int _savedAbsentCount;
+
+    public bool CanNotifyParents => SavedAbsentCount > 0;
+    public string NotifyParentsLabel => $"Prévenir les parents ({SavedAbsentCount} absent{(SavedAbsentCount > 1 ? "s" : "")})";
+
+    partial void OnSavedAbsentCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(CanNotifyParents));
+        OnPropertyChanged(nameof(NotifyParentsLabel));
+    }
+
+    private void SetSavedAbsents(IEnumerable<int> ids)
+    {
+        _savedAbsents = ids.ToList();
+        SavedAbsentCount = _savedAbsents.Count;
+    }
 
     async partial void OnDayChanged(DateTime? value)
     {
@@ -154,11 +177,14 @@ public sealed partial class AttendanceViewModel(
             Counts = [];
             SessionName = SessionDetails = "";
             HasNoStudent = false;
+            SetSavedAbsents([]);
             return;
         }
         var sheet = await attendance.GetSheetAsync(item.Id);
         var s = sheet.Session;
         SessionName = s.Group!.FullName;
+        _course = s.Group.Course?.Subject?.Name ?? s.Group.FullName;
+        _sessionDate = s.Date;
         SessionDetails = string.Join(" · ", new[]
         {
             $"{Labels.Time(s.Start)}–{Labels.Time(s.End)}",
@@ -167,6 +193,7 @@ public sealed partial class AttendanceViewModel(
         });
         Rows = sheet.Lines.Select(l => new AttendanceStudentRow(l, UpdateCounts)).ToList();
         HasNoStudent = Rows.Count == 0;
+        SetSavedAbsents(sheet.Lines.Where(l => l.Status == AttendanceStatus.Absent).Select(l => l.StudentId));
         UpdateCounts();
     }
 
@@ -213,6 +240,22 @@ public sealed partial class AttendanceViewModel(
         {
             notifier.Info($"Présences enregistrées · {SessionName}");
             UpdateProgress(item, marks.Count, Rows.Count);
+            SetSavedAbsents(marks.Where(m => m.Value == AttendanceStatus.Absent).Select(m => m.Key));
+            if (SavedAbsentCount > 0 && (await settings.GetAsync()).NotifyParentOnAbsence) await NotifyParents();
         }
+    }
+
+    /// <summary>Opens the absence notices (WhatsApp / copy) for the absent students of the saved sheet.</summary>
+    [RelayCommand]
+    private async Task NotifyParents()
+    {
+        if (_savedAbsents.Count == 0)
+        {
+            notifier.Info("Aucun absent enregistré pour cette séance");
+            return;
+        }
+        var dialog = services.GetRequiredService<AbsenceNoticeDialogViewModel>();
+        if (!await RunAsync(() => dialog.InitializeAsync(_course, SessionName, _sessionDate, _savedAbsents), notifier)) return;
+        await dialogs.ShowAsync(dialog);
     }
 }

@@ -28,6 +28,8 @@ public static class UiHost
         sc.AddSingleton<IShell>(sp => sp.GetRequiredService<FakePlatform>());
         sc.AddSingleton<IPrintService>(sp => sp.GetRequiredService<FakePlatform>());
         sc.AddSingleton<IThemeService>(sp => sp.GetRequiredService<FakePlatform>());
+        sc.AddSingleton<IClipboard>(sp => sp.GetRequiredService<FakePlatform>());
+        sc.AddSingleton<ILauncher>(sp => sp.GetRequiredService<FakePlatform>());
         return sc;
     }
 
@@ -52,7 +54,7 @@ public static class UiHost
     }
 }
 
-public sealed class FakePlatform : IFilePicker, IShell, IPrintService, IThemeService
+public sealed class FakePlatform : IFilePicker, IShell, IPrintService, IThemeService, IClipboard, ILauncher
 {
     public string? NextOpenFile { get; set; }
     public string? NextSaveFile { get; set; }
@@ -76,4 +78,11 @@ public sealed class FakePlatform : IFilePicker, IShell, IPrintService, IThemeSer
     public void PrintReport(string title, string subtitle, CenterSettings settings, IReadOnlyList<(string Label, string Value)> summary, IReadOnlyList<PrintTable> tables) => Printed.Add(title);
     public AppTheme Current { get; private set; }
     public void Apply(AppTheme theme) => Current = theme;
+
+    /// <summary>Last text put on the clipboard.</summary>
+    public string? Clipboard { get; private set; }
+    public void SetText(string text) => Clipboard = text;
+    /// <summary>Links opened through <see cref="ILauncher"/> (wa.me…).</summary>
+    public List<string> OpenedUrls { get; } = [];
+    public void OpenUrl(string url) => OpenedUrls.Add(url);
 }
