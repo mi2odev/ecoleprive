@@ -268,7 +268,11 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     private void OnSessionChanged()
     {
-        if (_session.State != SessionState.Active) Search.Close();
+        if (_session.State != SessionState.Active)
+        {
+            Search.Close();
+            IsShortcutsOpen = false; // never leave the F1 panel over the lock or login screen
+        }
         if (_session.State == SessionState.SignedOut)
         {
             Dialogs.CloseAll();
@@ -340,6 +344,7 @@ public sealed partial class ShellViewModel : ViewModelBase
     private void OpenSearch(string? text)
     {
         if (_session.State != SessionState.Active || Dialogs.Current is not null) return;
+        IsShortcutsOpen = false; // the palette would otherwise open underneath the F1 panel
         Search.Open(string.IsNullOrWhiteSpace(text) ? null : text.Trim());
     }
 
@@ -390,7 +395,11 @@ public sealed partial class ShellViewModel : ViewModelBase
 
     /// <summary>Scale factor of the whole window (text and controls): 1.0, 1.15 or 1.3. Remembered on this computer.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowClock))]
     private double _textScale = 1.0;
+
+    /// <summary>The header clock is hidden at larger text sizes so the header buttons keep their room.</summary>
+    public bool ShowClock => TextScale < 1.1;
 
     public IReadOnlyList<TextScaleOption> TextScaleOptions { get; }
 

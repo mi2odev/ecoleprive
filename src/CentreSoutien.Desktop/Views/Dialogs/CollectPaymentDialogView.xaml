@@ -10,7 +10,7 @@
     <StackPanel>
         <StackPanel Visibility="{Binding CanPickStudent, Converter={StaticResource BoolToVisible}}" Margin="0,0,0,16">
             <TextBlock Text="Élève" Style="{StaticResource FieldLabel}" />
-            <ComboBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}" DisplayMemberPath="Label"
+            <ComboBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}" DisplayMemberPath="Label" ui:FocusOnShow.Enabled="{Binding CanPickStudent}"
                       IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Label" StaysOpenOnEdit="True" MaxDropDownHeight="320"
                       ToolTip="Tapez le début du nom pour trouver l'élève" />
         </StackPanel>
@@ -29,7 +29,7 @@
         </UniformGrid>
         <TextBlock Text="{Binding Summary}" Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,16" />
         <TextBlock Text="Montant (DZD)" Style="{StaticResource FieldLabel}" />
-        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" ui:FocusOnShow.Enabled="True" />
+        <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" ui:FocusOnShow.Enabled="{Binding CanPickStudent, Converter={StaticResource Not}}" />
         <TextBlock Text="{Binding RemainingAfter}" Style="{StaticResource Small}" Margin="0,6,0,0"
                    Visibility="{Binding HasRemainingAfter, Converter={StaticResource BoolToVisible}}" />
         <!-- Quick amounts: one click fills the amount -->

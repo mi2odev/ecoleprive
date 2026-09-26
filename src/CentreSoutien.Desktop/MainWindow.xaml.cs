@@ -99,13 +99,19 @@ public partial class MainWindow : Window
         if (ReferenceEquals(e.OriginalSource, ShortcutsOverlay) && Shell is { } shell) shell.IsShortcutsOpen = false;
     }
 
+    private IInputElement? _focusBeforeShortcuts;
+
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(ShellViewModel.IsShortcutsOpen) && Shell is { IsShortcutsOpen: true })
+            _focusBeforeShortcuts = Keyboard.FocusedElement;
         // The shortcuts panel had the focus: give it back to the page so Tab and shortcuts keep working.
         if (e.PropertyName == nameof(ShellViewModel.IsShortcutsOpen) && Shell is { IsShortcutsOpen: false })
             Dispatcher.BeginInvoke(() =>
             {
-                if (Keyboard.FocusedElement is not UIElement { IsVisible: true, IsEnabled: true }) PageScroller.Focus();
+                // Back to where the owner was (e.g. the current attendance row), else to the page.
+                if (_focusBeforeShortcuts is UIElement { IsVisible: true, IsEnabled: true } previous) Keyboard.Focus(previous);
+                else if (Keyboard.FocusedElement is not UIElement { IsVisible: true, IsEnabled: true }) PageScroller.Focus();
             }, DispatcherPriority.Input);
     }
 }

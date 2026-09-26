@@ -57,7 +57,8 @@
         <ItemsControl ItemsSource="{Binding QuickActions}" Margin="0,0,-12,10" Focusable="False">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <UniformGrid Rows="1" />
+                    <!-- 3 per row: tiles stay readable even at the largest text size. -->
+                    <UniformGrid Columns="3" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>

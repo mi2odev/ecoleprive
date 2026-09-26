@@ -200,4 +200,26 @@ public class UsabilityShellTests
         shell.CloseShortcutsCommand.Execute(null);
         Assert.False(shell.IsShortcutsOpen);
     }
+
+    [Fact]
+    public async Task F1_panel_never_hides_the_search_palette_or_survives_a_lock()
+    {
+        await using var host = await UiHost.CreateAsync(demo: false);
+        var shell = host.Get<CentreSoutien.Presentation.ViewModels.Shell.ShellViewModel>();
+        shell.IsShortcutsOpen = true;
+        shell.OpenSearchCommand.Execute(null);
+        Assert.False(shell.IsShortcutsOpen);
+        Assert.True(shell.Search.IsOpen);
+        shell.CloseSearchCommand.Execute(null);
+
+        shell.IsShortcutsOpen = true;
+        shell.LockNowCommand.Execute(null);
+        Assert.False(shell.IsShortcutsOpen);
+        Assert.True(shell.ShowLock);
+
+        shell.TextScale = 1.3;
+        Assert.False(shell.ShowClock);
+        shell.TextScale = 1.0;
+        Assert.True(shell.ShowClock);
+    }
 }

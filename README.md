@@ -28,6 +28,13 @@ UI language: French · Currency: DZD · Visual direction: **B · Marine** from t
 - **Excel import** of students (with parents, groups and discounts): downloadable template, preview with errors / warnings (duplicates, full or unknown groups), import in one transaction.
 - **Global search (Ctrl+K):** students, parents, teachers, groups, documents and receipts, accent-insensitive.
 
+### Ease of use
+
+- **Actions rapides** on the dashboard (collect a payment, enroll a student, take attendance, add an expense, chase unpaid fees, search) and a **Premiers pas** checklist that guides the setup of a new center (hideable, disappears when done).
+- **Help on every page** ("Aide" button in the header), sidebar icons, a "← Retour" button, clear empty states with the next action to take, required fields marked with *, and less-used actions grouped in a **Plus…** menu (nothing removed).
+- **Text size** Normal / Grand / Très grand (F1 panel), remembered on the computer.
+- **Keyboard shortcuts:** `Ctrl+K` search · `Ctrl+N` new item on the current page · `Ctrl+P` print (reports) · `F5` refresh · `Alt+←` back · `Ctrl+1…9` jump to the main pages · `Ctrl+L` lock · `F1` all shortcuts · attendance: `P` présent, `A` absent, `R` retard, `E` excusé · `Enter` confirms simple dialogs, `Échap` closes them.
+
 There is deliberately **no** user management, roles, permissions, or teacher / staff / accountant login.
 
 ## Security
@@ -35,7 +42,7 @@ There is deliberately **no** user management, roles, permissions, or teacher / s
 - **Single owner account.** Created on first start as `admin` / `admin`. The owner **must** choose a new password at first login (8+ characters, letters and digits/symbols). The login screen only shows the default username while the default password is still in place.
 - **Password hashing:** PBKDF2-HMAC-SHA256, 600 000 iterations, random 128-bit salt, constant-time comparison. Hashes are upgraded automatically if the policy changes. No plain-text password is ever stored.
 - **Brute-force protection:** after 5 wrong attempts, login is locked for 1, 2, 4, 8, then 15 minutes.
-- **Automatic lock** after N minutes of inactivity (configurable: never, 5, 10, 15, 30, 60). The lock screen asks for the password. **Session timeout:** a session left locked too long ends and requires a full login. Closing the app signs the owner out. `Ctrl+L` locks immediately, `Ctrl+K` opens the global search.
+- **Automatic lock** after N minutes of inactivity (configurable: never, 5, 10, 15, 30, 60). The lock screen asks for the password. **Session timeout:** a session left locked too long ends and requires a full login. Closing the app signs the owner out. `Ctrl+L` locks immediately.
 - **Encrypted database:** SQLite with SQLCipher (AES-256). The random 256-bit key is stored in `keys.json`, protected by Windows DPAPI (bound to the Windows user account).
 - **Encrypted backups (`.csbak`):** the database copy, images and documents are encrypted (AES-256-GCM). The key is wrapped with the owner's password, so a backup can be restored **on another PC** with the password in use when the backup was made. The current database is kept as `avant-restauration-*.db` before a restore.
 - Single instance per Windows session (two copies can't write the database at the same time).

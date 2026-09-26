@@ -47,15 +47,20 @@ public static class FocusOnShow
     public static bool GetEnabled(DependencyObject d) => (bool)d.GetValue(EnabledProperty);
     public static void SetEnabled(DependencyObject d, bool value) => d.SetValue(EnabledProperty, value);
 
+    private static readonly DependencyProperty HookedProperty = DependencyProperty.RegisterAttached(
+        "Hooked", typeof(bool), typeof(FocusOnShow));
+
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not UIElement el || e.NewValue is not true) return;
+        // Hook once; the handlers check the current value, so the property can be data-bound.
+        if (d is not UIElement el || e.NewValue is not true || (bool)el.GetValue(HookedProperty)) return;
+        el.SetValue(HookedProperty, true);
         el.IsVisibleChanged += (_, args) =>
         {
-            if (args.NewValue is true) el.Dispatcher.BeginInvoke(() => Keyboard.Focus(el), System.Windows.Threading.DispatcherPriority.Input);
+            if (args.NewValue is true && GetEnabled(el)) el.Dispatcher.BeginInvoke(() => Keyboard.Focus(el), System.Windows.Threading.DispatcherPriority.Input);
         };
         if (el is FrameworkElement fe)
-            fe.Loaded += (_, _) => { if (el.IsVisible) Keyboard.Focus(el); };
+            fe.Loaded += (_, _) => { if (el.IsVisible && GetEnabled(el)) Keyboard.Focus(el); };
     }
 }
 

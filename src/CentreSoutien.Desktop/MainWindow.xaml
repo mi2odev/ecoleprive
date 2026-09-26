@@ -309,7 +309,8 @@
                                 <TextBlock Text="Ctrl+K" Style="{StaticResource KeyCapText}" />
                             </Border>
                         </Grid>
-                        <TextBlock Grid.Column="2" Text="{Binding ClockLabel}" Style="{StaticResource Muted}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding ClockLabel}" Style="{StaticResource Muted}" Margin="0,0,14,0" VerticalAlignment="Center"
+                                   Visibility="{Binding ShowClock, Converter={StaticResource BoolToVisible}}" />
                         <StackPanel Grid.Column="3" Orientation="Horizontal">
                             <!-- Help of the current page. -->
                             <Button Command="{Binding ToggleHelpCommand}" Style="{StaticResource HelpToggleButton}" Height="34" Margin="0,0,8,0"
@@ -560,7 +561,8 @@
         <!-- ===================== DIALOG OVERLAY ===================== -->
         <Grid Visibility="{Binding Dialogs.Current, Converter={StaticResource NotNullToVisible}}" Background="{DynamicResource OverlayBrush}" Panel.ZIndex="40"
               KeyboardNavigation.TabNavigation="Cycle">
-            <Border Style="{StaticResource Card}" Width="{Binding Dialogs.Current.Width}" MaxHeight="{Binding ActualHeight, ElementName=RootGrid, Converter={x:Static views:Sizes.MinusMargin}}"
+            <Border Style="{StaticResource Card}" Width="{Binding Dialogs.Current.Width}"
+                    MaxWidth="{Binding ActualWidth, ElementName=RootGrid, Converter={x:Static views:Sizes.MinusMargin}}" MaxHeight="{Binding ActualHeight, ElementName=RootGrid, Converter={x:Static views:Sizes.MinusMargin}}"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="60" ShadowDepth="20" Opacity="0.2" Color="#000000" />
