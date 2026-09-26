@@ -71,6 +71,8 @@ public sealed partial class SearchViewModel(ISearchService search, INavigator na
 
     partial void OnQueryChanged(string value)
     {
+        // Hide the previous "no result" message until the new query has been searched.
+        HasSearched = false;
         _debounce?.Cancel();
         var cts = _debounce = new CancellationTokenSource();
         Pending = DebouncedSearchAsync(value, cts.Token);
@@ -107,7 +109,7 @@ public sealed partial class SearchViewModel(ISearchService search, INavigator na
             return;
         }
         List<SearchHit> hits = [];
-        await RunAsync(async () => hits = await search.SearchAsync(text));
+        await RunAsync(async () => hits = await search.SearchAsync(text), notifier);
         if (version != _version) return; // a newer query has been typed meanwhile
         Apply(hits);
         HasSearched = true;

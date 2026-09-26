@@ -241,7 +241,10 @@ public sealed partial class AttendanceViewModel(
             notifier.Info($"Présences enregistrées · {SessionName}");
             UpdateProgress(item, marks.Count, Rows.Count);
             SetSavedAbsents(marks.Where(m => m.Value == AttendanceStatus.Absent).Select(m => m.Key));
-            if (SavedAbsentCount > 0 && (await settings.GetAsync()).NotifyParentOnAbsence) await NotifyParents();
+            var notify = false;
+            if (SavedAbsentCount > 0) await RunAsync(async () => notify = (await settings.GetAsync()).NotifyParentOnAbsence, notifier);
+            // Open the notices after Save completes so the Save button is not left "running" behind the dialog.
+            if (notify) _ = NotifyParentsCommand.ExecuteAsync(null);
         }
     }
 

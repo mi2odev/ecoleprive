@@ -348,9 +348,19 @@ public sealed partial class PaymentsViewModel(
         _syncingSelection = false;
     }
 
+    partial void OnAllRemindersSelectedChanging(bool? oldValue, bool? newValue) => _allWasPartial = oldValue is null;
+
+    private bool _allWasPartial;
+
     partial void OnAllRemindersSelectedChanged(bool? value)
     {
         if (_syncingSelection || value is null) return;
+        // Clicking the header box while only some rows are selected selects them all (not none).
+        if (value == false && _allWasPartial)
+        {
+            AllRemindersSelected = true;
+            return;
+        }
         _syncingSelection = true;
         foreach (var r in Reminders) r.IsSelected = value.Value;
         _syncingSelection = false;

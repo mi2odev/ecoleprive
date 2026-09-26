@@ -20,6 +20,13 @@ public sealed class ConnectionStringProvider(AppPaths paths, KeyStore keys, Stor
 
     public string ConnectionString => For(paths.Database, options.EncryptDatabase ? keys.Passphrase : null);
 
+    /// <summary>Closes the pooled connections of this database only (other databases in the process are untouched).</summary>
+    public void ClearPool()
+    {
+        using var c = new SqliteConnection(ConnectionString);
+        SqliteConnection.ClearPool(c);
+    }
+
     public static string For(string file, string? passphrase, bool pooling = true)
     {
         var b = new SqliteConnectionStringBuilder

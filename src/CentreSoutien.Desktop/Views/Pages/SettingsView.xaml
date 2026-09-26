@@ -355,7 +355,7 @@
                                     <Button Content="Texte par défaut" Command="{Binding ResetPaymentTemplateCommand}" Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="0,6,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBox Text="{Binding PaymentTemplate, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource MultilineTextBox}" MinHeight="96" />
+                                    <TextBox Text="{Binding PaymentTemplate, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" MinHeight="96" />
                                     <TextBlock Text="Aperçu" Style="{StaticResource SettingGroup}" Margin="0,10,0,4" />
                                     <Border Background="{DynamicResource SunkBrush}" CornerRadius="{StaticResource RadiusSmall}" Padding="12,10">
                                         <TextBlock Text="{Binding PaymentPreview}" Style="{StaticResource Body}" TextWrapping="Wrap" />
@@ -371,7 +371,7 @@
                                     <Button Content="Texte par défaut" Command="{Binding ResetAbsenceTemplateCommand}" Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="0,6,0,0" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
-                                    <TextBox Text="{Binding AbsenceTemplate, UpdateSourceTrigger=PropertyChanged, Delay=200}" Style="{StaticResource MultilineTextBox}" MinHeight="80" />
+                                    <TextBox Text="{Binding AbsenceTemplate, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource MultilineTextBox}" MinHeight="80" />
                                     <TextBlock Text="Aperçu" Style="{StaticResource SettingGroup}" Margin="0,10,0,4" />
                                     <Border Background="{DynamicResource SunkBrush}" CornerRadius="{StaticResource RadiusSmall}" Padding="12,10">
                                         <TextBlock Text="{Binding AbsencePreview}" Style="{StaticResource Body}" TextWrapping="Wrap" />

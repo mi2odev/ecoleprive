@@ -95,7 +95,6 @@ public sealed class BackupService(
             }
             finally
             {
-                SqliteConnection.ClearAllPools();
                 try { work.Delete(true); } catch (IOException) { }
             }
         }
@@ -150,7 +149,7 @@ public sealed class BackupService(
             }
 
             // Swap the live database; keep the previous one next to the backups just in case.
-            SqliteConnection.ClearAllPools();
+            connections.ClearPool();
             var safety = Path.Combine(paths.Backups, $"avant-restauration-{clock.GetLocalNow():yyyy-MM-dd-HHmmss}.db");
             if (File.Exists(paths.Database)) File.Copy(paths.Database, safety, overwrite: true);
             foreach (var suffix in new[] { "-wal", "-shm" })
@@ -167,7 +166,7 @@ public sealed class BackupService(
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
+            connections.ClearPool();
             try { work.Delete(true); } catch (IOException) { }
             Gate.Release();
         }

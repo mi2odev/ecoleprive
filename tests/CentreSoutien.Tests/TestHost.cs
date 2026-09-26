@@ -37,8 +37,8 @@ public sealed class TestHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        Get<ConnectionStringProvider>().ClearPool();
         await Services.DisposeAsync();
-        SqliteConnection.ClearAllPools();
         try { Directory.Delete(Folder, true); } catch (IOException) { }
     }
 }

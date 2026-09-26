@@ -35,8 +35,21 @@ public partial class MainWindow : Window
         if (_search is not null) _search.PropertyChanged += OnSearchChanged;
     }
 
+    private IInputElement? _focusBeforeSearch;
+
     private void OnSearchChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(SearchViewModel.IsOpen))
+        {
+            if (_search?.IsOpen == true) _focusBeforeSearch = Keyboard.FocusedElement;
+            else
+                // Give keyboard focus back (the search box is now hidden), so Tab and shortcuts keep working.
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (_focusBeforeSearch is UIElement { IsVisible: true, IsEnabled: true } previous && !ReferenceEquals(previous, SearchBox)) Keyboard.Focus(previous);
+                    else PageScroller.Focus();
+                }, DispatcherPriority.Input);
+        }
         if (e.PropertyName == nameof(SearchViewModel.Selected))
             Dispatcher.BeginInvoke(new Action(BringSelectedIntoView), DispatcherPriority.Loaded);
     }

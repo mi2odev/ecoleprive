@@ -9,22 +9,14 @@ public sealed class WindowsClipboard : IClipboard
 {
     public void SetText(string text)
     {
-        // The clipboard can be held briefly by another application (clipboard managers, remote desktop): retry a few times.
-        for (var attempt = 0; ; attempt++)
+        try
         {
-            try
-            {
-                System.Windows.Clipboard.SetText(text);
-                return;
-            }
-            catch (COMException) when (attempt < 4)
-            {
-                Thread.Sleep(60);
-            }
-            catch (COMException)
-            {
-                throw new BusinessException("Le presse-papiers est occupé par une autre application. Réessayez.");
-            }
+            // Single call: WPF already retries briefly when another application holds the clipboard.
+            System.Windows.Clipboard.SetDataObject(text, copy: true);
+        }
+        catch (COMException)
+        {
+            throw new BusinessException("Le presse-papiers est occupé par une autre application. Réessayez.");
         }
     }
 }

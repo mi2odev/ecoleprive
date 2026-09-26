@@ -115,7 +115,7 @@ public class SecurityTests
     {
         await using var host = await TestHost.CreateAsync();
         var paths = host.Get<AppPaths>();
-        SqliteConnection.ClearAllPools();
+        host.Get<ConnectionStringProvider>().ClearPool();
         var head = new byte[16];
         await using (var fs = new FileStream(paths.Database, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             await fs.ReadExactlyAsync(head);

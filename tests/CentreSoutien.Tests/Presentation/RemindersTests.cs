@@ -311,4 +311,19 @@ public class RemindersTests
         for (var i = 0; i < 300 && dialogs.Current is not AbsenceNoticeDialogViewModel && !running.IsCompleted; i++) await Task.Delay(10);
         return Assert.IsType<AbsenceNoticeDialogViewModel>(dialogs.Current);
     }
+
+    [Fact]
+    public async Task Clicking_select_all_on_a_partial_selection_selects_everything()
+    {
+        await using var host = await UiHost.CreateAsync();
+        var page = await OpenRemindersAsync(host);
+        Assert.True(page.Reminders.Count > 1);
+        page.Reminders[0].IsSelected = false;
+        Assert.Null(page.AllRemindersSelected);
+        page.AllRemindersSelected = false; // what a two-state CheckBox does when clicked in the partial state
+        Assert.True(page.AllRemindersSelected);
+        Assert.All(page.Reminders, r => Assert.True(r.IsSelected));
+        page.AllRemindersSelected = false; // second click clears
+        Assert.All(page.Reminders, r => Assert.False(r.IsSelected));
+    }
 }

@@ -57,10 +57,9 @@ public abstract class ChartBase : FrameworkElement
         SetResourceReference(PanelBrushProperty, "PanelBrush");
         SnapsToDevicePixels = true;
         MinHeight = 120;
-        ToolTip = _tip;
-        ToolTipService.SetInitialShowDelay(this, 100);
-        ToolTipService.SetBetweenShowDelay(this, 0);
-        ToolTipOpening += (_, e) => { if (_hover < 0 || Data is null) e.Handled = true; };
+        // The tooltip is opened/closed manually in OnMouseMove (ToolTipService would not reopen it
+        // after the pointer paused outside a bar).
+        _tip.PlacementTarget = this;
     }
 
     public ChartData? Data { get => (ChartData?)GetValue(DataProperty); set => SetValue(DataProperty, value); }
@@ -310,6 +309,7 @@ public abstract class ChartBase : FrameworkElement
                     var ft = Text(data.FormatAxis(v), AxisFontSize - 0.5, InkBrush, strong: true);
                     var y = Y(v) - ft.Height - 6;
                     if (y < area.Top) y = Y(v) + 6;
+                    if (ft.Width > plot.Width) continue;
                     var x = Math.Clamp(plot.Left + i * bw + (bw - ft.Width) / 2, plot.Left, plot.Right - ft.Width);
                     dc.DrawText(ft, new Point(x, y));
                 }
@@ -326,7 +326,12 @@ public abstract class ChartBase : FrameworkElement
         if (index == _hover) return;
         _hover = index;
         if (index >= 0 && Data is { } data)
+        {
             _tip.Content = data.Describe(index);
+            // Reopen so the tooltip follows the pointer to the new bar.
+            _tip.IsOpen = false;
+            _tip.IsOpen = true;
+        }
         else
             _tip.IsOpen = false;
         InvalidateVisual();
