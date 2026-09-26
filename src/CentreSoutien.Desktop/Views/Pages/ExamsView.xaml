@@ -1,0 +1,95 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.ExamsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ExamsViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="Nouvel examen" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding CountLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Examens" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Margin="0,0,0,18">
+            <ComboBox DockPanel.Dock="Left" ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label"
+                      Width="320" VerticalAlignment="Top" Margin="0,0,12,0" MaxDropDownHeight="320" />
+            <ListBox ItemsSource="{Binding TypeFilters}" SelectedItem="{Binding SelectedType}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
+        </DockPanel>
+
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="1.5*" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Date" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Intitulé" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Type" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Groupe" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Sur" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Coef." Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="6" Text="Notes saisies" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="7" Text="{Binding AverageHeader}" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="8" Text="Actions" Style="{StaticResource ColumnHeader}" Width="220" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucune évaluation ne correspond aux filtres." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExamRow}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Date}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Title}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Type}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Group}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Max}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Coefficient}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="6" Text="{Binding Entered}" Style="{StaticResource Muted}" />
+                                    <TextBlock x:Name="Avg" Grid.Column="7" Text="{Binding Average}" Style="{StaticResource Body}" FontWeight="SemiBold" />
+                                    <StackPanel Grid.Column="8" Orientation="Horizontal" Width="220" VerticalAlignment="Center">
+                                        <Button Content="Saisir les notes" Command="{Binding EnterGrades}" Style="{StaticResource InkLinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Passing}" Value="False">
+                                    <Setter TargetName="Avg" Property="Foreground" Value="{DynamicResource BadBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

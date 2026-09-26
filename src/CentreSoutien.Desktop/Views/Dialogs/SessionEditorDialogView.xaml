@@ -1,0 +1,50 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.SessionEditorDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:SessionEditorDialogViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="Cell" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,16,14" />
+        </Style>
+    </UserControl.Resources>
+    <StackPanel>
+        <TextBlock Text="Groupe *" Style="{StaticResource FieldLabel}" />
+        <ComboBox ItemsSource="{Binding GroupOptions}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label"
+                  IsTextSearchEnabled="True" TextSearch.TextPath="Label" MaxDropDownHeight="320" Margin="0,0,0,14" />
+
+        <UniformGrid Columns="3" Margin="0,0,-16,0">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Date *" Style="{StaticResource FieldLabel}" />
+                <DatePicker SelectedDate="{Binding Date}" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Début *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Start, UpdateSourceTrigger=PropertyChanged}" Tag="09:00" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Fin *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding End, UpdateSourceTrigger=PropertyChanged}" Tag="11:00" />
+            </StackPanel>
+        </UniformGrid>
+
+        <UniformGrid Columns="2" Margin="0,0,-16,0">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Salle" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding RoomOptions}" SelectedItem="{Binding SelectedRoom}" DisplayMemberPath="Label" />
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Enseignant" Style="{StaticResource FieldLabel}" />
+                <ComboBox ItemsSource="{Binding TeacherOptions}" SelectedItem="{Binding SelectedTeacher}" DisplayMemberPath="Label" MaxDropDownHeight="320" />
+            </StackPanel>
+        </UniformGrid>
+
+        <TextBlock Text="Statut" Style="{StaticResource FieldLabel}" />
+        <ListBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,10" />
+
+        <TextBlock Text="Sujet de la séance (facultatif)" Style="{StaticResource FieldLabel}" />
+        <TextBox Text="{Binding Topic, UpdateSourceTrigger=PropertyChanged}" Tag="Ex. Suites numériques, révision du chapitre 3" />
+    </StackPanel>
+</UserControl>

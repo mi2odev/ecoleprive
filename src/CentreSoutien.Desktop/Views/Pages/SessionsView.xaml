@@ -1,0 +1,114 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.SessionsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:SessionsViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <Button Content="Générer depuis l'emploi du temps" Command="{Binding GenerateCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Nouvelle séance" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding WeekLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Séances" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Margin="0,0,0,18">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,0,16,0">
+                <Button Content="← Semaine précédente" Command="{Binding PreviousWeekCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,6,0" />
+                <Button Content="Cette semaine" Command="{Binding ThisWeekCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,6,0" />
+                <Button Content="Semaine suivante →" Command="{Binding NextWeekCommand}" Style="{StaticResource SmallSecondaryButton}" />
+            </StackPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding CountLabel}" Style="{StaticResource Muted}" VerticalAlignment="Top" Margin="16,7,0,0" />
+            <ListBox ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
+        </DockPanel>
+
+        <Border Style="{StaticResource Card}" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisible}}">
+            <TextBlock Text="Aucune séance pour cette semaine. Utilisez « Générer depuis l'emploi du temps » pour créer les séances prévues."
+                       Style="{StaticResource EmptyText}" />
+        </Border>
+
+        <ItemsControl ItemsSource="{Binding Days}" Focusable="False">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:SessionDayGroup}">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <Border Style="{StaticResource CardHeader}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Title}" Style="{StaticResource H2}" />
+                                </DockPanel>
+                            </Border>
+                            <Border Style="{StaticResource TableHeader}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="1.3*" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Horaire" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="1" Text="Groupe" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="2" Text="Enseignant" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="3" Text="Salle" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="4" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="5" Text="Présences" Style="{StaticResource ColumnHeader}" />
+                                    <TextBlock Grid.Column="6" Text="Actions" Style="{StaticResource ColumnHeader}" Width="250" />
+                                </Grid>
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:SessionRow}">
+                                        <Border Style="{StaticResource TableRow}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="2*" />
+                                                    <ColumnDefinition Width="1.3*" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Time}" Style="{StaticResource Muted}" />
+                                                <StackPanel Grid.Column="1" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="GroupText" Text="{Binding Group}" Style="{StaticResource BodyStrong}" />
+                                                    <TextBlock Text="{Binding Topic}" Style="{StaticResource Small}"
+                                                               Visibility="{Binding HasTopic, Converter={StaticResource BoolToVisible}}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding Teacher}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                                <TextBlock Grid.Column="3" Text="{Binding Room}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                                <ContentControl Grid.Column="4" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="5" Text="{Binding Attendance}" Style="{StaticResource Muted}" />
+                                                <StackPanel Grid.Column="6" Orientation="Horizontal" Width="250" VerticalAlignment="Center">
+                                                    <Button Content="Faire l'appel" Command="{Binding TakeAttendance}" Style="{StaticResource InkLinkButton}" Margin="0,0,12,0"
+                                                            IsEnabled="{Binding IsCancelled, Converter={StaticResource Not}}" />
+                                                    <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                                    <Button Content="{Binding ToggleLabel}" Command="{Binding ToggleCancel}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                                    <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsCancelled}" Value="True">
+                                                <Setter TargetName="GroupText" Property="TextDecorations" Value="Strikethrough" />
+                                                <Setter TargetName="GroupText" Property="Foreground" Value="{DynamicResource MutedBrush}" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>
