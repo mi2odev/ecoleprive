@@ -17,7 +17,7 @@ public sealed record SubjectRow(int Id, string Name, string ShortName, string? D
 
 public sealed partial class SubjectsViewModel(
     ICrudService<Subject> subjects, ICourseService courses, ITeacherService teachers, DialogHost dialogs, INotifier notifier,
-    TimeProvider clock, IServiceProvider services) : PageViewModel
+    TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<SubjectRow> _all = [];
 
@@ -82,4 +82,8 @@ public sealed partial class SubjectsViewModel(
             await RefreshAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter une matière";
 }

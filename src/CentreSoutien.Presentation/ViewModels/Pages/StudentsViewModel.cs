@@ -26,7 +26,7 @@ public sealed record StudentRow(StudentListItem Item, IRelayCommand Open)
 
 public sealed partial class StudentsViewModel(
     IStudentService students, INavigator nav, DialogHost dialogs, INotifier notifier, IFilePicker files, IExportService export,
-    IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel
+    IShell shell, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     /// <summary>Navigation parameter: pre-filled search (from the header search box).</summary>
     public sealed record Query(string Text);
@@ -121,4 +121,8 @@ public sealed partial class StudentsViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter un élève";
 }

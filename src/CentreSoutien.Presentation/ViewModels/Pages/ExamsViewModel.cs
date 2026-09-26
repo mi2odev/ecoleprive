@@ -17,7 +17,7 @@ public sealed record ExamRow(
 
 public sealed partial class ExamsViewModel(
     IExamService exams, IGroupService groups, ISettingsService settings, INavigator nav, DialogHost dialogs, INotifier notifier,
-    IServiceProvider services) : PageViewModel
+    IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private List<Exam> _all = [];
     private Dictionary<int, Group> _groups = [];
@@ -123,4 +123,8 @@ public sealed partial class ExamsViewModel(
             await RefreshAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Nouvel examen";
 }

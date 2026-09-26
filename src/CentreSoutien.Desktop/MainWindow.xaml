@@ -41,14 +41,108 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Windows icon font (Windows 11), with the Windows 10 font as fallback: same code points. -->
+        <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <!-- Icon before a label (sidebar entries, header buttons). -->
+        <Style x:Key="ShellIcon" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+        </Style>
+        <Style x:Key="ButtonIcon" TargetType="TextBlock" BasedOn="{StaticResource ShellIcon}">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Margin" Value="0,0,7,0" />
+        </Style>
+        <!-- Keyboard key ("Ctrl+K") shown next to a label. -->
+        <Style x:Key="KeyCap" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SunkBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="6,1" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="KeyCapText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        </Style>
+        <!-- Header "Aide" button: highlighted while the page help is shown. -->
+        <Style x:Key="HelpToggleButton" TargetType="Button" BasedOn="{StaticResource SmallSecondaryButton}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ShowHelpPanel}" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SunkBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource InkBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Text size choice (Normal / Grand / Très grand). -->
+        <Style x:Key="ScaleChoice" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Padding="16,7" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1"
+                                BorderBrush="{DynamicResource LineBrush}" Background="{DynamicResource PanelBrush}">
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InkBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InkBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource BgBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Key="Escape" Command="{Binding Dialogs.Current.CancelCommand}" />
         <KeyBinding Key="L" Modifiers="Control" Command="{Binding LockNowCommand}" />
         <KeyBinding Key="K" Modifiers="Control" Command="{Binding OpenSearchCommand}" />
+        <KeyBinding Key="F1" Command="{Binding ToggleShortcutsCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshPageCommand}" />
+        <KeyBinding Key="Left" Modifiers="Alt" Command="{Binding GoBackCommand}" />
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewItemCommand}" />
+        <KeyBinding Key="P" Modifiers="Control" Command="{Binding PrintPageCommand}" />
+        <!-- Ctrl+1 … Ctrl+9: PageHelp.QuickPages -->
+        <KeyBinding Key="D1" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="1" />
+        <KeyBinding Key="D2" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="2" />
+        <KeyBinding Key="D3" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="3" />
+        <KeyBinding Key="D4" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="4" />
+        <KeyBinding Key="D5" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="5" />
+        <KeyBinding Key="D6" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="6" />
+        <KeyBinding Key="D7" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="7" />
+        <KeyBinding Key="D8" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="8" />
+        <KeyBinding Key="D9" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="9" />
+        <KeyBinding Key="NumPad1" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="1" />
+        <KeyBinding Key="NumPad2" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="2" />
+        <KeyBinding Key="NumPad3" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="3" />
+        <KeyBinding Key="NumPad4" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="4" />
+        <KeyBinding Key="NumPad5" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="5" />
+        <KeyBinding Key="NumPad6" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="6" />
+        <KeyBinding Key="NumPad7" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="7" />
+        <KeyBinding Key="NumPad8" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="8" />
+        <KeyBinding Key="NumPad9" Modifiers="Control" Command="{Binding GoToCommand}" CommandParameter="9" />
     </Window.InputBindings>
 
-    <Grid>
+    <!-- The whole window is scaled by the text size preference (Normal / Grand / Très grand), overlays included. -->
+    <Grid x:Name="RootGrid">
+        <Grid.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding TextScale}" ScaleY="{Binding TextScale}" />
+        </Grid.LayoutTransform>
         <!-- ===================== LOGIN ===================== -->
         <Grid Visibility="{Binding ShowLogin, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}">
             <Grid.ColumnDefinitions>
@@ -146,7 +240,12 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Button>
-                            <Button Content="Déconnexion" Command="{Binding SignOutCommand}" Style="{StaticResource NavButton}" FontSize="13" Margin="0,4,0,0" />
+                            <Button Command="{Binding SignOutCommand}" Style="{StaticResource NavButton}" FontSize="13" Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Static shell:Glyphs.SignOut}" Style="{StaticResource ShellIcon}" FontSize="14" />
+                                    <TextBlock Text="Déconnexion" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Border>
 
@@ -160,8 +259,14 @@
                                         <ItemsControl ItemsSource="{Binding Items}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate DataType="{x:Type shell:NavItem}">
-                                                    <Button Content="{Binding Label}" Command="{Binding GoCommand}" Tag="{Binding IsActive}"
-                                                            Style="{StaticResource NavButton}" Margin="0,0,0,1" />
+                                                    <Button Command="{Binding GoCommand}" Tag="{Binding IsActive}" ToolTip="{Binding ToolTip}"
+                                                            AutomationProperties.Name="{Binding Label}"
+                                                            Style="{StaticResource NavButton}" Margin="0,0,0,1">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource ShellIcon}" Width="18" TextAlignment="Center" />
+                                                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Button>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
@@ -176,20 +281,126 @@
             <!-- Main column -->
             <DockPanel>
                 <Border DockPanel.Dock="Top" Height="60" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource BgBrush}" Padding="28,0">
-                    <DockPanel VerticalAlignment="Center" LastChildFill="False">
-                        <!-- Opens the search palette on click (or on Enter after typing). -->
-                        <TextBox x:Name="HeaderSearch" DockPanel.Dock="Left" Width="320" Tag="Rechercher…  (Ctrl+K)" Cursor="Hand"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding SearchCommand}"
-                                 PreviewMouseLeftButtonDown="HeaderSearch_OnPreviewMouseLeftButtonDown" />
-                        <Button DockPanel.Dock="Right" Content="Verrouiller" Command="{Binding LockNowCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34"
-                                ToolTip="Verrouiller l'application (Ctrl+L)" />
-                        <Button DockPanel.Dock="Right" Content="{Binding ThemeLabel}" Command="{Binding ToggleThemeCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Margin="0,0,14,0" />
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding ClockLabel}" Style="{StaticResource Muted}" Margin="0,0,14,0" />
-                    </DockPanel>
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <!-- Back to the previous page (also Alt+←), in addition to the pages' own back links. -->
+                        <Button Command="{Binding GoBackCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Margin="0,0,12,0"
+                                ToolTip="Revenir à la page précédente (Alt+←)"
+                                Visibility="{Binding Navigator.CanGoBack, Converter={StaticResource BoolToVisible}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Static shell:Glyphs.Back}" Style="{StaticResource ButtonIcon}" FontSize="12" />
+                                <TextBlock Text="Retour" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <!-- Opens the search palette on click (or on Enter after typing). The icon and the Ctrl+K key stay visible. -->
+                        <Grid Grid.Column="1" MaxWidth="340" HorizontalAlignment="Stretch" Margin="0,0,14,0">
+                            <TextBox x:Name="HeaderSearch" Tag="Rechercher… élève, parent, reçu" Cursor="Hand" Padding="32,0,62,0"
+                                     ToolTip="Rechercher dans tout le centre (Ctrl+K)"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ui:Enter.Command="{Binding SearchCommand}"
+                                     PreviewMouseLeftButtonDown="HeaderSearch_OnPreviewMouseLeftButtonDown" />
+                            <TextBlock Text="{x:Static shell:Glyphs.Search}" Style="{StaticResource ShellIcon}" FontSize="13" Margin="12,0,0,0"
+                                       HorizontalAlignment="Left" Foreground="{DynamicResource MutedBrush}" IsHitTestVisible="False" />
+                            <Border Style="{StaticResource KeyCap}" HorizontalAlignment="Right" Margin="0,0,8,0" IsHitTestVisible="False">
+                                <TextBlock Text="Ctrl+K" Style="{StaticResource KeyCapText}" />
+                            </Border>
+                        </Grid>
+                        <TextBlock Grid.Column="2" Text="{Binding ClockLabel}" Style="{StaticResource Muted}" Margin="0,0,14,0" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="3" Orientation="Horizontal">
+                            <!-- Help of the current page. -->
+                            <Button Command="{Binding ToggleHelpCommand}" Style="{StaticResource HelpToggleButton}" Height="34" Margin="0,0,8,0"
+                                    ToolTip="Afficher ou masquer l'aide de cette page">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Static shell:Glyphs.Help}" Style="{StaticResource ButtonIcon}" />
+                                    <TextBlock Text="Aide" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <!-- Shortcuts and text size (F1). -->
+                            <Button Command="{Binding ToggleShortcutsCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Padding="10,0" Margin="0,0,8,0"
+                                    ToolTip="Raccourcis clavier et taille du texte (F1)" AutomationProperties.Name="Raccourcis clavier et taille du texte">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Static shell:Glyphs.Keyboard}" Style="{StaticResource ButtonIcon}" />
+                                    <TextBlock Text="Aa" VerticalAlignment="Center" FontWeight="Medium" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ToggleThemeCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding ThemeGlyph}" Style="{StaticResource ButtonIcon}" />
+                                    <TextBlock Text="{Binding ThemeLabel}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding LockNowCommand}" Style="{StaticResource SmallSecondaryButton}" Height="34"
+                                    ToolTip="Verrouiller l'application (Ctrl+L)">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{x:Static shell:Glyphs.Lock}" Style="{StaticResource ButtonIcon}" />
+                                    <TextBlock Text="Verrouiller" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
                 </Border>
                 <ScrollViewer x:Name="PageScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="{DynamicResource BgBrush}">
-                    <ContentControl MaxWidth="1320" Margin="32,28,32,64" Focusable="False"
-                                    Content="{Binding Navigator.Current}" ContentTemplateSelector="{StaticResource ViewLocator}" />
+                    <StackPanel>
+                        <!-- Help of the current page ("Aide" button), texts in Presentation/Core/PageHelp.cs. -->
+                        <Border MaxWidth="1320" Margin="32,24,32,0" Padding="20,16" CornerRadius="{StaticResource RadiusSmall}"
+                                Background="{DynamicResource SunkBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1"
+                                Visibility="{Binding ShowHelpPanel, Converter={StaticResource BoolToVisible}}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" VerticalAlignment="Top" Margin="16,0,0,0">
+                                    <Button Content="Masquer l'aide" Command="{Binding ToggleHelpCommand}" Style="{StaticResource LinkButton}" FontSize="13" HorizontalAlignment="Right" />
+                                    <Button Content="Tous les raccourcis (F1)" Command="{Binding ToggleShortcutsCommand}" Style="{StaticResource LinkButton}" FontSize="13"
+                                            HorizontalAlignment="Right" Margin="0,8,0,0" />
+                                </StackPanel>
+                                <Grid DataContext="{Binding CurrentHelp}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="3*" />
+                                        <ColumnDefinition Width="2*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal">
+                                        <TextBlock Text="{x:Static shell:Glyphs.Help}" Style="{StaticResource ShellIcon}" FontSize="16" />
+                                        <TextBlock Style="{StaticResource BodyStrong}" FontSize="15" VerticalAlignment="Center">
+                                            <Run Text="À quoi sert cette page · " /><Run Text="{Binding Title, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Purpose}" TextWrapping="Wrap" FontSize="13.5" Margin="0,8,0,12" />
+                                    <StackPanel Grid.Row="2" Margin="0,0,24,0">
+                                        <TextBlock Text="COMMENT FAIRE" Style="{StaticResource Overline}" />
+                                        <ItemsControl ItemsSource="{Binding Steps}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,2">
+                                                        <TextBlock DockPanel.Dock="Left" Text="•" Margin="2,0,8,0" Foreground="{DynamicResource MutedBrush}" />
+                                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="13" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Visibility="{Binding HasShortcuts, Converter={StaticResource BoolToVisible}}">
+                                        <TextBlock Text="RACCOURCIS" Style="{StaticResource Overline}" />
+                                        <ItemsControl ItemsSource="{Binding Shortcuts}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="13" Margin="0,2" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+                            </DockPanel>
+                        </Border>
+                        <ContentControl MaxWidth="1320" Margin="32,28,32,64" Focusable="False"
+                                        Content="{Binding Navigator.Current}" ContentTemplateSelector="{StaticResource ViewLocator}" />
+                    </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </DockPanel>
@@ -262,6 +473,74 @@
             </Border>
         </Grid>
 
+        <!-- ===================== SHORTCUTS & DISPLAY (F1) ===================== -->
+        <Grid x:Name="ShortcutsOverlay" Visibility="{Binding IsShortcutsOpen, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource OverlayBrush}"
+              Panel.ZIndex="36" KeyboardNavigation.TabNavigation="Cycle" MouseLeftButtonDown="ShortcutsOverlay_OnMouseLeftButtonDown">
+            <Grid.InputBindings>
+                <KeyBinding Key="Escape" Command="{Binding CloseShortcutsCommand}" />
+            </Grid.InputBindings>
+            <Border Style="{StaticResource Card}" Width="700" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0"
+                    MaxHeight="{Binding ActualHeight, ElementName=RootGrid, Converter={x:Static views:Sizes.MinusMargin}}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="60" ShadowDepth="20" Opacity="0.2" Color="#000000" />
+                </Border.Effect>
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="24,22,24,6">
+                        <Button DockPanel.Dock="Right" Content="Fermer (Échap)" Command="{Binding CloseShortcutsCommand}" Style="{StaticResource SmallSecondaryButton}"
+                                VerticalAlignment="Top" ui:FocusOnShow.Enabled="True" />
+                        <TextBlock Text="Aide, raccourcis et affichage" Style="{StaticResource H3}" VerticalAlignment="Center" />
+                    </DockPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,0,24,22">
+                        <StackPanel>
+                            <TextBlock Text="TAILLE DU TEXTE" Style="{StaticResource Overline}" Margin="0,10,0,6" />
+                            <TextBlock Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="Agrandit tout l'affichage (textes, boutons, fenêtres). Le choix est gardé sur cet ordinateur." />
+                            <ItemsControl ItemsSource="{Binding TextScaleOptions}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type shell:TextScaleOption}">
+                                        <RadioButton Content="{Binding Label}" GroupName="TextScale" IsChecked="{Binding IsSelected, Mode=OneWay}"
+                                                     Command="{Binding SelectCommand}" Style="{StaticResource ScaleChoice}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="AIDE DE LA PAGE" Style="{StaticResource Overline}" Margin="0,22,0,6" />
+                            <TextBlock Style="{StaticResource Small}" TextWrapping="Wrap"
+                                       Text="Le bouton « Aide » en haut de l'écran explique la page ouverte : à quoi elle sert, comment faire et ses raccourcis. Les icônes de la barre latérale indiquent aussi leur raccourci au survol." />
+
+                            <TextBlock Text="RACCOURCIS CLAVIER" Style="{StaticResource Overline}" Margin="0,22,0,8" />
+                            <TextBlock Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Visibility="{Binding PrimaryActionLabel, Converter={StaticResource NotNullToVisible}}">
+                                <Run Text="Sur cette page, Ctrl+N : " /><Run Text="{Binding PrimaryActionLabel, Mode=OneWay}" FontWeight="Medium" /><Run Text="." />
+                            </TextBlock>
+                            <ItemsControl ItemsSource="{Binding Shortcuts}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,3,16,3">
+                                            <Border DockPanel.Dock="Left" Style="{StaticResource KeyCap}" MinWidth="64" Margin="0,0,10,0" VerticalAlignment="Top">
+                                                <TextBlock Text="{Binding Keys}" Style="{StaticResource KeyCapText}" Foreground="{DynamicResource InkBrush}" HorizontalAlignment="Center" />
+                                            </Border>
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" FontSize="13" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
         <!-- ===================== LOCK SCREEN ===================== -->
         <Grid Visibility="{Binding ShowLock, Converter={StaticResource BoolToVisible}}" Background="{DynamicResource BgBrush}" Panel.ZIndex="50"
               KeyboardNavigation.TabNavigation="Cycle" FocusManager.IsFocusScope="True">
@@ -281,7 +560,7 @@
         <!-- ===================== DIALOG OVERLAY ===================== -->
         <Grid Visibility="{Binding Dialogs.Current, Converter={StaticResource NotNullToVisible}}" Background="{DynamicResource OverlayBrush}" Panel.ZIndex="40"
               KeyboardNavigation.TabNavigation="Cycle">
-            <Border Style="{StaticResource Card}" Width="{Binding Dialogs.Current.Width}" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}, Converter={x:Static views:Sizes.MinusMargin}}"
+            <Border Style="{StaticResource Card}" Width="{Binding Dialogs.Current.Width}" MaxHeight="{Binding ActualHeight, ElementName=RootGrid, Converter={x:Static views:Sizes.MinusMargin}}"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="60" ShadowDepth="20" Opacity="0.2" Color="#000000" />

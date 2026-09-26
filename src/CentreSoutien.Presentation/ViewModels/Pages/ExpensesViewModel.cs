@@ -15,7 +15,7 @@ public sealed record ExpenseLine(int Id, string Date, string Category, string De
 
 public sealed partial class ExpensesViewModel(
     ICrudService<Expense> expenses, IExportService export, IFilePicker files, IShell shell,
-    DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     private const string AllCategories = "Toutes";
     private List<Expense> _month = [];
@@ -121,4 +121,8 @@ public sealed partial class ExpensesViewModel(
             shell.Reveal(path);
         }, notifier);
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter une dépense";
 }

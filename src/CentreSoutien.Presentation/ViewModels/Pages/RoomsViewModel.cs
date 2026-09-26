@@ -12,7 +12,7 @@ namespace CentreSoutien.Presentation.ViewModels.Pages;
 public sealed record RoomRow(int Id, string Name, string Capacity, string Equipment, Badge Now, string Week, Badge Status, IRelayCommand Edit, IRelayCommand Delete);
 
 public sealed partial class RoomsViewModel(
-    ICrudService<Room> rooms, IScheduleService schedule, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel
+    ICrudService<Room> rooms, IScheduleService schedule, DialogHost dialogs, INotifier notifier, TimeProvider clock, IServiceProvider services) : PageViewModel, IHasPrimaryAction
 {
     public override string NavKey => "rooms";
     public override string Title => "Salles";
@@ -77,4 +77,8 @@ public sealed partial class RoomsViewModel(
             await RefreshAsync();
         }
     }
+
+    // Ctrl+N in the shell.
+    IAsyncRelayCommand? IHasPrimaryAction.PrimaryCommand => AddCommand;
+    string? IHasPrimaryAction.PrimaryLabel => "Ajouter une salle";
 }
