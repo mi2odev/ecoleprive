@@ -1,0 +1,144 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.TeacherPaymentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:TeacherPaymentsViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth}" DisplayMemberPath="Label" Width="170" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding MonthLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Paiements des enseignants" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <ItemsControl ItemsSource="{Binding Kpis}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
+
+        <!-- Month table -->
+        <Border Style="{StaticResource Card}" Margin="0,0,0,22">
+            <StackPanel>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.3*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="1.4*" />
+                            <ColumnDefinition Width="105" />
+                            <ColumnDefinition Width="105" />
+                            <ColumnDefinition Width="105" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="60" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Enseignant" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Matière" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Règle" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Dû" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Versé" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Reste" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="6" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="7" Text="Dernier paiement" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun enseignant actif." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Lines, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Lines}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:TeacherPayLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.3*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="1.4*" />
+                                        <ColumnDefinition Width="105" />
+                                        <ColumnDefinition Width="105" />
+                                        <ColumnDefinition Width="105" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="60" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Content="{Binding Name}" Command="{Binding Open}" Style="{StaticResource InkLinkButton}" FontWeight="Medium"
+                                            HorizontalAlignment="Left" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Subject}" Style="{StaticResource Muted}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Rule}" Style="{StaticResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Rule}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Due}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Paid}" Style="{StaticResource Body}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Rest}" Style="{StaticResource BodyStrong}" />
+                                    <ContentControl Grid.Column="6" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="7" Text="{Binding LastPayment}" Style="{StaticResource Muted}" />
+                                    <Button Grid.Column="8" Content="Payer" Command="{Binding Pay}" Style="{StaticResource InkLinkButton}" FontSize="12"
+                                            Visibility="{Binding CanPay, Converter={StaticResource BoolToVisible}}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- History -->
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Border Style="{StaticResource CardHeader}">
+                    <DockPanel>
+                        <CheckBox DockPanel.Dock="Right" Content="Mois sélectionné uniquement" IsChecked="{Binding HistoryForMonthOnly}" VerticalAlignment="Center" />
+                        <TextBlock Text="Historique" Style="{StaticResource H2}" />
+                    </DockPanel>
+                </Border>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="1.3*" />
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="80" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Date" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Enseignant" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Mois" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Mode" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Note" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Montant" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun versement enregistré." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding History, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding History}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:TeacherPayHistoryLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="1.3*" />
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="80" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Date}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Teacher}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Month}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Method}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Note}" Style="{StaticResource Muted}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
+                                    <Button Grid.Column="6" Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

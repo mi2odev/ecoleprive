@@ -1,0 +1,81 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.ExpensesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:ExpensesViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth}" DisplayMemberPath="Label" Width="170" Margin="0,0,8,0" />
+                <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
+                <Button Content="Ajouter une dépense" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+            </StackPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding MonthLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Dépenses" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <ItemsControl ItemsSource="{Binding Kpis}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
+
+        <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Style="{StaticResource ChipList}" Margin="0,0,0,14" />
+
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="1.6*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="140" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Date" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Catégorie" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Description" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Fournisseur" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Mode" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Montant" Style="{StaticResource ColumnHeader}" />
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucune dépense pour cette période." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:ExpenseLine}">
+                            <Border Style="{StaticResource TableRow}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="1.6*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Date}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Category}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Description}" Style="{StaticResource Body}" Margin="0,0,10,0" ToolTip="{Binding Description}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Supplier}" Style="{StaticResource Muted}" Margin="0,0,10,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Method}" Style="{StaticResource Muted}" />
+                                    <TextBlock Grid.Column="5" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
+                                    <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding TotalLabel}" Style="{StaticResource Small}" Margin="20,12" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

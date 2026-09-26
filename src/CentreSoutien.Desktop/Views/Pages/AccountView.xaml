@@ -1,0 +1,117 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.AccountView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:AccountViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="AccountRow" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="0,12" />
+        </Style>
+        <Style x:Key="AccountLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,16,0" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <StackPanel Margin="0,0,0,22">
+            <TextBlock Text="Compte unique de l'application" Style="{StaticResource Muted}" />
+            <TextBlock Text="Mon compte" Style="{StaticResource H1}" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <Grid MaxWidth="1080" HorizontalAlignment="Left">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="320" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" MinWidth="320" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Profile -->
+            <Border Style="{StaticResource Card}" Padding="24,8,24,20" VerticalAlignment="Top">
+                <StackPanel>
+                    <Border Style="{StaticResource AccountRow}" Padding="0,16">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:Avatar Size="72" Initials="{Binding Initials}" ImagePath="{Binding PhotoPath}" Margin="0,0,16,0" />
+                            <Button Content="Changer la photo" Command="{Binding ChangePhotoCommand}" Style="{StaticResource SmallSecondaryButton}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Button Content="Retirer" Command="{Binding RemovePhotoCommand}" Style="{StaticResource LinkButton}" VerticalAlignment="Center"
+                                    Visibility="{Binding HasPhoto, Converter={StaticResource BoolToVisible}}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource AccountRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Nom d'utilisateur" Style="{StaticResource AccountLabel}" />
+                            <TextBox Grid.Column="1" Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource AccountRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Nom complet" Style="{StaticResource AccountLabel}" />
+                            <TextBox Grid.Column="1" Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource AccountRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="E-mail" Style="{StaticResource AccountLabel}" />
+                            <TextBox Grid.Column="1" Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                    </Border>
+                    <Border Style="{StaticResource AccountRow}">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <TextBlock Text="Téléphone" Style="{StaticResource AccountLabel}" />
+                            <TextBox Grid.Column="1" Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" />
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding Error}" Style="{StaticResource ErrorText}" Margin="0,12,0,0"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVisible}}" />
+                    <Button Content="Enregistrer" Command="{Binding SaveProfileCommand}" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" Margin="0,16,0,0" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Grid.Column="2">
+                <!-- Password -->
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,12">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding PasswordChangedLabel}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                            <TextBlock Text="Mot de passe" Style="{StaticResource H2}" />
+                        </DockPanel>
+                        <TextBlock Text="Mot de passe actuel" Style="{StaticResource FieldLabel}" />
+                        <PasswordBox Style="{StaticResource FieldPasswordBox}" ui:PasswordBinding.Password="{Binding CurrentPassword, Mode=TwoWay}" Margin="0,0,0,12" />
+                        <TextBlock Text="Nouveau mot de passe" Style="{StaticResource FieldLabel}" />
+                        <PasswordBox Style="{StaticResource FieldPasswordBox}" ui:PasswordBinding.Password="{Binding NewPassword, Mode=TwoWay}" Margin="0,0,0,12" />
+                        <TextBlock Text="Confirmer le nouveau mot de passe" Style="{StaticResource FieldLabel}" />
+                        <PasswordBox Style="{StaticResource FieldPasswordBox}" ui:PasswordBinding.Password="{Binding ConfirmPassword, Mode=TwoWay}"
+                                     ui:Enter.Command="{Binding ChangePasswordCommand}" Margin="0,0,0,12" />
+                        <TextBlock Text="{Binding PasswordRules}" Style="{StaticResource Small}" TextWrapping="Wrap" TextTrimming="None" />
+                        <TextBlock Text="{Binding PasswordError}" Style="{StaticResource ErrorText}" Margin="0,10,0,0"
+                                   Visibility="{Binding HasPasswordError, Converter={StaticResource BoolToVisible}}" />
+                        <Button Content="Mettre à jour" Command="{Binding ChangePasswordCommand}" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Left" Margin="0,14,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Session -->
+                <Border Style="{StaticResource PaddedCard}">
+                    <StackPanel>
+                        <TextBlock Text="Session" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding SessionLabel}" Style="{StaticResource Body}" Margin="0,10,0,12" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Verrouiller" Command="{Binding LockCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
+                            <Button Content="Se déconnecter" Command="{Binding SignOutCommand}" Style="{StaticResource SmallSecondaryButton}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>
