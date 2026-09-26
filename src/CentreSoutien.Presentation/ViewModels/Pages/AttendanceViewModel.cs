@@ -114,9 +114,11 @@ public sealed partial class AttendanceViewModel(
         await RunAsync(async () =>
         {
             DayLabel = Labels.LongDate(day);
-            // Make sure the timetable's sessions exist for the day (existing ones are kept).
-            await sessions.GenerateAsync(day, day);
-            var list = (await sessions.ListAsync(day, day)).Where(s => s.Status != SessionStatus.Cancelled || s.Id == sessionId).ToList();
+            // First visit of a day: create its sessions from the timetable. Once the day has sessions,
+            // leave it alone so sessions deleted on the Séances page do not come back.
+            var all = await sessions.ListAsync(day, day);
+            if (all.Count == 0 && await sessions.GenerateAsync(day, day) > 0) all = await sessions.ListAsync(day, day);
+            var list = all.Where(s => s.Status != SessionStatus.Cancelled || s.Id == sessionId).ToList();
             SessionItems = list.Select(ToItem).ToList();
             HasNoSession = SessionItems.Count == 0;
             var pick = SessionItems.FirstOrDefault(i => i.Id == sessionId)
