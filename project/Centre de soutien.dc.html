@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&amp;family=Newsreader:opsz,wght@6..72,500&amp;family=Public+Sans:wght@400;500;600&amp;family=Instrument+Serif&amp;family=Geist:wght@400;500;600&amp;display=swap">
+<style>
+html,body{margin:0;height:100%;overflow:hidden}
+*{box-sizing:border-box}
+a{color:inherit;text-decoration:underline}
+a:hover{opacity:.75}
+input,select,button{font-family:inherit}
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute; inset:0; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); background:var(--bg)">
+  <div style="background:var(--plate); border-right:1px solid var(--line); display:flex; flex-direction:column; justify-content:space-between; padding:44px 48px">
+    <div style="font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#6A6A66">Gestion du centre</div>
+    <img src="assets/logo.png" alt="Future Leaders Academy" style="width:80%; max-width:540px; align-self:center">
+    <div style="font-size:13px; color:#6A6A66">Future Leaders Academy · Cours de soutien</div>
+  </div>
+  <div style="display:flex; align-items:center; justify-content:center; padding:48px">
+    <div style="width:100%; max-width:360px; display:flex; flex-direction:column; gap:22px">
+      <div style="display:flex; flex-direction:column; gap:8px">
+        <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1); letter-spacing:-.01em">Connexion</h1>
+        <div style="font-size:14px; color:var(--muted)">Accès propriétaire du centre.</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px">
+        <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted)">Nom d'utilisateur
+          <input value="{{ user }}" onChange="{{ onUser }}" style="height:42px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px; outline:none">
+        </label>
+        <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--muted)">Mot de passe
+          <input type="password" value="{{ pw }}" onChange="{{ onPw }}" onKeyDown="{{ onLoginKey }}" placeholder="••••••••" style="height:42px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px; outline:none">
+        </label>
+        <sc-if value="{{ hasErr }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; color:var(--bad)">{{ err }}</div></sc-if>
+      </div>
+      <button onClick="{{ login }}" style="height:44px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:14px; font-weight:500; cursor:pointer">Se connecter</button>
+      <div style="font-size:12px; color:var(--muted); line-height:1.5">Verrouillage automatique après {{ lockMin }} min d'inactivité.</div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute; inset:0; display:flex">
+  <aside style="width:236px; flex:none; background:var(--side); border-right:1px solid var(--sideLine); display:flex; flex-direction:column; color:var(--sideInk)">
+    <div style="display:flex; align-items:center; gap:10px; padding:18px 18px 14px">
+      <div style="width:40px; height:40px; border-radius:var(--rs); background:#FFFFFF; display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none"><img src="assets/logo.png" alt="" style="width:38px; height:38px; object-fit:contain"></div>
+      <div style="display:flex; flex-direction:column; line-height:1.15">
+        <span style="font-family:var(--serif); font-weight:var(--hw); font-size:16px">Future Leaders</span>
+        <span style="font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--sideMuted)">Academy</span>
+      </div>
+    </div>
+    <nav style="flex:1; overflow-y:auto; padding:6px 10px 12px; display:flex; flex-direction:column; gap:12px">
+      <sc-for list="{{ nav }}" as="g" hint-placeholder-count="6">
+        <div style="display:flex; flex-direction:column; gap:1px">
+          <sc-if value="{{ g.label }}"><div style="font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--sideMuted); padding:4px 10px 4px">{{ g.label }}</div></sc-if>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+            <div onClick="{{ it.go }}" style="{{ it.style }}">{{ it.label }}</div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="border-top:1px solid var(--sideLine); padding:12px 10px; display:flex; flex-direction:column; gap:4px">
+      <div onClick="{{ goAccount }}" style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--rs); cursor:pointer" style-hover="background:var(--sideActive)">
+        <div style="width:32px; height:32px; border-radius:50%; background:var(--sideActive); border:1px solid var(--sideLine); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600">MB</div>
+        <div style="display:flex; flex-direction:column; line-height:1.25; min-width:0">
+          <span style="font-size:13px; font-weight:500">{{ fullName }}</span>
+          <span style="font-size:12px; color:var(--sideMuted)">Mon compte</span>
+        </div>
+      </div>
+      <div onClick="{{ logout }}" style="padding:8px 10px; font-size:13px; color:var(--sideMuted); cursor:pointer; border-radius:var(--rs)" style-hover="background:var(--sideActive)">Déconnexion</div>
+    </div>
+  </aside>
+
+  <main style="flex:1; min-width:0; display:flex; flex-direction:column; background:var(--bg)">
+    <header style="height:60px; flex:none; display:flex; align-items:center; gap:14px; padding:0 28px; border-bottom:1px solid var(--line); background:var(--bg)">
+      <input placeholder="Rechercher un élève (Entrée)" onKeyDown="{{ onSearchKey }}" style="width:320px; min-width:140px; flex:0 1 320px; height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none">
+      <div style="flex:1"></div>
+      <div style="font-size:13px; color:var(--muted); white-space:nowrap">{{ todayLabel }} · 14:32</div>
+      <button onClick="{{ toggleMode }}" style="white-space:nowrap; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">{{ modeLabel }}</button>
+      <button onClick="{{ lockNow }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Verrouiller</button>
+    </header>
+    <div style="flex:1; overflow-y:auto">
+    <div style="max-width:1320px; margin:0 auto; padding:28px 32px 64px; display:flex; flex-direction:column; gap:22px">
+
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px">
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="font-size:13px; color:var(--muted)">{{ todayLabel }}</div>
+          <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1); letter-spacing:-.01em">Tableau de bord</h1>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button onClick="{{ goPayments }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Paiements</button>
+          <button onClick="{{ openPayModal }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Encaisser un paiement</button>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--r); overflow:hidden">
+        <sc-for list="{{ fin }}" as="f" hint-placeholder-count="6">
+          <div style="background:var(--panel); padding:16px 18px; display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:12px; color:var(--muted)">{{ f.label }}</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:var(--kpi); letter-spacing:-.01em">{{ f.value }}</div>
+            <div style="font-size:12px; color:var(--muted)">{{ f.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px">
+        <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="3">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline">
+              <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">{{ b.title }}</div>
+              <div onClick="{{ b.go }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Ouvrir</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px">
+              <sc-for list="{{ b.rows }}" as="x" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; gap:4px">
+                  <div style="font-size:22px; font-weight:600; letter-spacing:-.01em; white-space:nowrap">{{ x.v }}</div>
+                  <div style="font-size:12px; color:var(--muted)">{{ x.l }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:16px; align-items:start">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; padding:16px 20px; border-bottom:1px solid var(--line)">
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Séances d'aujourd'hui</div>
+            <div onClick="{{ goSchedule }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Emploi du temps</div>
+          </div>
+          <sc-for list="{{ todayRows }}" as="s" hint-placeholder-count="6">
+            <div onClick="{{ s.open }}" style="display:grid; grid-template-columns:110px minmax(0,1.6fr) minmax(0,1fr) 90px 90px; gap:12px; align-items:center; padding:11px 20px; border-bottom:1px solid var(--line); cursor:pointer; font-size:13px" style-hover="background:var(--sunk)">
+              <div style="font-variant-numeric:tabular-nums; color:var(--muted)">{{ s.time }}</div>
+              <div style="font-weight:500">{{ s.name }}</div>
+              <div style="color:var(--muted)">{{ s.teacher }}</div>
+              <div style="color:var(--muted)">{{ s.room }}</div>
+              <div><span style="{{ s.badge }}">{{ s.state }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:14px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline">
+              <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Présences du jour</div>
+              <div onClick="{{ goAttendance }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Faire l'appel</div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px">
+              <sc-for list="{{ attStats }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; gap:4px">
+                  <div style="font-size:22px; font-weight:600">{{ a.v }}</div>
+                  <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted)"><span style="{{ a.dot }}"></span>{{ a.l }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; height:6px; border-radius:3px; overflow:hidden; background:var(--sunk)">
+              <sc-for list="{{ attBar }}" as="w"><div style="{{ w }}"></div></sc-for>
+            </div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:8px">
+            <div style="font-size:12px; color:var(--muted)">Prochaine séance · {{ next.inMin }}</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:21px">{{ next.name }}</div>
+            <div style="font-size:13px; color:var(--muted)">{{ next.time }} · {{ next.teacher }} · {{ next.room }}</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:12px">
+            <div style="font-size:12px; color:var(--muted)">Salles disponibles maintenant</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              <sc-for list="{{ freeRooms }}" as="rm" hint-placeholder-count="4">
+                <span style="height:28px; padding:0 10px; display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:var(--rs); font-size:13px">{{ rm }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStudents }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px">
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="font-size:13px; color:var(--muted)">{{ studentCount }}</div>
+          <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Élèves</h1>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button onClick="{{ toastExport }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Exporter</button>
+          <button onClick="{{ toastAddStudent }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Ajouter un élève</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap">
+        <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Nom, matricule ou téléphone du parent" style="width:340px; height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none">
+        <div style="display:flex; gap:4px">
+          <sc-for list="{{ lvlChips }}" as="c" hint-placeholder-count="5"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for>
+        </div>
+      </div>
+      <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow-x:auto"><div style="min-width:820px">
+        <div style="display:grid; grid-template-columns:minmax(0,2fr) 70px minmax(0,2fr) minmax(0,1.3fr) 130px 90px; gap:12px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); font-weight:500">
+          <div>Élève</div><div>Niveau</div><div>Cours</div><div>Parent</div><div>Reste à payer</div><div>Septembre</div>
+        </div>
+        <sc-for list="{{ studentRows }}" as="s" hint-placeholder-count="10">
+          <div onClick="{{ s.open }}" style="display:grid; grid-template-columns:minmax(0,2fr) 70px minmax(0,2fr) minmax(0,1.3fr) 130px 90px; gap:12px; align-items:center; padding:10px 20px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer; overflow-wrap:anywhere" style-hover="background:var(--sunk)">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0">
+              <div style="width:30px; height:30px; flex:none; border-radius:50%; background:var(--sunk); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600">{{ s.ini }}</div>
+              <div style="display:flex; flex-direction:column; min-width:0"><span style="font-weight:500">{{ s.name }}</span><span style="font-size:12px; color:var(--muted)">{{ s.id }}</span></div>
+            </div>
+            <div>{{ s.level }}</div>
+            <div style="color:var(--muted)">{{ s.courses }}</div>
+            <div style="color:var(--muted); font-variant-numeric:tabular-nums">{{ s.parent }}</div>
+            <div style="font-variant-numeric:tabular-nums">{{ s.rest }}</div>
+            <div><span style="{{ s.badge }}">{{ s.state }}</span></div>
+          </div>
+        </sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ isStudentProfile }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ goStudents }}" style="font-size:13px; color:var(--muted); cursor:pointer">← Élèves</div>
+      <div style="display:flex; align-items:center; gap:18px">
+        <div style="width:64px; height:64px; border-radius:50%; background:var(--sunk); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600">{{ st.ini }}</div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px">
+          <div style="display:flex; align-items:center; gap:10px"><h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">{{ st.name }}</h1><span style="{{ st.badge }}">{{ st.state }}</span></div>
+          <div style="font-size:13px; color:var(--muted)">{{ st.id }} · {{ st.level }} · Inscrit le {{ st.joined }} · {{ st.school }}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button onClick="{{ openPayStudent }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Ajouter un paiement</button>
+        <sc-for list="{{ stActions }}" as="a" hint-placeholder-count="4">
+          <button onClick="{{ a.go }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">{{ a.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex; gap:22px; border-bottom:1px solid var(--line); overflow-x:auto">
+        <sc-for list="{{ stTabs }}" as="t" hint-placeholder-count="5"><div onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</div></sc-for>
+      </div>
+      <sc-if value="{{ tabApercu }}">
+        <div style="display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:16px; align-items:start">
+          <div style="display:flex; flex-direction:column; gap:16px">
+            <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+              <div style="display:flex; justify-content:space-between; align-items:baseline; padding:16px 20px; border-bottom:1px solid var(--line)">
+                <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Inscriptions</div>
+                <div onClick="{{ toastEnroll }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Modifier l'inscription</div>
+              </div>
+              <sc-for list="{{ st.enr }}" as="e" hint-placeholder-count="2">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px">
+                  <div style="display:flex; flex-direction:column; gap:2px; min-width:0"><span onClick="{{ e.open }}" style="font-weight:500; cursor:pointer">{{ e.name }}</span><span style="color:var(--muted); font-size:12px">{{ e.teacher }} · {{ e.when }}</span></div>
+                  <div style="font-variant-numeric:tabular-nums; white-space:nowrap">{{ e.price }}</div>
+                  <div onClick="{{ e.change }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Changer</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 20px">
+              <sc-for list="{{ st.info }}" as="i" hint-placeholder-count="6">
+                <div style="display:flex; flex-direction:column; gap:3px"><span style="font-size:12px; color:var(--muted)">{{ i.l }}</span><span style="font-size:14px">{{ i.v }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:16px">
+            <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+              <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Septembre 2026</div>
+              <sc-for list="{{ st.fin }}" as="f" hint-placeholder-count="4">
+                <div style="display:flex; justify-content:space-between; font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><span style="font-variant-numeric:tabular-nums; font-weight:500">{{ f.v }}</span></div>
+              </sc-for>
+            </div>
+            <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:6px">
+              <div style="font-size:12px; color:var(--muted)">Parent / tuteur</div>
+              <div style="font-size:15px; font-weight:500">{{ st.parentName }}</div>
+              <div style="font-size:13px; color:var(--muted)">{{ st.parentPhone }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabPresences }}">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <div style="padding:14px 20px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted)">Taux de présence : <span style="color:var(--ink); font-weight:600">{{ st.rate }}</span></div>
+          <sc-for list="{{ st.hist }}" as="h" hint-placeholder-count="6">
+            <div style="display:grid; grid-template-columns:110px minmax(0,1fr) 100px; gap:12px; align-items:center; padding:10px 20px; border-bottom:1px solid var(--line); font-size:13px">
+              <div style="color:var(--muted)">{{ h.date }}</div><div>{{ h.course }}</div><div><span style="{{ h.badge }}">{{ h.label }}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabNotes }}">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <div style="display:grid; grid-template-columns:minmax(0,1.6fr) repeat(4,90px); gap:12px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); font-weight:500"><div>Cours</div><div>Test 1</div><div>Test 2</div><div>Devoir</div><div>Moyenne</div></div>
+          <sc-for list="{{ st.grades }}" as="g" hint-placeholder-count="2">
+            <div style="display:grid; grid-template-columns:minmax(0,1.6fr) repeat(4,90px); gap:12px; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px; font-variant-numeric:tabular-nums">
+              <div style="font-weight:500">{{ g.course }}</div><div>{{ g.a }}</div><div>{{ g.b }}</div><div>{{ g.c }}</div><div style="font-weight:600">{{ g.avg }}</div>
+            </div>
+          </sc-for>
+          <div style="padding:12px 20px"><button onClick="{{ toastGrade }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Saisir une note</button></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabPaiements }}">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <sc-if value="{{ st.noPay }}"><div style="padding:18px 20px; font-size:13px; color:var(--muted)">Aucun paiement enregistré pour ce mois.</div></sc-if>
+          <sc-for list="{{ st.pays }}" as="p" hint-placeholder-count="2">
+            <div style="display:grid; grid-template-columns:140px 110px minmax(0,1fr) 130px 90px; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px">
+              <div style="font-variant-numeric:tabular-nums">{{ p.rec }}</div><div style="color:var(--muted)">{{ p.date }}</div><div style="color:var(--muted)">{{ p.mode }}</div><div style="font-weight:500; font-variant-numeric:tabular-nums">{{ p.amount }}</div>
+              <div onClick="{{ p.print }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Reçu</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ tabDocuments }}">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <sc-for list="{{ st.docs }}" as="d" hint-placeholder-count="3">
+            <div style="display:grid; grid-template-columns:minmax(0,1fr) 120px 80px; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px">
+              <div style="font-weight:500">{{ d.name }}</div><div style="color:var(--muted)">{{ d.date }}</div><div style="font-size:12px; color:var(--muted); text-decoration:underline; cursor:pointer">Ouvrir</div>
+            </div>
+          </sc-for>
+          <div style="padding:12px 20px"><button onClick="{{ toastDoc }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Ajouter un document</button></div>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isTeachers }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Enseignants</h1>
+      <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow-x:auto"><div style="min-width:820px">
+        <div style="display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) 80px 80px minmax(0,1.4fr) 90px; gap:12px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); font-weight:500"><div>Enseignant</div><div>Matière</div><div>Cours</div><div>Élèves</div><div>Rémunération</div><div>Statut</div></div>
+        <sc-for list="{{ teacherRows }}" as="t" hint-placeholder-count="8">
+          <div onClick="{{ t.open }}" style="display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1.2fr) 80px 80px minmax(0,1.4fr) 90px; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer; overflow-wrap:anywhere" style-hover="background:var(--sunk)">
+            <div style="font-weight:500">{{ t.name }}</div><div style="color:var(--muted)">{{ t.subj }}</div><div>{{ t.nc }}</div><div>{{ t.ns }}</div><div style="color:var(--muted)">{{ t.rule }}</div><div><span style="{{ t.badge }}">{{ t.state }}</span></div>
+          </div>
+        </sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ isTeacherProfile }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ goTeachers }}" style="font-size:13px; color:var(--muted); cursor:pointer">← Enseignants</div>
+      <div style="display:flex; align-items:center; gap:18px">
+        <div style="width:64px; height:64px; border-radius:50%; background:var(--sunk); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:600">{{ tp.ini }}</div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px">
+          <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">{{ tp.name }}</h1>
+          <div style="font-size:13px; color:var(--muted)">{{ tp.subj }} · Au centre depuis {{ tp.since }} · {{ tp.phone }}</div>
+        </div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px">
+        <button onClick="{{ openPayTeacher }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Enregistrer un paiement</button>
+        <button onClick="{{ toastEditTeacher }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Modifier</button>
+        <button onClick="{{ goSchedule }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Emploi du temps</button>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:16px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+            <div style="padding:16px 20px; border-bottom:1px solid var(--line); font-family:var(--serif); font-weight:var(--hw); font-size:19px">Cours et horaires</div>
+            <sc-for list="{{ tp.courses }}" as="c" hint-placeholder-count="2">
+              <div onClick="{{ c.open }}" style="display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1.6fr) 90px; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer; overflow-wrap:anywhere" style-hover="background:var(--sunk)">
+                <div style="font-weight:500">{{ c.name }}</div><div style="color:var(--muted)">{{ c.when }} · {{ c.room }}</div><div>{{ c.fill }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ tp.noCourses }}"><div style="padding:16px 20px; font-size:13px; color:var(--muted)">Aucun cours cette année.</div></sc-if>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:12px">
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Élèves ({{ tp.ns }})</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              <sc-for list="{{ tp.students }}" as="s" hint-placeholder-count="8"><span onClick="{{ s.open }}" style="height:28px; padding:0 10px; display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:var(--rs); font-size:13px; cursor:pointer">{{ s.name }}</span></sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+            <div style="font-size:12px; color:var(--muted)">Gains · Septembre 2026</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:var(--kpi)">{{ tp.earn }}</div>
+            <div style="font-size:13px; color:var(--muted)">{{ tp.rule }}</div>
+            <div style="font-size:13px"><span style="{{ tp.badge }}">{{ tp.state }}</span></div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+            <div style="padding:14px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted)">Historique des paiements</div>
+            <sc-for list="{{ tp.hist }}" as="h" hint-placeholder-count="3">
+              <div style="display:flex; justify-content:space-between; padding:11px 20px; border-bottom:1px solid var(--line); font-size:13px"><span>{{ h.month }} <span style="color:var(--muted)">· {{ h.date }}</span></span><span style="font-variant-numeric:tabular-nums; font-weight:500">{{ h.amount }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isCourses }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Cours</h1>
+      <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow-x:auto"><div style="min-width:820px">
+        <div style="display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1.2fr) 100px minmax(0,1.6fr) 90px 110px; gap:12px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); font-weight:500"><div>Cours</div><div>Enseignant</div><div>Salle</div><div>Horaire</div><div>Inscrits</div><div>Prix / mois</div></div>
+        <sc-for list="{{ courseRows }}" as="c" hint-placeholder-count="10">
+          <div onClick="{{ c.open }}" style="display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1.2fr) 100px minmax(0,1.6fr) 90px 110px; gap:12px; align-items:center; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px; cursor:pointer; overflow-wrap:anywhere" style-hover="background:var(--sunk)">
+            <div style="font-weight:500">{{ c.name }}</div><div style="color:var(--muted)">{{ c.teacher }}</div><div style="color:var(--muted)">{{ c.room }}</div><div style="color:var(--muted)">{{ c.when }}</div><div><span style="{{ c.badge }}">{{ c.fill }}</span></div><div style="font-variant-numeric:tabular-nums">{{ c.price }}</div>
+          </div>
+        </sc-for>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ isCourseDetail }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ goCourses }}" style="font-size:13px; color:var(--muted); cursor:pointer">← Cours</div>
+      <div style="display:flex; flex-direction:column; gap:4px">
+        <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">{{ cd.name }}</h1>
+        <div style="font-size:13px; color:var(--muted)">{{ cd.teacher }} · {{ cd.room }} · {{ cd.when }}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:16px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Prix mensuel (DZD)
+              <input type="number" step="500" value="{{ cd.priceRaw }}" onChange="{{ onPrice }}" style="height:38px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px; outline:none">
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Enseignant
+              <select value="{{ cd.t }}" onChange="{{ onTeacher }}" style="height:38px; padding:0 10px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px">
+                <sc-for list="{{ teacherOpts }}" as="o"><option value="{{ o.id }}">{{ o.name }}</option></sc-for>
+              </select>
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Salle
+              <select value="{{ cd.room }}" onChange="{{ onRoom }}" style="height:38px; padding:0 10px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px">
+                <sc-for list="{{ roomOpts }}" as="o"><option value="{{ o }}">{{ o }}</option></sc-for>
+              </select>
+            </label>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Horaire
+              <div style="display:flex; align-items:center; justify-content:space-between; height:38px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); font-size:14px; color:var(--ink)"><span>{{ cd.when }}</span><span onClick="{{ goSchedule }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Modifier</span></div>
+            </div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line)">
+              <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Élèves inscrits · {{ cd.fill }}</div>
+              <div style="display:flex; gap:6px">
+                <select value="{{ addSid }}" onChange="{{ onAddSid }}" style="height:32px; padding:0 8px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; max-width:200px">
+                  <option value="">Choisir un élève…</option>
+                  <sc-for list="{{ cd.eligible }}" as="o"><option value="{{ o.id }}">{{ o.name }}</option></sc-for>
+                </select>
+                <button onClick="{{ addToCourse }}" style="height:32px; padding:0 12px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; cursor:pointer">Ajouter</button>
+              </div>
+            </div>
+            <sc-for list="{{ cd.students }}" as="s" hint-placeholder-count="8">
+              <div style="display:grid; grid-template-columns:minmax(0,1fr) 110px 90px 70px; gap:12px; align-items:center; padding:9px 20px; border-bottom:1px solid var(--line); font-size:13px">
+                <div onClick="{{ s.open }}" style="font-weight:500; cursor:pointer">{{ s.name }}</div><div style="color:var(--muted)">{{ s.id }}</div><div><span style="{{ s.badge }}">{{ s.state }}</span></div>
+                <div onClick="{{ s.remove }}" style="font-size:12px; color:var(--muted); cursor:pointer; text-decoration:underline">Retirer</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+            <div style="font-size:12px; color:var(--muted)">Recettes · Septembre 2026</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:var(--kpi)">{{ cd.collected }}</div>
+            <div style="font-size:13px; color:var(--muted)">sur {{ cd.expected }} attendus</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+            <div style="font-size:12px; color:var(--muted)">Taux de présence</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:var(--kpi)">{{ cd.rate }}</div>
+            <div onClick="{{ cd.goAtt }}" style="font-size:13px; color:var(--muted); cursor:pointer; text-decoration:underline">Voir les présences</div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)"><span>Capacité</span><span>{{ cd.fill }}</span></div>
+            <div style="height:6px; background:var(--sunk); border-radius:3px; overflow:hidden"><div style="{{ cd.capBar }}"></div></div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSchedule }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px">
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="font-size:13px; color:var(--muted)">Semaine du 26 septembre au 1er octobre 2026</div>
+          <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Emploi du temps</h1>
+        </div>
+        <button onClick="{{ toastSession }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Nouvelle séance</button>
+      </div>
+      <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow-x:auto">
+        <div style="min-width:980px">
+        <div style="display:grid; grid-template-columns:56px minmax(0,2fr) repeat(5,minmax(0,1fr)); border-bottom:1px solid var(--line)">
+          <div></div>
+          <sc-for list="{{ days }}" as="d" hint-placeholder-count="6"><div style="{{ d.headStyle }}">{{ d.label }}</div></sc-for>
+        </div>
+        <div style="display:grid; grid-template-columns:56px minmax(0,2fr) repeat(5,minmax(0,1fr)); position:relative">
+          <div style="position:relative; height:624px">
+            <sc-for list="{{ hours }}" as="h" hint-placeholder-count="12"><div style="{{ h.style }}">{{ h.label }}</div></sc-for>
+          </div>
+          <sc-for list="{{ days }}" as="d" hint-placeholder-count="6">
+            <div style="{{ d.colStyle }}">
+              <sc-for list="{{ d.blocks }}" as="b">
+                <div onClick="{{ b.open }}" style="{{ b.style }}">
+                  <div style="font-weight:600; line-height:1.25">{{ b.name }}</div>
+                  <div style="opacity:.75; line-height:1.3">{{ b.time }} · {{ b.room }}</div>
+                  <div style="opacity:.75; line-height:1.3">{{ b.teacher }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ d.today }}"><div style="{{ nowLine }}"></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAttendance }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:4px">
+        <div style="font-size:13px; color:var(--muted)">{{ todayLabel }}</div>
+        <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Présences</h1>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(200px,280px) minmax(0,1fr); gap:16px; align-items:start">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow:hidden">
+          <sc-for list="{{ attSessions }}" as="s" hint-placeholder-count="8">
+            <div onClick="{{ s.go }}" style="{{ s.style }}">
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted)"><span>{{ s.time }}</span><span>{{ s.done }}</span></div>
+              <div style="font-size:13px; font-weight:500">{{ s.name }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--line)">
+            <div style="display:flex; flex-direction:column; gap:3px">
+              <div style="font-family:var(--serif); font-weight:var(--hw); font-size:21px">{{ ac.name }}</div>
+              <div style="font-size:13px; color:var(--muted)">{{ ac.time }} · {{ ac.room }} · {{ ac.teacher }}</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button onClick="{{ allPresent }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Tous présents</button>
+              <button onClick="{{ saveAtt }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; cursor:pointer">Enregistrer</button>
+            </div>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px 20px; padding:12px 20px; border-bottom:1px solid var(--line); font-size:13px; color:var(--muted)">
+            <sc-for list="{{ ac.counts }}" as="c" hint-placeholder-count="4"><span>{{ c.l }} <b style="color:var(--ink)">{{ c.v }}</b></span></sc-for>
+          </div>
+          <sc-for list="{{ ac.rows }}" as="r" hint-placeholder-count="8">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 12px; align-items:center; padding:9px 20px; border-bottom:1px solid var(--line); font-size:13px">
+              <div style="display:flex; flex-direction:column; min-width:140px"><span style="font-weight:500">{{ r.name }}</span><span style="font-size:12px; color:var(--muted)">{{ r.id }}</span></div>
+              <div style="display:flex; gap:4px">
+                <sc-for list="{{ r.opts }}" as="o"><div onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</div></sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPayments }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px">
+        <div style="display:flex; flex-direction:column; gap:4px">
+          <div style="font-size:13px; color:var(--muted)">Septembre 2026</div>
+          <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Paiements des élèves</h1>
+        </div>
+        <div style="display:flex; gap:8px">
+          <button onClick="{{ toastExport }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Exporter</button>
+          <button onClick="{{ openPayModal }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Encaisser un paiement</button>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--r); overflow:hidden">
+        <sc-for list="{{ payKpis }}" as="f" hint-placeholder-count="4">
+          <div style="background:var(--panel); padding:16px 18px; display:flex; flex-direction:column; gap:6px">
+            <div style="font-size:12px; color:var(--muted)">{{ f.label }}</div>
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:var(--kpi)">{{ f.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid; grid-template-columns:minmax(0,1.8fr) minmax(260px,1fr); gap:16px; align-items:start">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); overflow-x:auto">
+          <div style="min-width:640px">
+          <div style="display:flex; gap:4px; padding:12px 16px; border-bottom:1px solid var(--line)">
+            <sc-for list="{{ payChips }}" as="c" hint-placeholder-count="4"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 110px 110px 110px 80px 80px; gap:10px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted); font-weight:500"><div>Élève</div><div>Mensualité</div><div>Payé</div><div>Reste</div><div>Statut</div><div></div></div>
+          <sc-for list="{{ payRows }}" as="p" hint-placeholder-count="10">
+            <div style="display:grid; grid-template-columns:minmax(0,1.6fr) 110px 110px 110px 80px 80px; gap:10px; align-items:center; padding:10px 20px; border-bottom:1px solid var(--line); font-size:13px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere">
+              <div onClick="{{ p.open }}" style="font-weight:500; cursor:pointer">{{ p.name }}<span style="color:var(--muted); font-weight:400">{{ p.disc }}</span></div><div>{{ p.due }}</div><div>{{ p.paid }}</div><div>{{ p.rest }}</div><div><span style="{{ p.badge }}">{{ p.state }}</span></div>
+              <div><sc-if value="{{ p.canPay }}"><span onClick="{{ p.pay }}" style="font-size:12px; cursor:pointer; text-decoration:underline">Encaisser</span></sc-if></div>
+            </div>
+          </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r)">
+          <div style="padding:16px 20px; border-bottom:1px solid var(--line); font-family:var(--serif); font-weight:var(--hw); font-size:19px">Derniers reçus</div>
+          <sc-for list="{{ receipts }}" as="p" hint-placeholder-count="8">
+            <div style="display:flex; justify-content:space-between; gap:10px; padding:10px 20px; border-bottom:1px solid var(--line); font-size:13px">
+              <div style="display:flex; flex-direction:column; gap:2px; min-width:0"><span style="font-weight:500">{{ p.name }}</span><span style="font-size:12px; color:var(--muted)">{{ p.rec }} · {{ p.date }} · {{ p.mode }}</span></div>
+              <span style="font-variant-numeric:tabular-nums; font-weight:500; white-space:nowrap">{{ p.amount }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Paramètres</h1>
+      <div style="display:grid; grid-template-columns:minmax(150px,200px) minmax(0,1fr); gap:20px; align-items:start">
+        <div style="display:flex; flex-direction:column; gap:2px">
+          <sc-for list="{{ setTabs }}" as="t" hint-placeholder-count="8"><div onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</div></sc-for>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:8px 24px 20px">
+          <sc-if value="{{ stCentre }}">
+            <div style="display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--line)">
+              <div style="width:96px; height:64px; background:#FFFFFF; border:1px solid var(--line); border-radius:var(--rs); display:flex; align-items:center; justify-content:center"><img src="assets/logo.png" alt="" style="width:88px; height:58px; object-fit:contain"></div>
+              <button onClick="{{ toastLogo }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Remplacer le logo</button>
+            </div>
+            <sc-for list="{{ fCentre }}" as="f" hint-placeholder-count="6">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+          </sc-if>
+          <sc-if value="{{ stTarifs }}">
+            <div style="padding:16px 0 6px; font-size:12px; color:var(--muted); font-weight:500">Tarifs mensuels par niveau</div>
+            <sc-for list="{{ fTarifs }}" as="f" hint-placeholder-count="4">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+            <div style="padding:20px 0 6px; font-size:12px; color:var(--muted); font-weight:500">Règles de paiement et remises</div>
+            <sc-for list="{{ fRules }}" as="f" hint-placeholder-count="5">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+          </sc-if>
+          <sc-if value="{{ stRemun }}">
+            <sc-for list="{{ fRemun }}" as="f" hint-placeholder-count="4">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+            <div style="padding:14px 0 0; font-size:13px; color:var(--muted)">Chaque enseignant peut avoir sa propre règle depuis sa fiche.</div>
+          </sc-if>
+          <sc-if value="{{ stEval }}">
+            <sc-for list="{{ fEval }}" as="f" hint-placeholder-count="5">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; font-size:13px"><span>Prévenir le parent par SMS en cas d'absence</span><div onClick="{{ tg.sms.go }}" style="{{ tg.sms.track }}"><div style="{{ tg.sms.knob }}"></div></div></div>
+          </sc-if>
+          <sc-if value="{{ stRecus }}">
+            <sc-for list="{{ fRecus }}" as="f" hint-placeholder-count="3">
+              <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; font-size:13px"><span>Afficher le logo sur les reçus</span><div onClick="{{ tg.logo.go }}" style="{{ tg.logo.track }}"><div style="{{ tg.logo.knob }}"></div></div></div>
+          </sc-if>
+          <sc-if value="{{ stBackup }}">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-bottom:1px solid var(--line); font-size:13px"><span>Sauvegarde automatique quotidienne à 22:00</span><div onClick="{{ tg.autoBackup.go }}" style="{{ tg.autoBackup.track }}"><div style="{{ tg.autoBackup.knob }}"></div></div></div>
+            <label style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Dossier de sauvegarde</span><input defaultValue="D:\Sauvegardes\FLA" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Dernière sauvegarde</span><span>{{ lastBackup }}</span></div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; padding-top:16px">
+              <button onClick="{{ backupNow }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Sauvegarder maintenant</button>
+              <button onClick="{{ toastRestore }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Restaurer…</button>
+              <button onClick="{{ toastExport }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Exporter les données (Excel)</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ stApp }}">
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Langue</span>
+              <select style="height:36px; width:100%; max-width:220px; padding:0 10px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px"><option>Français</option><option>العربية</option><option>English</option></select>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Thème</span>
+              <div style="display:flex; flex-wrap:wrap; gap:4px"><sc-for list="{{ modeChips }}" as="c"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for></div>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; font-size:13px"><span style="color:var(--muted)">Style visuel</span>
+              <div style="display:flex; flex-wrap:wrap; gap:4px"><sc-for list="{{ dirChips }}" as="c"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ stSec }}">
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Verrouillage après inactivité</span>
+              <div style="display:flex; flex-wrap:wrap; gap:4px"><sc-for list="{{ lockChips }}" as="c"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for></div>
+            </div>
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Expiration de session</span><span>Déconnexion à la fermeture de l'application</span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font-size:13px"><span>Chiffrer la base de données locale</span><div onClick="{{ tg.encrypt.go }}" style="{{ tg.encrypt.track }}"><div style="{{ tg.encrypt.knob }}"></div></div></div>
+            <div style="display:grid; grid-template-columns:minmax(110px,170px) minmax(0,1fr); gap:16px; align-items:center; padding:14px 0; font-size:13px"><span style="color:var(--muted)">Mot de passe de connexion</span><span onClick="{{ goAccount }}" style="cursor:pointer; text-decoration:underline">Modifier dans Mon compte</span></div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex; flex-direction:column; gap:4px">
+        <div style="font-size:13px; color:var(--muted)">Compte unique de l'application</div>
+        <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">Mon compte</h1>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; align-items:start; max-width:1080px">
+        <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:8px 24px 20px">
+          <div style="display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--line)">
+            <div style="width:72px; height:72px; border-radius:50%; background:var(--sunk); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600">MB</div>
+            <button onClick="{{ toastPhoto }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Changer la photo</button>
+          </div>
+          <label style="display:grid; grid-template-columns:minmax(100px,140px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">Nom d'utilisateur</span><input value="{{ username }}" onChange="{{ onUsername }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+          <sc-for list="{{ fAccount }}" as="f" hint-placeholder-count="3">
+            <label style="display:grid; grid-template-columns:minmax(100px,140px) minmax(0,1fr); gap:16px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); font-size:13px"><span style="color:var(--muted)">{{ f.l }}</span><input defaultValue="{{ f.v }}" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+          </sc-for>
+          <div style="padding-top:16px"><button onClick="{{ toastSaved }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">Enregistrer</button></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px">
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:12px">
+            <div style="font-family:var(--serif); font-weight:var(--hw); font-size:19px">Mot de passe</div>
+            <sc-for list="{{ pwFields }}" as="f" hint-placeholder-count="3">
+              <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">{{ f }}<input type="password" style="height:36px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; outline:none"></label>
+            </sc-for>
+            <div style="font-size:12px; color:var(--muted)">8 caractères minimum. Le mot de passe est stocké haché, jamais en clair.</div>
+            <div><button onClick="{{ toastPw }}" style="white-space:nowrap; flex:none; height:36px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; font-weight:500; cursor:pointer">Mettre à jour</button></div>
+          </div>
+          <div style="background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; display:flex; flex-direction:column; gap:10px">
+            <div style="font-size:12px; color:var(--muted)">Session</div>
+            <div style="font-size:13px">Connecté depuis 08:12 sur ce poste</div>
+            <div style="display:flex; gap:8px">
+              <button onClick="{{ lockNow }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Verrouiller</button>
+              <button onClick="{{ logout }}" style="white-space:nowrap; flex:none; height:34px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Se déconnecter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPlaceholder }}" hint-placeholder-val="{{ false }}">
+      <h1 style="margin:0; font-family:var(--serif); font-weight:var(--hw); font-size:var(--h1)">{{ phTitle }}</h1>
+      <div style="background:var(--panel); border:1px dashed var(--line); border-radius:var(--r); padding:40px; font-size:14px; color:var(--muted); line-height:1.6">Module non maquetté dans cette itération. Il suivra la structure des écrans Élèves et Cours : liste filtrable, fiche détaillée et actions directes.</div>
+    </sc-if>
+
+    </div>
+    </div>
+  </main>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLocked }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:50">
+  <div style="width:100%; max-width:340px; display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center">
+    <div style="width:80px; height:80px; border-radius:50%; background:var(--sunk); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600">MB</div>
+    <div style="display:flex; flex-direction:column; gap:4px">
+      <div style="font-family:var(--serif); font-weight:var(--hw); font-size:28px">{{ fullName }}</div>
+      <div style="font-size:13px; color:var(--muted)">Application verrouillée. Saisissez votre mot de passe.</div>
+    </div>
+    <input type="password" value="{{ lockPw }}" onChange="{{ onLockPw }}" onKeyDown="{{ onUnlockKey }}" placeholder="Mot de passe" style="width:100%; height:42px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px; outline:none; text-align:center">
+    <sc-if value="{{ hasErr }}"><div style="font-size:13px; color:var(--bad)">{{ err }}</div></sc-if>
+    <button onClick="{{ unlock }}" style="width:100%; height:42px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:14px; font-weight:500; cursor:pointer">Déverrouiller</button>
+    <div onClick="{{ logout }}" style="font-size:13px; color:var(--muted); cursor:pointer; text-decoration:underline">Se déconnecter</div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasModal }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ closeModal }}" style="position:absolute; inset:0; background:rgba(10,10,10,0.42); display:flex; align-items:center; justify-content:center; z-index:40">
+  <div onClick="{{ stop }}" style="width:440px; background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:24px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="font-family:var(--serif); font-weight:var(--hw); font-size:24px">{{ md.title }}</div>
+    <sc-if value="{{ md.pickStudent }}">
+      <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Élève
+        <select value="{{ md.sid }}" onChange="{{ onModalSid }}" style="height:38px; padding:0 10px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:14px">
+          <option value="">Choisir…</option>
+          <sc-for list="{{ md.opts }}" as="o"><option value="{{ o.id }}">{{ o.name }}</option></sc-for>
+        </select>
+      </label>
+    </sc-if>
+    <sc-if value="{{ md.fixed }}"><div style="font-size:14px"><span style="color:var(--muted)">Bénéficiaire :</span> {{ md.who }}</div></sc-if>
+    <div style="font-size:13px; color:var(--muted)">{{ md.note }}</div>
+    <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Montant (DZD)
+      <input type="number" value="{{ amt }}" onChange="{{ onAmt }}" style="height:42px; padding:0 12px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:16px; outline:none">
+    </label>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted)">Mode de paiement
+      <div style="display:flex; gap:4px; flex-wrap:wrap"><sc-for list="{{ modeOpts }}" as="c"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for></div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; padding-top:4px">
+      <button onClick="{{ closeModal }}" style="white-space:nowrap; flex:none; height:38px; padding:0 14px; border:1px solid var(--line); border-radius:var(--rs); background:var(--panel); color:var(--ink); font-size:13px; cursor:pointer">Annuler</button>
+      <button onClick="{{ confirmPay }}" style="white-space:nowrap; flex:none; height:38px; padding:0 14px; border:0; border-radius:var(--rs); background:var(--accent); color:var(--onAccent); font-size:13px; font-weight:500; cursor:pointer">{{ md.cta }}</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:var(--rs); font-size:13px; z-index:60">{{ toast }}</div>
+</sc-if>
+
+<div style="position:absolute; right:16px; bottom:16px; z-index:70; display:flex; align-items:center; gap:4px; padding:4px; background:var(--panel); border:1px solid var(--line); border-radius:999px; box-shadow:0 4px 16px rgba(0,0,0,0.08); font-size:12px">
+  <span style="padding:0 8px; color:var(--muted)">Direction</span>
+  <sc-for list="{{ dirPills }}" as="c" hint-placeholder-count="3"><div onClick="{{ c.go }}" style="{{ c.style }}">{{ c.label }}</div></sc-for>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;direction&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;], &quot;default&quot;: &quot;A&quot;, &quot;tsType&quot;: &quot;'A'|'B'|'C'&quot;}, &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;light&quot;, &quot;dark&quot;], &quot;default&quot;: &quot;light&quot;, &quot;tsType&quot;: &quot;'light'|'dark'&quot;}, &quot;skipLogin&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}}">
+const FMT = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' DZD';
+const DAYS = ['Samedi', 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi'];
+const DSHORT = ['Sam.', 'Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.'];
+const NOW = 14 + 32 / 60;
+const SHORT = { 'Mathématiques': 'Maths', 'Physique': 'Physique', 'Français': 'Français', 'Anglais': 'Anglais', 'Sciences naturelles': 'Sciences', 'Philosophie': 'Philo', 'Arabe': 'Arabe', 'Informatique': 'Info' };
+const ROOMS = ['Salle 1', 'Salle 2', 'Salle 3', 'Salle 4', 'Labo', 'Salle Info'];
+const hh = h => String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0');
+const THEMES = {
+  A: { serif: "'Source Serif 4', Georgia, serif", sans: "'IBM Plex Sans', system-ui, sans-serif", hw: 600, r: '10px', rs: '6px', h1: '34px', kpi: '24px',
+    light: { bg: '#F5F5F3', panel: '#FFFFFF', sunk: '#EEEEEB', line: '#E2E2DE', ink: '#1C1C1B', muted: '#6A6A66', accent: '#222222', onAccent: '#FFFFFF', side: '#FFFFFF', sideInk: '#1C1C1B', sideMuted: '#6A6A66', sideActive: '#EEEEEB', sideLine: '#E2E2DE', plate: '#FAFAF8' },
+    dark: { bg: '#141413', panel: '#1C1C1B', sunk: '#262625', line: '#30302E', ink: '#ECEBE7', muted: '#9A9994', accent: '#ECEBE7', onAccent: '#141413', side: '#1C1C1B', sideInk: '#ECEBE7', sideMuted: '#9A9994', sideActive: '#2A2A28', sideLine: '#30302E', plate: '#F1F0EC' } },
+  B: { serif: "'Newsreader', Georgia, serif", sans: "'Public Sans', system-ui, sans-serif", hw: 500, r: '6px', rs: '4px', h1: '36px', kpi: '26px',
+    light: { bg: '#F3F5F8', panel: '#FFFFFF', sunk: '#EBEFF4', line: '#DCE2EA', ink: '#131A2A', muted: '#5B6475', accent: '#1B2F5A', onAccent: '#FFFFFF', side: '#132242', sideInk: '#EEF1F7', sideMuted: '#9AA6BD', sideActive: 'rgba(255,255,255,0.10)', sideLine: 'rgba(255,255,255,0.09)', plate: '#FFFFFF' },
+    dark: { bg: '#0D1220', panel: '#141B2B', sunk: '#1B2335', line: '#263049', ink: '#E6EAF2', muted: '#8F99AE', accent: '#AFC3EA', onAccent: '#0D1220', side: '#0A0F1B', sideInk: '#E6EAF2', sideMuted: '#8390A8', sideActive: 'rgba(255,255,255,0.07)', sideLine: 'rgba(255,255,255,0.06)', plate: '#F2F4F8' } },
+  C: { serif: "'Instrument Serif', Georgia, serif", sans: "'Geist', system-ui, sans-serif", hw: 400, r: '3px', rs: '2px', h1: '44px', kpi: '30px',
+    light: { bg: '#F3F0E8', panel: '#FBF9F4', sunk: '#ECE7DC', line: '#DCD5C6', ink: '#221F1A', muted: '#6C6558', accent: '#222222', onAccent: '#FBF9F4', side: '#ECE7DC', sideInk: '#221F1A', sideMuted: '#6C6558', sideActive: '#FBF9F4', sideLine: '#DCD5C6', plate: '#FBF9F4' },
+    dark: { bg: '#171512', panel: '#1F1C18', sunk: '#28241E', line: '#363027', ink: '#EEE9DF', muted: '#A39B8C', accent: '#EEE9DF', onAccent: '#171512', side: '#1F1C18', sideInk: '#EEE9DF', sideMuted: '#A39B8C', sideActive: '#2C2821', sideLine: '#363027', plate: '#F3EFE6' } },
+};
+
+class Component extends DCLogic {
+  D = this.build();
+  state = { loggedIn: !!this.props.skipLogin, locked: false, user: 'admin', pw: '', err: '', lockPw: '', screen: 'dashboard', sid: null, tid: null, cid: null, tab: 'apercu', q: '', lvl: 'Tous', pf: 'Tous', attC: 'c2', setTab: 'centre', mode: null, dir: null, lockMin: 10, modal: null, amt: '', pmode: 'Espèces', toast: '', att: this.D.att, tg: { logo: true, autoBackup: true, encrypt: true, sms: false }, username: 'admin', addSid: '', lastBackup: 'Hier, 22:00 · 14,2 Mo', v: 0 };
+
+  build() {
+    let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647; const pick = a => a[Math.floor(r() * a.length)];
+    const teachers = [
+      ['t1', 'Karima Boudiaf', 'Mathématiques', 'pct', 40, '0661 24 18 90', 2018], ['t2', 'Sofiane Hadjadj', 'Physique', 'pct', 40, '0770 53 21 07', 2019],
+      ['t3', 'Nadia Merabet', 'Français', 'seance', 2000, '0555 84 12 66', 2020], ['t4', 'Omar Belhadj', 'Anglais', 'seance', 2000, '0662 90 47 13', 2021],
+      ['t5', 'Leïla Saadi', 'Sciences naturelles', 'pct', 35, '0771 12 88 40', 2020], ['t6', 'Hakim Zitouni', 'Philosophie', 'seance', 2200, '0560 31 75 92', 2022],
+      ['t7', 'Fatima Kerroum', 'Arabe', 'seance', 1800, '0698 45 03 21', 2019], ['t8', 'Redouane Aït Ahmed', 'Informatique', 'fixe', 25000, '0775 60 14 38', 2023],
+      ['t9', 'Samir Lakhdar', 'Histoire-géographie', 'seance', 1800, '0551 72 30 19', 2021],
+    ].map(([id, name, subj, ct, cv, phone, since]) => ({ id, name, subj, ct, cv, phone, since, active: id !== 't9', paid: false, hist: [] }));
+    const courses = [
+      ['c1', 'Mathématiques', '3AS', 'A', 't1', 'Salle 1', 4500, 12, [[0, 9, 11], [3, 17, 19]]], ['c11', 'Mathématiques', '3AS', 'B', 't1', 'Salle 1', 4500, 12, [[0, 17, 19], [2, 9, 11]]],
+      ['c2', 'Mathématiques', '4AM', 'A', 't1', 'Salle 2', 3500, 14, [[0, 14, 16], [4, 17, 19]]], ['c3', 'Physique', '3AS', 'A', 't2', 'Labo', 4500, 8, [[0, 11, 13], [2, 17, 19]]],
+      ['c4', 'Physique', '2AS', 'A', 't2', 'Labo', 4000, 10, [[1, 15, 17], [5, 9, 11]]], ['c5', 'Français', '4AM', 'A', 't3', 'Salle 3', 3000, 14, [[0, 16, 18], [3, 15, 17]]],
+      ['c6', 'Anglais', '3AS', 'A', 't4', 'Salle 3', 3000, 14, [[0, 9, 11], [4, 15, 17]]], ['c7', 'Sciences naturelles', '3AS', 'A', 't5', 'Salle 2', 4000, 12, [[0, 10, 12], [5, 14, 16]]],
+      ['c8', 'Philosophie', '3AS', 'A', 't6', 'Salle 4', 3000, 16, [[1, 9, 11], [5, 16, 18]]], ['c9', 'Arabe', '4AM', 'A', 't7', 'Salle 4', 3000, 14, [[0, 13, 15], [2, 16, 18]]],
+      ['c10', 'Informatique', '2AS', 'A', 't8', 'Salle Info', 3500, 6, [[1, 10, 12], [3, 14, 16]]],
+    ].map(([id, subj, level, grp, t, room, price, cap, slots]) => ({ id, subj, level, grp, t, room, price, cap, slots, enr: [], rate: 80 + Math.floor(r() * 15) }));
+    const FN = ['Yacine', 'Amira', 'Rayan', 'Lina', 'Adam', 'Sarah', 'Anis', 'Meriem', 'Ilyes', 'Nour', 'Walid', 'Inès', 'Karim', 'Yasmine', 'Mehdi', 'Aya', 'Samy', 'Rania', 'Nassim', 'Dounia', 'Islam', 'Imane', 'Riad', 'Hiba', 'Amine'];
+    const LN = ['Benali', 'Haddad', 'Bouzid', 'Mansouri', 'Cherif', 'Belkacem', 'Saidi', 'Kaci', 'Meziane', 'Rahmani', 'Bensaid', 'Ferhat', 'Toumi', 'Amrani', 'Hamidi', 'Zerrouki', 'Brahimi', 'Djebbar', 'Lounis', 'Ouali'];
+    const SCH = ['Lycée Émir Abdelkader', 'Lycée Ibn Khaldoun', 'CEM Ali Boumendjel', 'CEM El Feth', 'Lycée Descartes'];
+    const lvls = ['3AS', '3AS', '3AS', '4AM', '4AM', '2AS'];
+    const students = [];
+    for (let i = 0; i < 50; i++) {
+      const ln = pick(LN), level = pick(lvls), id = 'E' + (1001 + i), active = i % 13 !== 5, isNew = i >= 43;
+      const st = { id, fn: FN[(i * 7) % FN.length], ln, level, active, isNew, disc: r() < 0.15 ? 10 : 0, courses: [],
+        joined: isNew ? (String(1 + (i % 20)).padStart(2, '0') + '/09/2026') : (String(1 + Math.floor(r() * 27)).padStart(2, '0') + '/' + pick(['09/2024', '10/2024', '09/2025', '10/2025', '01/2026'])),
+        parentName: pick(['M.', 'Mme']) + ' ' + ln, parentPhone: '0' + pick(['5', '6', '7']) + (50 + Math.floor(r() * 49)) + ' ' + (10 + Math.floor(r() * 89)) + ' ' + (10 + Math.floor(r() * 89)) + ' ' + (10 + Math.floor(r() * 89)),
+        school: level === '4AM' ? pick(SCH.slice(2, 4)) : pick([SCH[0], SCH[1], SCH[4]]), dob: String(1 + Math.floor(r() * 27)).padStart(2, '0') + '/' + String(1 + Math.floor(r() * 12)).padStart(2, '0') + '/' + (level === '4AM' ? 2011 : level === '2AS' ? 2010 : 2008),
+        x: r(), grades: {} };
+      if (active) {
+        const av = courses.filter(c => c.level === level);
+        av.forEach(c => { if (r() < 0.5 && c.enr.length < c.cap) { c.enr.push(id); st.courses.push(c.id); } });
+        if (!st.courses.length) { const c = av.find(c => c.enr.length < c.cap); if (c) { c.enr.push(id); st.courses.push(c.id); } }
+      }
+      st.courses.forEach(cid => { const g = () => Math.round((8 + r() * 11.5) * 2) / 2; st.grades[cid] = [g(), g(), g()]; });
+      students.push(st);
+    }
+    const due = st => st.courses.reduce((a, cid) => a + courses.find(c => c.id === cid).price, 0) * (1 - st.disc / 100);
+    students.forEach(st => { const d = due(st); st.paid = !st.active ? 0 : st.x < 0.6 ? d : st.x < 0.82 ? Math.round(d / 200) * 100 : 0; });
+    const payments = []; let n = 380;
+    students.filter(s => s.paid > 0).forEach(s => { const day = 18 + Math.floor(r() * 9); payments.push({ rec: '', sid: s.id, amount: s.paid, day, mode: pick(['Espèces', 'Espèces', 'Espèces', 'BaridiMob', 'CCP']) }); });
+    payments.sort((a, b) => a.day - b.day).forEach(p => { p.rec = 'REC-2026-0' + (n++); p.date = p.day + '/09/2026'; });
+    payments.reverse();
+    const att = {};
+    courses.forEach(c => c.slots.forEach(([d, a]) => { if (d === 0 && a <= NOW) { att[c.id] = {}; c.enr.forEach(sid => { const x = r(); att[c.id][sid] = x < 0.83 ? 'P' : x < 0.92 ? 'R' : 'A'; }); } }));
+    teachers.forEach(t => { t.hist = ['Août 2026', 'Juillet 2026', 'Juin 2026'].map((m, k) => ({ month: m, date: ['31/08', '31/07', '30/06'][k], f: 0.85 + r() * 0.2 })); });
+    return { teachers, courses, students, payments, due, recN: n, expenses: [['Loyer', 60000], ['Électricité et eau', 9800], ['Fournitures', 6400], ['Internet', 3500], ['Entretien', 8000]] };
+  }
+
+  componentDidMount() {
+    if (!this.D) this.D = this.build();
+    if (!this.state || !this.state.att) this.setState({ att: this.D.att, attC: 'c2', tg: { logo: true, autoBackup: true, encrypt: true, sms: false }, lockMin: 10, q: '', lvl: 'Tous', pf: 'Tous', tab: 'apercu', setTab: 'centre', screen: 'dashboard', user: 'admin', username: 'admin', pw: '', lockPw: '', err: '', amt: '', pmode: 'Espèces', toast: '', addSid: '', v: 0, lastBackup: 'Hier, 22:00 · 14,2 Mo' });
+    this.last = Date.now();
+    this.onAct = () => { this.last = Date.now(); };
+    ['mousemove', 'keydown', 'click'].forEach(e => window.addEventListener(e, this.onAct));
+    this.iv = setInterval(() => { const s = this.state; if (s.loggedIn && !s.locked && Date.now() - this.last > s.lockMin * 60000) this.setState({ locked: true, err: '' }); }, 5000);
+  }
+  componentWillUnmount() { ['mousemove', 'keydown', 'click'].forEach(e => window.removeEventListener(e, this.onAct)); clearInterval(this.iv); }
+
+  toast(msg) { clearTimeout(this.tt); this.setState({ toast: msg }); this.tt = setTimeout(() => this.setState({ toast: '' }), 2400); }
+  go(screen, extra) { this.setState({ screen, ...(extra || {}) }); const el = document.querySelector('main > div'); if (el) el.scrollTop = 0; }
+  T(id) { return this.D.teachers.find(t => t.id === id); }
+  S(id) { return this.D.students.find(s => s.id === id); }
+  C(id) { return this.D.courses.find(c => c.id === id); }
+  cname(c) { return c.subj + ' · ' + c.level + ' ' + c.grp; }
+  when(c) { return c.slots.map(([d, a, b]) => DSHORT[d] + ' ' + a + 'h–' + b + 'h').join(', '); }
+  earn(t) {
+    const cs = this.D.courses.filter(c => c.t === t.id);
+    if (t.ct === 'pct') { const base = cs.reduce((a, c) => a + c.price * c.enr.length, 0); return { v: base * t.cv / 100, rule: t.cv + ' % des mensualités de ' + cs.reduce((a, c) => a + c.enr.length, 0) + ' élèves' }; }
+    if (t.ct === 'seance') { const n = cs.reduce((a, c) => a + c.slots.length * 4, 0); return { v: n * t.cv, rule: n + ' séances × ' + FMT(t.cv) }; }
+    return { v: t.cv, rule: 'Forfait mensuel' };
+  }
+  ruleLabel(t) { return t.ct === 'pct' ? t.cv + ' % des mensualités' : t.ct === 'seance' ? FMT(t.cv) + ' / séance' : FMT(t.cv) + ' / mois'; }
+  stStatus(st) {
+    if (!st.active) return ['Inactif', 'n'];
+    const d = this.D.due(st); if (st.paid >= d) return ['Payé', 'ok']; if (st.paid > 0) return ['Partiel', 'warn']; return ['Impayé', 'bad'];
+  }
+  badge(k) {
+    const c = k === 'ok' ? 'var(--ok)' : k === 'warn' ? 'var(--warn)' : k === 'bad' ? 'var(--bad)' : null;
+    return { display: 'inline-flex', alignItems: 'center', height: 22, padding: '0 8px', borderRadius: 999, fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap', color: c || 'var(--muted)', background: c ? `color-mix(in oklch, ${c} 14%, transparent)` : 'var(--sunk)' };
+  }
+  chip(on) { return { height: 30, padding: '0 12px', display: 'inline-flex', alignItems: 'center', borderRadius: 'var(--rs)', fontSize: 13, cursor: 'pointer', border: '1px solid ' + (on ? 'var(--ink)' : 'var(--line)'), background: on ? 'var(--ink)' : 'var(--panel)', color: on ? 'var(--bg)' : 'var(--ink)', fontWeight: on ? 500 : 400 }; }
+  toggle(key) {
+    const on = this.state.tg[key];
+    return { go: () => this.setState(s => ({ tg: { ...s.tg, [key]: !s.tg[key] } })), track: { width: 38, height: 22, borderRadius: 11, background: on ? 'var(--accent)' : 'var(--line)', position: 'relative', cursor: 'pointer', flex: 'none' }, knob: { position: 'absolute', top: 3, left: on ? 19 : 3, width: 16, height: 16, borderRadius: '50%', background: on ? 'var(--onAccent)' : 'var(--panel)', transition: 'left .15s' } };
+  }
+  ini(name) { return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase(); }
+  openPay(kind, id) {
+    let amt = '';
+    if (kind === 'student' && id) { const st = this.S(id); amt = String(Math.max(0, this.D.due(st) - st.paid)); }
+    if (kind === 'teacher') amt = String(Math.round(this.earn(this.T(id)).v));
+    this.setState({ modal: { kind, id, pick: kind === 'student' && !id }, amt, pmode: kind === 'teacher' ? 'CCP' : 'Espèces' });
+  }
+  confirmPay() {
+    const m = this.state.modal, amt = Number(this.state.amt) || 0;
+    if (!m.id || amt <= 0) { this.toast('Choisissez un bénéficiaire et un montant.'); return; }
+    if (m.kind === 'student') {
+      const st = this.S(m.id); st.paid += amt; const rec = 'REC-2026-0' + (this.D.recN++);
+      this.D.payments.unshift({ rec, sid: st.id, amount: amt, day: 26, date: '26/09/2026', mode: this.state.pmode });
+      this.setState({ modal: null, v: this.state.v + 1 }); this.toast('Paiement enregistré · reçu ' + rec + ' généré');
+    } else {
+      const t = this.T(m.id); t.paid = true; t.hist.unshift({ month: 'Septembre 2026', date: '26/09', amt });
+      this.setState({ modal: null, v: this.state.v + 1 }); this.toast('Paiement de ' + FMT(amt) + ' enregistré pour ' + t.name);
+    }
+  }
+
+  renderVals() {
+    if (!this.D) this.D = this.build();
+    const D = this.D;
+    const S = { ...this.state, att: this.state.att || D.att || {} };
+    if (!S.attC) S.attC = 'c2';
+    const pd = this.props.direction, pt = this.props.theme;
+    const dir = ['A', 'B', 'C'].includes(S.dir) ? S.dir : (['A', 'B', 'C'].includes(pd) ? pd : 'A');
+    const mode = ['light', 'dark'].includes(S.mode) ? S.mode : (pt === 'dark' ? 'dark' : 'light');
+    const th = THEMES[dir], pal = th[mode];
+    const dark = mode === 'dark';
+    const rootStyle = { position: 'fixed', inset: 0, overflow: 'hidden', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--sans)', fontSize: 14, WebkitFontSmoothing: 'antialiased',
+      '--serif': th.serif, '--sans': th.sans, '--hw': th.hw, '--r': th.r, '--rs': th.rs, '--h1': th.h1, '--kpi': th.kpi,
+      '--ok': dark ? 'oklch(0.78 0.11 155)' : 'oklch(0.50 0.11 155)', '--warn': dark ? 'oklch(0.80 0.11 75)' : 'oklch(0.53 0.11 65)', '--bad': dark ? 'oklch(0.75 0.13 28)' : 'oklch(0.52 0.15 28)' };
+    Object.keys(pal).forEach(k => { rootStyle['--' + k] = pal[k]; });
+
+    const scr = S.screen;
+    const parent = { studentProfile: 'students', teacherProfile: 'teachers', courseDetail: 'courses' }[scr] || scr;
+    const NAV = [
+      ['', [['dashboard', 'Tableau de bord']]],
+      ['Scolarité', [['students', 'Élèves'], ['parents', 'Parents'], ['teachers', 'Enseignants'], ['subjects', 'Matières'], ['courses', 'Cours'], ['groups', 'Groupes'], ['rooms', 'Salles']]],
+      ['Planning', [['schedule', 'Emploi du temps'], ['sessions', 'Séances'], ['attendance', 'Présences']]],
+      ['Évaluation', [['grades', 'Notes'], ['exams', 'Examens']]],
+      ['Finances', [['payments', 'Paiements'], ['tpayments', 'Paiements enseignants'], ['expenses', 'Dépenses']]],
+      ['Centre', [['reports', 'Rapports'], ['documents', 'Documents'], ['settings', 'Paramètres']]],
+    ];
+    const titles = {}; NAV.forEach(([, it]) => it.forEach(([k, l]) => { titles[k] = l; }));
+    const nav = NAV.map(([label, items]) => ({ label, items: items.map(([k, l]) => ({ label: l, go: () => this.go(k), style: { padding: '7px 10px', borderRadius: 'var(--rs)', fontSize: 13.5, cursor: 'pointer', color: parent === k ? 'var(--sideInk)' : 'var(--sideMuted)', background: parent === k ? 'var(--sideActive)' : 'transparent', fontWeight: parent === k ? 600 : 400 } })) }));
+
+    const active = D.students.filter(s => s.active);
+    const dueTotal = active.reduce((a, s) => a + D.due(s), 0);
+    const collected = D.payments.reduce((a, p) => a + p.amount, 0);
+    const outstanding = active.reduce((a, s) => a + Math.max(0, D.due(s) - s.paid), 0);
+    const nOut = active.filter(s => s.paid < D.due(s)).length;
+    const todayPays = D.payments.filter(p => p.day === 26);
+    const tDue = D.teachers.filter(t => t.active && !t.paid).reduce((a, t) => a + this.earn(t).v, 0);
+    const tAll = D.teachers.filter(t => t.active).reduce((a, t) => a + this.earn(t).v, 0);
+    const exp = D.expenses.reduce((a, e) => a + e[1], 0);
+    const fin = [
+      { label: 'Recettes du jour', value: FMT(todayPays.reduce((a, p) => a + p.amount, 0)), note: todayPays.length + ' reçus émis' },
+      { label: 'Recettes du mois', value: FMT(collected), note: 'Septembre 2026' },
+      { label: 'Impayés élèves', value: FMT(outstanding), note: nOut + ' élèves concernés' },
+      { label: 'Paiements enseignants', value: FMT(tDue), note: 'À verser le 30/09' },
+      { label: 'Dépenses', value: FMT(exp), note: D.expenses.length + ' postes ce mois' },
+      { label: 'Bénéfice estimé', value: FMT(dueTotal - tAll - exp), note: 'Mensualités − charges' },
+    ];
+    const fullGroups = D.courses.filter(c => c.enr.length >= c.cap).length;
+    const todaySess = [];
+    D.courses.forEach(c => c.slots.forEach(([d, a, b]) => { if (d === 0) todaySess.push({ c, a, b }); }));
+    todaySess.sort((x, y) => x.a - y.a);
+    const blocks = [
+      { title: 'Élèves', go: () => this.go('students'), rows: [{ v: D.students.length, l: 'Total' }, { v: active.length, l: 'Actifs' }, { v: D.students.filter(s => s.isNew).length, l: 'Nouveaux (sept.)' }] },
+      { title: 'Enseignants', go: () => this.go('teachers'), rows: [{ v: D.teachers.length, l: 'Total' }, { v: D.teachers.filter(t => t.active).length, l: 'Actifs' }, { v: D.teachers.filter(t => t.active && !t.paid).length, l: 'Paiements dus' }] },
+      { title: 'Cours', go: () => this.go('courses'), rows: [{ v: D.courses.length, l: 'Cours actifs' }, { v: todaySess.length, l: "Séances aujourd'hui" }, { v: fullGroups, l: 'Groupes complets' }] },
+    ];
+    const todayRows = todaySess.map(({ c, a, b }) => { const st = b <= NOW ? ['Terminée', 'n'] : a <= NOW ? ['En cours', 'ok'] : ['À venir', 'n']; return { time: hh(a) + '–' + hh(b), name: this.cname(c), teacher: this.T(c.t).name, room: c.room, state: st[0], badge: st[1] === 'ok' ? this.badge('ok') : { ...this.badge('n'), background: 'transparent', border: '1px solid var(--line)' }, open: () => this.go('attendance', { attC: c.id }) }; });
+    let P = 0, A = 0, R = 0; Object.values(S.att).forEach(m => Object.values(m).forEach(v => { if (v === 'P') P++; else if (v === 'A') A++; else if (v === 'R') R++; }));
+    const tot = Math.max(1, P + A + R);
+    const dot = c => ({ width: 8, height: 8, borderRadius: '50%', background: c, display: 'inline-block' });
+    const attStats = [{ v: P, l: 'Présents', dot: dot('var(--ok)') }, { v: A, l: 'Absents', dot: dot('var(--bad)') }, { v: R, l: 'Retards', dot: dot('var(--warn)') }];
+    const attBar = [{ width: (P / tot * 100) + '%', background: 'var(--ok)' }, { width: (R / tot * 100) + '%', background: 'var(--warn)' }, { width: (A / tot * 100) + '%', background: 'var(--bad)' }];
+    const nx = todaySess.find(x => x.a > NOW);
+    const mins = nx ? Math.round((nx.a - NOW) * 60) : 0;
+    const next = nx ? { name: this.cname(nx.c), time: hh(nx.a) + '–' + hh(nx.b), teacher: this.T(nx.c.t).name, room: nx.c.room, inMin: 'dans ' + (mins >= 60 ? Math.floor(mins / 60) + ' h ' + String(mins % 60).padStart(2, '0') : mins + ' min') } : { name: 'Aucune', time: '', teacher: '', room: '', inMin: '' };
+    const busy = todaySess.filter(x => x.a <= NOW && x.b > NOW).map(x => x.c.room);
+    const freeRooms = ROOMS.filter(r => !busy.includes(r));
+
+    const q = S.q.trim().toLowerCase();
+    const list = D.students.filter(s => (S.lvl === 'Tous' || (S.lvl === 'Inactifs' ? !s.active : s.level === S.lvl && s.active)) && (!q || (s.fn + ' ' + s.ln + ' ' + s.id + ' ' + s.parentPhone).toLowerCase().includes(q)));
+    const studentRows = list.map(s => { const [lab, k] = this.stStatus(s); const rest = s.active ? D.due(s) - s.paid : 0; return { id: s.id, name: s.fn + ' ' + s.ln, ini: this.ini(s.fn + ' ' + s.ln), level: s.level, courses: s.courses.map(c => SHORT[this.C(c).subj]).join(', ') || '—', parent: s.parentPhone, rest: rest > 0 ? FMT(rest) : '—', state: lab, badge: this.badge(k), open: () => this.go('studentProfile', { sid: s.id, tab: 'apercu' }) }; });
+    const lvlChips = ['Tous', '3AS', '4AM', '2AS', 'Inactifs'].map(l => ({ label: l, style: this.chip(S.lvl === l), go: () => this.setState({ lvl: l }) }));
+
+    let st = {};
+    const so = S.sid && this.S(S.sid);
+    if (so) {
+      const [lab, k] = this.stStatus(so), d = D.due(so);
+      const hist = []; const dates = ['26/09', '23/09', '19/09', '16/09', '12/09', '09/09'];
+      so.courses.forEach((cid, ci) => dates.forEach((dt, di) => { const h = (so.x * 97 + ci * 13 + di * 7) % 10; const v = h < 7.8 ? ['Présent', 'ok'] : h < 9 ? ['Retard', 'warn'] : ['Absent', 'bad']; hist.push({ date: dt + '/2026', course: this.cname(this.C(cid)), label: v[0], badge: this.badge(v[1]), o: di }); }));
+      hist.sort((a, b) => a.o - b.o);
+      const pres = hist.filter(h => h.label !== 'Absent').length;
+      const pays = D.payments.filter(p => p.sid === so.id).map(p => ({ rec: p.rec, date: p.date, mode: p.mode, amount: FMT(p.amount), print: () => this.toast('Impression du reçu ' + p.rec) }));
+      st = { id: so.id, name: so.fn + ' ' + so.ln, ini: this.ini(so.fn + ' ' + so.ln), level: so.level, joined: so.joined, school: so.school, state: lab, badge: this.badge(k), parentName: so.parentName, parentPhone: so.parentPhone,
+        enr: so.courses.map(cid => { const c = this.C(cid); return { name: this.cname(c), teacher: this.T(c.t).name, when: this.when(c), price: FMT(c.price), open: () => this.go('courseDetail', { cid }), change: () => this.toast('Changement de groupe : choisissez le nouveau groupe') }; }),
+        info: [{ l: 'Date de naissance', v: so.dob }, { l: 'Établissement', v: so.school }, { l: 'Téléphone parent', v: so.parentPhone }, { l: 'Adresse', v: 'Cité 200 logements, Bab Ezzouar' }, { l: 'Matricule', v: so.id }, { l: 'Remise', v: so.disc ? 'Fratrie −' + so.disc + ' %' : 'Aucune' }],
+        fin: [{ l: 'Mensualité', v: FMT(d / (1 - so.disc / 100)) }, { l: 'Remise', v: so.disc ? '−' + FMT(d / (1 - so.disc / 100) - d) : '—' }, { l: 'Payé', v: FMT(so.paid) }, { l: 'Reste à payer', v: FMT(Math.max(0, d - so.paid)) }],
+        hist, rate: hist.length ? Math.round(pres / hist.length * 100) + ' %' : '—',
+        grades: so.courses.map(cid => { const g = so.grades[cid]; return { course: this.cname(this.C(cid)), a: g[0].toFixed(1), b: g[1].toFixed(1), c: g[2].toFixed(1), avg: ((g[0] + g[1] + g[2]) / 3).toFixed(2) }; }),
+        pays, noPay: !pays.length,
+        docs: [{ name: "Fiche d'inscription.pdf", date: so.joined }, { name: 'Certificat de scolarité.pdf', date: '15/09/2026' }, { name: 'Photo identité.jpg', date: so.joined }] };
+    }
+    const stActions = [{ label: "Modifier l'élève", go: () => this.toast("Édition de la fiche élève") }, { label: 'Changer de groupe', go: () => this.toast('Changement de groupe') }, { label: 'Appliquer une remise', go: () => this.toast('Remise appliquée à la prochaine mensualité') }, { label: 'Ajouter un document', go: () => this.go('studentProfile', { tab: 'documents' }) }];
+    const stTabs = [['apercu', 'Aperçu'], ['presences', 'Présences'], ['notes', 'Notes'], ['paiements', 'Historique des paiements'], ['documents', 'Documents']].map(([k, l]) => ({ label: l, go: () => this.setState({ tab: k }), style: { padding: '10px 0', marginBottom: -1, whiteSpace: 'nowrap', flex: 'none', fontSize: 13.5, cursor: 'pointer', borderBottom: '2px solid ' + (S.tab === k ? 'var(--ink)' : 'transparent'), color: S.tab === k ? 'var(--ink)' : 'var(--muted)', fontWeight: S.tab === k ? 500 : 400 } }));
+
+    const teacherRows = D.teachers.map(t => { const cs = D.courses.filter(c => c.t === t.id); return { name: t.name, subj: t.subj, nc: cs.length, ns: new Set(cs.flatMap(c => c.enr)).size, rule: this.ruleLabel(t), state: t.active ? 'Actif' : 'Inactif', badge: this.badge(t.active ? 'ok' : 'n'), open: () => this.go('teacherProfile', { tid: t.id }) }; });
+    let tp = {};
+    const to = S.tid && this.T(S.tid);
+    if (to) {
+      const cs = D.courses.filter(c => c.t === to.id), ids = [...new Set(cs.flatMap(c => c.enr))], e = this.earn(to);
+      tp = { name: to.name, ini: this.ini(to.name), subj: to.subj, since: to.since, phone: to.phone, earn: FMT(e.v), rule: e.rule, state: to.paid ? 'Payé' : 'À payer le 30/09', badge: this.badge(to.paid ? 'ok' : 'warn'), ns: ids.length,
+        courses: cs.map(c => ({ name: this.cname(c), when: this.when(c), room: c.room, fill: c.enr.length + ' / ' + c.cap, open: () => this.go('courseDetail', { cid: c.id }) })), noCourses: !cs.length,
+        students: ids.map(id => { const s = this.S(id); return { name: s.fn + ' ' + s.ln, open: () => this.go('studentProfile', { sid: id, tab: 'apercu' }) }; }),
+        hist: to.hist.map(h => ({ month: h.month, date: h.date, amount: FMT(h.amt != null ? h.amt : e.v * h.f) })) };
+    }
+
+    const courseRows = D.courses.map(c => ({ name: this.cname(c), teacher: this.T(c.t).name, room: c.room, when: this.when(c), fill: c.enr.length + ' / ' + c.cap, badge: c.enr.length >= c.cap ? this.badge('warn') : { ...this.badge('n'), background: 'transparent', padding: 0, color: 'var(--ink)' }, price: FMT(c.price), open: () => this.go('courseDetail', { cid: c.id }) }));
+    let cd = {};
+    const co = S.cid && this.C(S.cid);
+    if (co) {
+      const coll = co.enr.reduce((a, id) => { const s = this.S(id); const d = D.due(s); return a + (d ? co.price * Math.min(1, s.paid / d) : 0); }, 0);
+      cd = { name: this.cname(co), teacher: this.T(co.t).name, t: co.t, room: co.room, when: this.when(co), priceRaw: co.price, fill: co.enr.length + ' / ' + co.cap, rate: co.rate + ' %',
+        collected: FMT(coll), expected: FMT(co.price * co.enr.length), capBar: { width: Math.min(100, co.enr.length / co.cap * 100) + '%', height: '100%', background: co.enr.length >= co.cap ? 'var(--warn)' : 'var(--accent)' },
+        goAtt: () => this.go('attendance', { attC: co.id }),
+        eligible: D.students.filter(s => s.active && s.level === co.level && !co.enr.includes(s.id)).map(s => ({ id: s.id, name: s.fn + ' ' + s.ln })),
+        students: co.enr.map(id => { const s = this.S(id); const [lab, k] = this.stStatus(s); return { id, name: s.fn + ' ' + s.ln, state: lab, badge: this.badge(k), open: () => this.go('studentProfile', { sid: id, tab: 'apercu' }), remove: () => { co.enr = co.enr.filter(x => x !== id); s.courses = s.courses.filter(x => x !== co.id); this.setState({ v: S.v + 1 }); this.toast(s.fn + ' ' + s.ln + ' retiré du cours'); } }; }) };
+    }
+    const teacherOpts = D.teachers.filter(t => t.active).map(t => ({ id: t.id, name: t.name }));
+
+    const days = DAYS.map((label, d) => {
+      const items = []; D.courses.forEach(c => c.slots.forEach(([dd, a, b]) => { if (dd === d) items.push({ c, a, b }); }));
+      items.sort((x, y) => x.a - y.a); const lanes = [];
+      items.forEach(it => { let l = lanes.findIndex(e => e <= it.a); if (l < 0) { l = lanes.length; lanes.push(0); } lanes[l] = it.b; it.l = l; });
+      const nl = Math.max(1, lanes.length);
+      return { label: label + (d === 0 ? ' 26' : ' ' + (26 + d > 30 ? (26 + d - 30) : 26 + d)), today: d === 0,
+        headStyle: { padding: '10px 10px', fontSize: 13, fontWeight: d === 0 ? 600 : 400, color: d === 0 ? 'var(--ink)' : 'var(--muted)', borderLeft: '1px solid var(--line)', background: d === 0 ? 'var(--sunk)' : 'transparent' },
+        colStyle: { position: 'relative', height: 624, borderLeft: '1px solid var(--line)', background: d === 0 ? 'color-mix(in oklch, var(--sunk) 50%, transparent)' : 'transparent', backgroundImage: 'repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent 52px)' },
+        blocks: items.map(it => { const live = d === 0 && it.a <= NOW && it.b > NOW; return { name: SHORT[it.c.subj] + ' · ' + it.c.level + ' ' + it.c.grp, time: it.a + 'h–' + it.b + 'h', room: it.c.room, teacher: this.T(it.c.t).name, open: () => this.go('courseDetail', { cid: it.c.id }),
+          style: { position: 'absolute', top: (it.a - 8) * 52 + 2, height: (it.b - it.a) * 52 - 4, left: `calc(${it.l * 100 / nl}% + 3px)`, width: `calc(${100 / nl}% - 6px)`, background: live ? 'var(--accent)' : 'var(--panel)', color: live ? 'var(--onAccent)' : 'var(--ink)', border: '1px solid ' + (live ? 'var(--accent)' : 'var(--line)'), borderRadius: 'var(--rs)', padding: '6px 8px', overflow: 'hidden', cursor: 'pointer', fontSize: 11.5, display: 'flex', flexDirection: 'column', gap: 2 } }; }) };
+    });
+    const hours = Array.from({ length: 12 }, (_, i) => ({ label: (8 + i) + 'h', style: { position: 'absolute', top: i * 52 + 4, right: 8, fontSize: 11, color: 'var(--muted)' } }));
+    const nowLine = { position: 'absolute', left: 0, right: 0, top: (NOW - 8) * 52, height: 2, background: 'var(--bad)', zIndex: 2 };
+
+    const attSessions = todaySess.map(({ c, a, b }) => { const on = S.attC === c.id; const m = S.att[c.id]; return { time: hh(a) + '–' + hh(b), name: this.cname(c), done: m ? Object.keys(m).length + ' / ' + c.enr.length + ' saisis' : 'À faire', go: () => this.setState({ attC: c.id }), style: { padding: '11px 16px', borderBottom: '1px solid var(--line)', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 3, background: on ? 'var(--sunk)' : 'transparent', boxShadow: on ? 'inset 3px 0 0 var(--ink)' : 'none' } }; });
+    const acC = this.C(S.attC) || todaySess[0].c;
+    const acSlot = acC.slots.find(x => x[0] === 0) || acC.slots[0];
+    const acM = S.att[acC.id] || {};
+    const setMark = (sid, v) => this.setState(s => ({ att: { ...s.att, [acC.id]: { ...(s.att[acC.id] || {}), [sid]: v } } }));
+    const OPT = [['P', 'Présent', 'var(--ok)'], ['A', 'Absent', 'var(--bad)'], ['R', 'Retard', 'var(--warn)']];
+    const cnt = k => Object.values(acM).filter(v => v === k).length;
+    const ac = { name: this.cname(acC), time: hh(acSlot[1]) + '–' + hh(acSlot[2]), room: acC.room, teacher: this.T(acC.t).name,
+      counts: [{ l: 'Présents', v: cnt('P') }, { l: 'Absents', v: cnt('A') }, { l: 'Retards', v: cnt('R') }, { l: 'Non saisis', v: acC.enr.length - Object.keys(acM).length }],
+      rows: acC.enr.map(id => { const s = this.S(id); return { id, name: s.fn + ' ' + s.ln, opts: OPT.map(([k, l, col]) => { const on = acM[id] === k; return { label: l, go: () => setMark(id, k), style: { height: 30, padding: '0 12px', display: 'inline-flex', alignItems: 'center', borderRadius: 'var(--rs)', fontSize: 12.5, cursor: 'pointer', border: '1px solid ' + (on ? col : 'var(--line)'), color: on ? col : 'var(--muted)', background: on ? `color-mix(in oklch, ${col} 14%, transparent)` : 'transparent', fontWeight: on ? 600 : 400 } }; }) }; }) };
+
+    const payKpis = [{ label: 'Attendu ce mois', value: FMT(dueTotal) }, { label: 'Encaissé', value: FMT(collected) }, { label: 'Reste à percevoir', value: FMT(outstanding) }, { label: 'Taux de recouvrement', value: Math.round(collected / Math.max(1, dueTotal) * 100) + ' %' }];
+    const payChips = ['Tous', 'Payé', 'Partiel', 'Impayé'].map(l => ({ label: l, style: this.chip(S.pf === l), go: () => this.setState({ pf: l }) }));
+    const payRows = active.filter(s => S.pf === 'Tous' || this.stStatus(s)[0] === S.pf).map(s => { const d = D.due(s), [lab, k] = this.stStatus(s); return { name: s.fn + ' ' + s.ln, disc: s.disc ? ' · −' + s.disc + ' %' : '', due: FMT(d), paid: FMT(s.paid), rest: FMT(Math.max(0, d - s.paid)), state: lab, badge: this.badge(k), canPay: s.paid < d, pay: () => this.openPay('student', s.id), open: () => this.go('studentProfile', { sid: s.id, tab: 'paiements' }) }; });
+    const receipts = D.payments.slice(0, 10).map(p => { const s = this.S(p.sid); return { name: s.fn + ' ' + s.ln, rec: p.rec, date: p.date.slice(0, 5), mode: p.mode, amount: FMT(p.amount) }; });
+
+    const m = S.modal;
+    let md = {};
+    if (m) {
+      if (m.kind === 'student') { const so2 = m.id && this.S(m.id); md = { title: 'Encaisser un paiement', pickStudent: m.pick, fixed: !m.pick && !!so2, who: so2 ? so2.fn + ' ' + so2.ln : '', sid: m.id || '', opts: active.filter(s => s.paid < D.due(s)).map(s => ({ id: s.id, name: s.fn + ' ' + s.ln + ' — reste ' + FMT(D.due(s) - s.paid) })), note: so2 ? 'Septembre 2026 · reste ' + FMT(Math.max(0, D.due(so2) - so2.paid)) + (so2.disc ? ' · remise fratrie ' + so2.disc + ' % incluse' : '') : 'Septembre 2026', cta: 'Valider et générer le reçu' }; }
+      else { const t = this.T(m.id); md = { title: 'Paiement enseignant', pickStudent: false, fixed: true, who: t.name, sid: '', opts: [], note: 'Septembre 2026 · ' + this.earn(t).rule, cta: 'Enregistrer le paiement' }; }
+    }
+    const modeOpts = ['Espèces', 'CCP', 'BaridiMob', 'Chèque', 'Virement'].map(l => ({ label: l, style: this.chip(S.pmode === l), go: () => this.setState({ pmode: l }) }));
+
+    const setTabs = [['centre', 'Centre'], ['tarifs', 'Tarifs, paiements et remises'], ['remun', 'Rémunération enseignants'], ['eval', 'Présences et notes'], ['recus', 'Reçus'], ['backup', 'Sauvegarde et export'], ['app', 'Langue et thème'], ['sec', 'Sécurité']].map(([k, l]) => ({ label: l, go: () => this.setState({ setTab: k }), style: { padding: '8px 12px', borderRadius: 'var(--rs)', fontSize: 13.5, cursor: 'pointer', background: S.setTab === k ? 'var(--panel)' : 'transparent', border: '1px solid ' + (S.setTab === k ? 'var(--line)' : 'transparent'), color: S.setTab === k ? 'var(--ink)' : 'var(--muted)', fontWeight: S.setTab === k ? 500 : 400 } }));
+    const F = a => a.map(([l, v]) => ({ l, v }));
+
+    const setDir = d => this.setState({ dir: d });
+    const dirNames = { A: 'A · Graphite', B: 'B · Marine', C: 'C · Papier' };
+    const pill = on => ({ height: 26, padding: '0 10px', display: 'inline-flex', alignItems: 'center', borderRadius: 999, cursor: 'pointer', background: on ? 'var(--ink)' : 'transparent', color: on ? 'var(--bg)' : 'var(--ink)', fontWeight: on ? 500 : 400 });
+
+    return {
+      rootStyle, showLogin: !S.loggedIn, showApp: S.loggedIn, isLocked: S.loggedIn && S.locked,
+      user: S.user, pw: S.pw, err: S.err, hasErr: !!S.err, lockPw: S.lockPw, lockMin: S.lockMin, fullName: 'Mourad Benyahia', username: S.username,
+      onUser: e => this.setState({ user: e.target.value }), onPw: e => this.setState({ pw: e.target.value, err: '' }), onLockPw: e => this.setState({ lockPw: e.target.value, err: '' }),
+      login: () => { if (!S.pw) return this.setState({ err: 'Saisissez votre mot de passe.' }); if (S.user.trim() !== S.username) return this.setState({ err: "Nom d'utilisateur ou mot de passe incorrect." }); this.last = Date.now(); this.setState({ loggedIn: true, pw: '', err: '', screen: 'dashboard' }); },
+      onLoginKey: e => { if (e.key === 'Enter') this.renderVals().login(); },
+      unlock: () => { if (!S.lockPw) return this.setState({ err: 'Saisissez votre mot de passe.' }); this.last = Date.now(); this.setState({ locked: false, lockPw: '', err: '' }); },
+      onUnlockKey: e => { if (e.key === 'Enter') this.renderVals().unlock(); },
+      lockNow: () => this.setState({ locked: true, err: '' }), logout: () => this.setState({ loggedIn: false, locked: false, pw: '', err: '', modal: null }),
+      toggleMode: () => this.setState({ mode: dark ? 'light' : 'dark' }), modeLabel: dark ? 'Mode clair' : 'Mode sombre',
+      onSearchKey: e => { if (e.key === 'Enter') { this.go('students', { q: e.target.value, lvl: 'Tous' }); e.target.value = ''; } },
+      nav, todayLabel: 'Samedi 26 septembre 2026', goAccount: () => this.go('account'),
+      goPayments: () => this.go('payments'), goSchedule: () => this.go('schedule'), goAttendance: () => this.go('attendance'), goStudents: () => this.go('students'), goTeachers: () => this.go('teachers'), goCourses: () => this.go('courses'),
+      isDashboard: scr === 'dashboard', isStudents: scr === 'students', isStudentProfile: scr === 'studentProfile' && !!so, isTeachers: scr === 'teachers', isTeacherProfile: scr === 'teacherProfile' && !!to, isCourses: scr === 'courses', isCourseDetail: scr === 'courseDetail' && !!co, isSchedule: scr === 'schedule', isAttendance: scr === 'attendance', isPayments: scr === 'payments', isSettings: scr === 'settings', isAccount: scr === 'account',
+      isPlaceholder: ['parents', 'subjects', 'groups', 'rooms', 'sessions', 'grades', 'exams', 'tpayments', 'expenses', 'reports', 'documents'].includes(scr), phTitle: titles[scr] || '',
+      fin, blocks, todayRows, attStats, attBar, next, freeRooms,
+      q: S.q, onQ: e => this.setState({ q: e.target.value }), lvlChips, studentRows, studentCount: list.length + ' élève' + (list.length > 1 ? 's' : '') + ' affichés sur ' + D.students.length,
+      st, stActions, stTabs, tabApercu: S.tab === 'apercu', tabPresences: S.tab === 'presences', tabNotes: S.tab === 'notes', tabPaiements: S.tab === 'paiements', tabDocuments: S.tab === 'documents',
+      openPayStudent: () => this.openPay('student', S.sid), openPayModal: () => this.openPay('student', null), openPayTeacher: () => this.openPay('teacher', S.tid),
+      teacherRows, tp, courseRows, cd, teacherOpts, roomOpts: ROOMS, addSid: S.addSid,
+      onPrice: e => { co.price = Number(e.target.value) || 0; this.setState({ v: S.v + 1 }); },
+      onTeacher: e => { co.t = e.target.value; this.setState({ v: S.v + 1 }); this.toast('Enseignant du cours modifié'); },
+      onRoom: e => { co.room = e.target.value; this.setState({ v: S.v + 1 }); this.toast('Salle modifiée'); },
+      onAddSid: e => this.setState({ addSid: e.target.value }),
+      addToCourse: () => { if (!S.addSid) return this.toast('Choisissez un élève'); const s = this.S(S.addSid); co.enr.push(s.id); s.courses.push(co.id); this.setState({ addSid: '' }); this.toast(s.fn + ' ' + s.ln + ' ajouté au cours'); },
+      days, hours, nowLine,
+      attSessions, ac, allPresent: () => this.setState(s => ({ att: { ...s.att, [acC.id]: Object.fromEntries(acC.enr.map(id => [id, 'P'])) } })), saveAtt: () => this.toast('Présences enregistrées · ' + this.cname(acC)),
+      payKpis, payChips, payRows, receipts,
+      hasModal: !!m, md, amt: S.amt, onAmt: e => this.setState({ amt: e.target.value }), modeOpts, closeModal: () => this.setState({ modal: null }), stop: e => e.stopPropagation(),
+      onModalSid: e => { const id = e.target.value; const s2 = id && this.S(id); this.setState({ modal: { ...m, id }, amt: s2 ? String(D.due(s2) - s2.paid) : '' }); },
+      confirmPay: () => this.confirmPay(),
+      setTabs, stCentre: S.setTab === 'centre', stTarifs: S.setTab === 'tarifs', stRemun: S.setTab === 'remun', stEval: S.setTab === 'eval', stRecus: S.setTab === 'recus', stBackup: S.setTab === 'backup', stApp: S.setTab === 'app', stSec: S.setTab === 'sec',
+      fCentre: F([['Nom du centre', 'Future Leaders Academy'], ['Adresse', '12 rue des Frères Bouadou, Bir Mourad Raïs, Alger'], ['Téléphone', '023 54 18 72'], ['E-mail', 'contact@futureleaders.dz'], ['Devise', 'DZD — Dinar algérien'], ['Année scolaire', '2026–2027']]),
+      fTarifs: F([['4AM (BEM)', '3 000 – 3 500 DZD'], ['1AS / 2AS', '3 500 – 4 000 DZD'], ['3AS (BAC)', '3 000 – 4 500 DZD'], ['Frais d\'inscription', '1 000 DZD']]),
+      fRules: F([['Échéance mensuelle', 'Le 5 de chaque mois'], ['Relance après', '10 jours de retard'], ['Remise fratrie', '10 %'], ['Paiement trimestriel', '5 %'], ['Cas social', 'Au cas par cas']]),
+      fRemun: F([['Mode par défaut', 'Pourcentage des mensualités'], ['Pourcentage par défaut', '40 %'], ['Tarif par séance', '2 000 DZD'], ['Date de versement', 'Dernier jour du mois']]),
+      fEval: F([['Retard compté après', '10 minutes'], ['Alerte après', '3 absences dans le mois'], ['Barème', 'Sur 20'], ['Moyenne de réussite', '10 / 20'], ['Arrondi des moyennes', '2 décimales']]),
+      fRecus: F([['Préfixe', 'REC-2026-'], ['Prochain numéro', String(D.recN).padStart(4, '0')], ['Mention en pied de page', 'Merci de votre confiance. Aucun remboursement après le 10 du mois.']]),
+      tg: { sms: this.toggle('sms'), logo: this.toggle('logo'), autoBackup: this.toggle('autoBackup'), encrypt: this.toggle('encrypt') },
+      lastBackup: S.lastBackup, backupNow: () => { this.setState({ lastBackup: "Aujourd'hui, 14:32 · 14,3 Mo" }); this.toast('Sauvegarde effectuée'); },
+      modeChips: [['light', 'Clair'], ['dark', 'Sombre']].map(([k, l]) => ({ label: l, style: this.chip(mode === k), go: () => this.setState({ mode: k }) })),
+      dirChips: ['A', 'B', 'C'].map(k => ({ label: dirNames[k], style: this.chip(dir === k), go: () => setDir(k) })),
+      lockChips: [5, 10, 15, 30].map(n => ({ label: n + ' min', style: this.chip(S.lockMin === n), go: () => this.setState({ lockMin: n }) })),
+      dirPills: ['A', 'B', 'C'].map(k => ({ label: dirNames[k], style: pill(dir === k), go: () => setDir(k) })),
+      fAccount: F([['Nom complet', 'Mourad Benyahia'], ['E-mail', 'm.benyahia@futureleaders.dz'], ['Téléphone', '0661 03 44 27']]),
+      pwFields: ['Mot de passe actuel', 'Nouveau mot de passe', 'Confirmer le nouveau mot de passe'],
+      onUsername: e => this.setState({ username: e.target.value, user: e.target.value }),
+      hasToast: !!S.toast, toast: S.toast,
+      toastExport: () => this.toast('Export Excel généré'), toastAddStudent: () => this.toast("Formulaire d'inscription ouvert"), toastEnroll: () => this.toast("Modification de l'inscription"),
+      toastGrade: () => this.toast('Saisie de note'), toastDoc: () => this.toast('Sélectionnez un fichier à joindre'), toastEditTeacher: () => this.toast("Édition de la fiche enseignant"),
+      toastSession: () => this.toast('Nouvelle séance : choisissez cours, salle et créneau'), toastLogo: () => this.toast('Sélectionnez une image'), toastRestore: () => this.toast('Choisissez un fichier de sauvegarde'),
+      toastPhoto: () => this.toast('Sélectionnez une photo'), toastSaved: () => this.toast('Informations enregistrées'), toastPw: () => this.toast('Mot de passe mis à jour'),
+    };
+  }
+}
+</script>
+</body>
+</html>
