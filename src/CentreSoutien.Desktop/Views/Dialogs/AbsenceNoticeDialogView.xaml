@@ -1,0 +1,39 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.AbsenceNoticeDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:AbsenceNoticeDialogViewModel}">
+    <StackPanel>
+        <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12" />
+        <TextBlock Text="Aucun absent enregistré pour cette séance." Style="{StaticResource EmptyText}"
+                   Visibility="{Binding Lines, Converter={StaticResource NullToVisible}}" />
+        <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type dlg:AbsenceNoticeLine}">
+                    <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,12">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="Copier" Command="{Binding Copy}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,8,0" />
+                                    <Button Content="WhatsApp" Command="{Binding WhatsApp}" IsEnabled="{Binding CanWhatsApp}" Style="{StaticResource SmallPrimaryButton}"
+                                            ToolTip="Ouvre la conversation WhatsApp avec le message prêt à envoyer" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding Student}" Style="{StaticResource BodyStrong}" />
+                                    <TextBlock Style="{StaticResource Small}" Margin="0,2,0,0">
+                                        <Run Text="{Binding Parent, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Phone, Mode=OneWay}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Background="{DynamicResource SunkBrush}" CornerRadius="{StaticResource RadiusSmall}" Padding="12,10" Margin="0,10,0,0">
+                                <TextBlock Text="{Binding Message}" Style="{StaticResource Body}" TextWrapping="Wrap" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

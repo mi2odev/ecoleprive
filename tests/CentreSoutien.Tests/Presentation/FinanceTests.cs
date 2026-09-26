@@ -220,7 +220,7 @@ public class FinanceTests
         await host.Get<Navigator>().NavigateAsync<SettingsViewModel>();
         var page = host.Page<SettingsViewModel>();
         Assert.False(page.HasError, page.Error);
-        Assert.Equal(8, page.Sections.Count);
+        Assert.Equal(9, page.Sections.Count);
 
         page.SelectedSection = page.Sections.First(s => s.Value == "sec");
         Assert.True(page.IsSecurity);

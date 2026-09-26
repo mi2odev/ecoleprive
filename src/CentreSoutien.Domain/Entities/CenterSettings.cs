@@ -37,6 +37,18 @@ public class CenterSettings : Entity
     public decimal PassingGrade { get; set; } = 10;
     public int GradeDecimals { get; set; } = 2;
 
+    // Messages to parents (payment reminders, absence notices) sent through WhatsApp / SMS / letters.
+    public const string DefaultPaymentReminderTemplate =
+        "Bonjour {parent}, sauf erreur de notre part, la mensualité de {mois} pour {eleve} n'est pas encore réglée. Reste à payer : {reste}. Merci de passer au centre. {centre} – {telephone}";
+    public const string DefaultAbsenceMessageTemplate =
+        "Bonjour {parent}, nous vous informons que {eleve} était absent(e) au cours de {cours} le {date}. {centre}";
+    public const string DefaultPhoneCountryCode = "213";
+
+    public string PaymentReminderTemplate { get; set; } = DefaultPaymentReminderTemplate;
+    public string AbsenceMessageTemplate { get; set; } = DefaultAbsenceMessageTemplate;
+    /// <summary>International dialling code used to turn local numbers (0661…) into WhatsApp numbers (213661…).</summary>
+    public string PhoneCountryCode { get; set; } = DefaultPhoneCountryCode;
+
     // Receipts
     public string ReceiptPrefix { get; set; } = "REC-2026-";
     public int NextReceiptNumber { get; set; } = 1;

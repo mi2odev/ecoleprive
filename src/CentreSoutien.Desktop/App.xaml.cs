@@ -59,6 +59,8 @@ public partial class App
             builder.Services.AddSingleton<IFilePicker, FilePicker>();
             builder.Services.AddSingleton<IShell, WindowsShell>();
             builder.Services.AddSingleton<IPrintService, PrintService>();
+            builder.Services.AddSingleton<IClipboard, WindowsClipboard>();
+            builder.Services.AddSingleton<ILauncher, UrlLauncher>();
             builder.Services.AddSingleton<ActivityMonitor>();
             builder.Services.AddSingleton<MainWindow>();
             _host = builder.Build();
