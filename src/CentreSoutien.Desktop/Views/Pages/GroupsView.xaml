@@ -1,0 +1,86 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.GroupsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:GroupsViewModel}">
+    <StackPanel>
+        <DockPanel Margin="0,0,0,22">
+            <Button DockPanel.Dock="Right" VerticalAlignment="Bottom" Content="Nouveau groupe" Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" />
+            <StackPanel>
+                <TextBlock Text="{Binding CountLabel}" Style="{StaticResource Muted}" />
+                <TextBlock Text="Groupes" Style="{StaticResource H1}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <DockPanel Margin="0,0,0,18">
+            <TextBox DockPanel.Dock="Left" Width="340" VerticalAlignment="Top" Tag="Groupe, enseignant ou salle"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=150}" Margin="0,0,12,0" />
+            <ListBox ItemsSource="{Binding Levels}" SelectedItem="{Binding SelectedLevel}" Style="{StaticResource ChipList}" />
+        </DockPanel>
+
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Border Style="{StaticResource TableHeader}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.6*" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="1.6*" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Groupe" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="1" Text="Enseignant" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="2" Text="Salle" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="3" Text="Horaire" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="Inscrits" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Statut" Style="{StaticResource ColumnHeader}" />
+                        <!-- Keeps header columns aligned with the row actions. -->
+                        <StackPanel Grid.Column="6" Orientation="Horizontal" Visibility="Hidden">
+                            <TextBlock Text="Modifier" FontSize="12" Margin="12,0" />
+                            <TextBlock Text="Supprimer" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <TextBlock Text="Aucun groupe ne correspond à la recherche." Style="{StaticResource EmptyText}"
+                           Visibility="{Binding Rows, Converter={StaticResource NullToVisible}}" />
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:GroupRow}">
+                            <Button Command="{Binding Open}" Style="{StaticResource RowButton}" Padding="20,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.6*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="1.6*" />
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="80" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Teacher}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Room}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Schedule}" Style="{StaticResource Muted}" Margin="0,0,12,0" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Fill}" Style="{StaticResource Body}"
+                                               Visibility="{Binding IsFull, Converter={StaticResource BoolToCollapsed}}" />
+                                    <ContentControl Grid.Column="4" Content="{Binding FullBadge}" Focusable="False" VerticalAlignment="Center"
+                                                    Visibility="{Binding IsFull, Converter={StaticResource BoolToVisible}}" ToolTip="Groupe complet" />
+                                    <ContentControl Grid.Column="5" Content="{Binding Status}" Focusable="False" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="6" Orientation="Horizontal">
+                                        <Button Content="Modifier" Command="{Binding Edit}" Style="{StaticResource LinkButton}" Margin="12,0" />
+                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
