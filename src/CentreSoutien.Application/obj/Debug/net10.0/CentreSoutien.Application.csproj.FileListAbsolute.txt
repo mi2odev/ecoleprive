@@ -1,0 +1,15 @@
+/home/claude/repo/src/CentreSoutien.Application/bin/Debug/net10.0/CentreSoutien.Application.deps.json
+/home/claude/repo/src/CentreSoutien.Application/bin/Debug/net10.0/CentreSoutien.Application.dll
+/home/claude/repo/src/CentreSoutien.Application/bin/Debug/net10.0/CentreSoutien.Application.pdb
+/home/claude/repo/src/CentreSoutien.Application/bin/Debug/net10.0/CentreSoutien.Domain.dll
+/home/claude/repo/src/CentreSoutien.Application/bin/Debug/net10.0/CentreSoutien.Domain.pdb
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.csproj.AssemblyReference.cache
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.GeneratedMSBuildEditorConfig.editorconfig
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.AssemblyInfoInputs.cache
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.AssemblyInfo.cs
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.csproj.CoreCompileInputs.cache
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSo.6C51D538.Up2Date
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.dll
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/refint/CentreSoutien.Application.dll
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/CentreSoutien.Application.pdb
+/home/claude/repo/src/CentreSoutien.Application/obj/Debug/net10.0/ref/CentreSoutien.Application.dll
