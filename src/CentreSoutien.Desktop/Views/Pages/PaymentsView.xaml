@@ -23,14 +23,14 @@
         <!-- Tabs -->
         <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,22">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Content="Mensualités" IsChecked="{Binding IsMonthly, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="monthly" Style="{StaticResource TabRadio}" />
+                <RadioButton Content="Séances" IsChecked="{Binding IsMonthly, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="monthly" Style="{StaticResource TabRadio}" />
                 <RadioButton Content="Reçus" IsChecked="{Binding IsReceipts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="receipts" Style="{StaticResource TabRadio}" />
                 <RadioButton Content="Remises" IsChecked="{Binding IsDiscounts, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="discounts" Style="{StaticResource TabRadio}" />
                 <RadioButton Content="Relances" IsChecked="{Binding IsReminders, Mode=OneWay}" Command="{Binding ShowTabCommand}" CommandParameter="reminders" Style="{StaticResource TabRadio}" />
             </StackPanel>
         </Border>
 
-        <!-- ===== Mensualités ===== -->
+        <!-- ===== Séances : what each student has left to pay ===== -->
         <StackPanel Visibility="{Binding IsMonthly, Converter={StaticResource BoolToVisible}}">
             <ItemsControl ItemsSource="{Binding Kpis}" Style="{StaticResource KpiStrip}" Margin="0,0,0,22" />
 
@@ -61,14 +61,14 @@
                                     <ColumnDefinition Width="80" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Élève" Style="{StaticResource ColumnHeader}" />
-                                <TextBlock Grid.Column="1" Text="Mensualité" Style="{StaticResource ColumnHeader}" />
-                                <TextBlock Grid.Column="2" Text="Payé" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="1" Text="Prix des séances" Style="{StaticResource ColumnHeader}" />
+                                <TextBlock Grid.Column="2" Text="À payer depuis" Style="{StaticResource ColumnHeader}" />
                                 <TextBlock Grid.Column="3" Text="Reste" Style="{StaticResource ColumnHeader}" />
                                 <TextBlock Grid.Column="4" Text="Statut" Style="{StaticResource ColumnHeader}" />
                             </Grid>
                         </Border>
-                        <ui:EmptyState Title="Aucune mensualité ce mois-ci" Glyph="&#xE8C7;"
-                                       Message="Cette page suit, mois par mois, ce que chaque élève doit, a payé et reste à payer. Elle se remplit dès que des élèves sont inscrits dans des groupes."
+                        <ui:EmptyState Title="Aucun élève à suivre" Glyph="&#xE8C7;"
+                                       Message="Chaque élève paie en rejoignant un groupe, puis à chaque fin de paquet de séances (4, 8…). Cette page montre ce que chacun reste à payer dès que des élèves sont inscrits dans des groupes."
                                        Visibility="{Binding HasNoData, Converter={StaticResource BoolToVisible}}">
                             <StackPanel Style="{StaticResource EmptyActions}">
                                 <Button Content="Aller aux élèves" Command="{Binding OpenStudentsCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
@@ -98,14 +98,17 @@
                                                     ToolTip="{Binding Item.FullName}">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
-                                                        <TextBlock Background="Transparent" Cursor="Hand" TextTrimming="CharacterEllipsis" FontSize="13">
-                                                            <Run Text="{Binding Name, Mode=OneWay}" FontWeight="Medium" Foreground="{DynamicResource InkBrush}" /><Run Text="{Binding Discount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
-                                                        </TextBlock>
+                                                        <StackPanel Background="Transparent" Cursor="Hand">
+                                                            <TextBlock TextTrimming="CharacterEllipsis" FontSize="13">
+                                                                <Run Text="{Binding Name, Mode=OneWay}" FontWeight="Medium" Foreground="{DynamicResource InkBrush}" /><Run Text="{Binding Discount, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
+                                                            </TextBlock>
+                                                            <TextBlock Text="{Binding Progress}" Style="{StaticResource Small}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                                        </StackPanel>
                                                     </ControlTemplate>
                                                 </Button.Template>
                                             </Button>
-                                            <TextBlock Grid.Column="1" Text="{Binding Due}" Style="{StaticResource Body}" />
-                                            <TextBlock Grid.Column="2" Text="{Binding Paid}" Style="{StaticResource Body}" />
+                                            <TextBlock Grid.Column="1" Text="{Binding PackPrice}" Style="{StaticResource Body}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Waiting}" Style="{StaticResource Muted}" />
                                             <TextBlock Grid.Column="3" Text="{Binding Rest}" Style="{StaticResource Body}" />
                                             <ContentControl Grid.Column="4" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" />
                                             <Button Grid.Column="5" Content="Encaisser" Command="{Binding Collect}" Style="{StaticResource InkLinkButton}" FontSize="12"
@@ -129,7 +132,7 @@
                                 <TextBlock Text="Derniers reçus" Style="{StaticResource H2}" />
                             </DockPanel>
                         </Border>
-                        <TextBlock Text="Aucun reçu ce mois-ci." Style="{StaticResource EmptyText}"
+                        <TextBlock Text="Aucun reçu pour ce mois." Style="{StaticResource EmptyText}"
                                    Visibility="{Binding LatestReceipts, Converter={StaticResource NullToVisible}}" />
                         <ItemsControl ItemsSource="{Binding LatestReceipts}">
                             <ItemsControl.ItemTemplate>
@@ -230,7 +233,7 @@
                         <Button DockPanel.Dock="Right" Content="Nouvelle remise" Command="{Binding AddDiscountCommand}" Style="{StaticResource SmallPrimaryButton}" />
                         <StackPanel>
                             <TextBlock Text="Remises" Style="{StaticResource H2}" />
-                            <TextBlock Text="Appliquées à la mensualité depuis la fiche de l'élève (« Appliquer une remise »)." Style="{StaticResource Small}" Margin="0,4,0,0" />
+                            <TextBlock Text="Appliquées au prix des séances depuis la fiche de l'élève (« Appliquer une remise »)." Style="{StaticResource Small}" Margin="0,4,0,0" />
                         </StackPanel>
                     </DockPanel>
                 </Border>
@@ -302,7 +305,7 @@
                         </StackPanel>
                         <StackPanel Margin="0,0,12,0">
                             <TextBlock Style="{StaticResource H2}">
-                                <Run Text="Relances · " /><Run Text="{Binding MonthLabel, Mode=OneWay}" />
+                                <Run Text="Relances" />
                             </TextBlock>
                             <TextBlock Style="{StaticResource Small}" Margin="0,4,0,0" TextWrapping="Wrap">
                                 <Run Text="{Binding RemindersSummary, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding DueDateLabel, Mode=OneWay}" />

@@ -10,7 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CentreSoutien.Presentation.ViewModels.Pages;
 
-public sealed record GroupStudentRow(int Id, string Name, string Matricule, Badge State, IRelayCommand Open, IRelayCommand Remove);
+/// <param name="Pack">"Séance 3/4": where the student is in the current pack of sessions of this group.</param>
+public sealed record GroupStudentRow(int Id, string Name, string Matricule, string Pack, Badge State, IRelayCommand Open, IRelayCommand Remove);
 
 /// <summary>
 /// Everything about one group: price, teacher, room, timetable, students, revenue and attendance.
@@ -41,7 +42,7 @@ public sealed partial class GroupDetailViewModel(
     [ObservableProperty] private string _subtitle = "";
     [ObservableProperty] private bool _isInactive;
 
-    [ObservableProperty] private string _priceLabel = "Prix mensuel";
+    [ObservableProperty] private string _priceLabel = "Prix";
     [ObservableProperty] private string _price = "";
     [ObservableProperty] private IReadOnlyList<Option<int?>> _teacherOptions = [];
     [ObservableProperty] private Option<int?>? _selectedTeacher;
@@ -89,8 +90,8 @@ public sealed partial class GroupDetailViewModel(
                 Name = g.FullName;
                 OnPropertyChanged(nameof(Title));
                 IsInactive = !g.IsActive;
-                PriceLabel = $"Prix mensuel ({Money.Currency})";
-                Price = Money.Number(g.MonthlyPrice);
+                PriceLabel = $"Prix pour {g.SessionsPerPack} séance{(g.SessionsPerPack > 1 ? "s" : "")} ({Money.Currency})";
+                Price = Money.Number(g.Price);
 
                 RevenueTitle = "Recettes · " + Labels.Month(Period.Of(now));
                 Collected = Money.Format(d.Collected);
@@ -109,12 +110,14 @@ public sealed partial class GroupDetailViewModel(
                 Schedule = g.Slots.Count == 0 ? "Non planifié" : Labels.Slots(g.Slots);
                 Subtitle = string.Join(" · ", new[]
                 {
-                    g.Teacher?.FullName ?? "Sans enseignant", g.Room?.Name ?? "Sans salle", Schedule, Money.Format(g.MonthlyPrice) + " / mois",
+                    g.Teacher?.FullName ?? "Sans enseignant", g.Room?.Name ?? "Sans salle", Schedule, g.PriceLabel,
                 });
 
                 Enrolled = d.Students
                     .Select(s => _students.GetValueOrDefault(s.Id) is { } row
-                        ? new GroupStudentRow(row.Id, row.FullName, row.Matricule, Badge.For(row.State),
+                        ? new GroupStudentRow(row.Id, row.FullName, row.Matricule,
+                            d.Progress.TryGetValue(row.Id, out var pr) ? $"Séance {Math.Min(pr.Status.Done + 1, pr.Status.Size)}/{pr.Status.Size}" : "",
+                            Badge.For(row.State),
                             new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(row.Id)),
                             new AsyncRelayCommand(() => RemoveStudentAsync(row.Id, row.FullName)))
                         : null)
@@ -161,11 +164,11 @@ public sealed partial class GroupDetailViewModel(
         var price = Parse.Amount(Price);
         if (price is null || price < 0)
         {
-            notifier.Error("Saisissez un prix mensuel valide.");
+            notifier.Error("Saisissez un prix valide.");
             return;
         }
-        if (price == _group.MonthlyPrice) return;
-        await SaveGroupAsync(g => g.MonthlyPrice = price.Value, "Prix mis à jour");
+        if (price == _group.Price) return;
+        await SaveGroupAsync(g => g.Price = price.Value, "Prix mis à jour");
     }
 
     private async Task SaveGroupAsync(Action<Group> change, string message)

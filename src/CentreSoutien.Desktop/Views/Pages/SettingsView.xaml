@@ -142,9 +142,9 @@
                         <Border Style="{StaticResource SettingRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                <TextBlock Text="Mensualités des cours" Style="{StaticResource SettingLabel}" />
+                                <TextBlock Text="Prix des séances" Style="{StaticResource SettingLabel}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <TextBlock Text="Le prix mensuel se règle sur chaque cours." Style="{StaticResource Body}" Margin="0,0,10,0" />
+                                    <TextBlock Text="Le prix et le nombre de séances payées à la fois (4, 8…) se règlent sur chaque groupe." Style="{StaticResource Body}" Margin="0,0,10,0" />
                                     <Button Content="Ouvrir les cours" Command="{Binding GoCoursesCommand}" Style="{StaticResource LinkButton}" />
                                 </StackPanel>
                             </Grid>
@@ -153,11 +153,10 @@
                         <Border Style="{StaticResource SettingRow}">
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="170" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                <TextBlock Text="Échéance mensuelle" Style="{StaticResource SettingLabel}" />
+                                <TextBlock Text="Délai de paiement" Style="{StaticResource SettingLabel}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <TextBlock Text="Le" Style="{StaticResource Body}" Margin="0,0,10,0" />
                                     <TextBox Text="{Binding Form.PaymentDueDay}" Width="60" />
-                                    <TextBlock Text="de chaque mois (1 à 28)" Style="{StaticResource Body}" Margin="10,0,0,0" />
+                                    <TextBlock Text="jours après le début d'un paquet de séances (inscription, puis toutes les N séances)" Style="{StaticResource Body}" Margin="10,0,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -222,7 +221,7 @@
                                 <TextBlock Text="Pourcentage par défaut" Style="{StaticResource SettingLabel}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <TextBox Text="{Binding Form.DefaultCompensationPercent, StringFormat={}{0:0.##}}" Width="60" />
-                                    <TextBlock Text="% des mensualités encaissées" Style="{StaticResource Body}" Margin="10,0,0,0" />
+                                    <TextBlock Text="% des séances payées par les élèves" Style="{StaticResource Body}" Margin="10,0,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>

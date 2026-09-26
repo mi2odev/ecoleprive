@@ -174,7 +174,7 @@ public sealed partial class EnrollDialogViewModel(IStudentService students, IGro
             {
                 var n = g.Enrollments.Count(e => e.IsActiveOn(today));
                 var full = n >= g.Capacity ? " · complet" : "";
-                return new Option<int>(g.Id, $"{g.FullName} · {g.Teacher?.FullName ?? "sans enseignant"} · {n}/{g.Capacity}{full} · {Money.Format(g.MonthlyPrice)}");
+                return new Option<int>(g.Id, $"{g.FullName} · {g.Teacher?.FullName ?? "sans enseignant"} · {n}/{g.Capacity}{full} · {g.PriceLabel}");
             }).ToList();
         SelectedGroup = GroupOptions.FirstOrDefault();
     }

@@ -120,7 +120,8 @@ public sealed partial class ParentsViewModel(
             _selected = p;
             OnPropertyChanged(nameof(SelectedId));
             HasSelection = true;
-            var period = Period.Of(clock.GetLocalNow().DateTime);
+            var now = clock.GetLocalNow().DateTime;
+            var period = Period.Of(now);
             SelectedName = p.FullName;
             var n = p.Children.Count;
             SelectedSubtitle = string.Join(" · ", new[] { p.Relation, n == 0 ? "Aucun enfant lié" : $"{n} enfant{(n > 1 ? "s" : "")}" }.Where(x => !string.IsNullOrWhiteSpace(x)));
@@ -138,14 +139,14 @@ public sealed partial class ParentsViewModel(
             Children = p.Children.OrderBy(c => c.FirstName).Select(c =>
             {
                 var courses = string.Join(", ", c.Enrollments.Where(e => e.CoversMonth(period.Year, period.Month)).Select(e => e.Group?.Subject?.Display).Where(x => x is not null).Distinct());
-                var balance = Billing.Balance(c, period);
+                var balance = Billing.Balance(c, now);
                 return new ParentChildRow(c.Id, c.FullName, c.Initials, string.IsNullOrWhiteSpace(c.Level) ? "—" : c.Level,
                     string.Join(" · ", new[] { c.Matricule, courses }.Where(x => !string.IsNullOrWhiteSpace(x))),
-                    balance > 0 ? "Reste " + Money.Format(balance) : "", Badge.For(Billing.State(c, period)),
+                    balance > 0 ? "Reste " + Money.Format(balance) : "", Badge.For(Billing.State(c, now)),
                     new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(c.Id)));
             }).ToList();
-            var total = p.Children.Sum(c => Billing.Balance(c, period));
-            BalanceLabel = total > 0 ? $"Reste à payer ({Labels.Month(period)}) : {Money.Format(total)}" : $"Aucun impayé pour {Labels.Month(period).ToLowerInvariant()}";
+            var total = p.Children.Sum(c => Billing.Balance(c, now));
+            BalanceLabel = total > 0 ? $"Reste à payer : {Money.Format(total)}" : "Aucune séance impayée";
             await LoadDocumentsAsync();
         }, notifier);
     }

@@ -16,6 +16,7 @@ public class CenterSettings : Entity
 
     // Pricing & payments
     public decimal RegistrationFee { get; set; } = 1000;
+    /// <summary>Days to pay once a pack of sessions starts (was the monthly due day; the column keeps its name).</summary>
     public int PaymentDueDay { get; set; } = 5;
     public int ReminderAfterDays { get; set; } = 10;
     public decimal SiblingDiscountPercent { get; set; } = 10;
@@ -39,6 +40,9 @@ public class CenterSettings : Entity
 
     // Messages to parents (payment reminders, absence notices) sent through WhatsApp / SMS / letters.
     public const string DefaultPaymentReminderTemplate =
+        "Bonjour {parent}, sauf erreur de notre part, les séances de {eleve} ne sont pas encore réglées ({seances}). Reste à payer : {reste}. Merci de passer au centre. {centre} – {telephone}";
+    /// <summary>Default reminder of the monthly billing (older versions); replaced by <see cref="DefaultPaymentReminderTemplate"/> on upgrade.</summary>
+    public const string OldMonthlyPaymentReminderTemplate =
         "Bonjour {parent}, sauf erreur de notre part, la mensualité de {mois} pour {eleve} n'est pas encore réglée. Reste à payer : {reste}. Merci de passer au centre. {centre} – {telephone}";
     public const string DefaultAbsenceMessageTemplate =
         "Bonjour {parent}, nous vous informons que {eleve} était absent(e) au cours de {cours} le {date}. {centre}";

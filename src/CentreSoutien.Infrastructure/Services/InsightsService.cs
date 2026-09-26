@@ -47,7 +47,7 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
         var todayGenerated = await db.Sessions.AnyAsync(s => s.Date == today, ct);
         var payments = students.SelectMany(s => s.Payments).ToList();
 
-        var monthly = Months(firstMonth, months, students, groups, teachers, expenses, payments, sessions);
+        var monthly = Months(firstMonth, months, now, students, groups, teachers, expenses, payments, sessions);
         var weekly = Enumerable.Range(0, weeks).Select(i => firstWeek.AddDays(7 * i)).Select(w =>
         {
             var marks = sessions.Where(s => s.Date >= w && s.Date < w.AddDays(7)).SelectMany(s => s.Attendance).ToList();
@@ -75,7 +75,7 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
     /// <summary>Saturday starting the (Algerian) school week of <paramref name="date"/>.</summary>
     public static DateTime WeekStart(DateTime date) => date.Date.AddDays(-(((int)date.DayOfWeek + 1) % 7));
 
-    private static List<MonthInsight> Months(DateTime firstMonth, int count, List<Student> students, List<Group> groups, List<Teacher> teachers,
+    private static List<MonthInsight> Months(DateTime firstMonth, int count, DateTime now, List<Student> students, List<Group> groups, List<Teacher> teachers,
         List<Expense> expenses, List<StudentPayment> payments, List<Session> sessions)
     {
         // Months before the first recorded activity have no estimated teacher pay (the center was not using the application yet).
@@ -83,19 +83,21 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
             .Concat(payments.Select(p => p.Date)).Concat(expenses.Select(e => e.Date)).Concat(sessions.Select(s => s.Date))
             .Concat(teachers.SelectMany(t => t.Payments).Select(p => Period.Of(p.Period)))
             .DefaultIfEmpty(DateTime.MaxValue).Min();
-        var active = students.Where(s => s.IsActive).ToList();
+        // Packs of sessions billed so far (payments cover the oldest packs first), grouped by the month they started.
+        var lines = students.Where(s => s.IsActive).SelectMany(s => Billing.Allocate(s, now)).ToList();
 
         return Enumerable.Range(0, count).Select(i => firstMonth.AddMonths(i)).Select(p =>
         {
             var next = p.AddMonths(1);
-            var expected = active.Sum(s => Billing.MonthlyDue(s, p));
-            var collected = active.Sum(s => Math.Min(Billing.MonthlyDue(s, p), Billing.PaidForPeriod(s, p)));
+            var month = lines.Where(l => l.Charge.Date >= p && l.Charge.Date < next).ToList();
+            var expected = month.Sum(l => l.Charge.Amount);
+            var collected = month.Sum(l => l.Paid);
             var revenue = payments.Where(x => x.Date >= p && x.Date < next).Sum(x => x.Amount);
             var spent = expenses.Where(e => e.Date >= p && e.Date < next).Sum(e => e.Amount);
             var teacherPay = teachers.Sum(t =>
             {
                 var earned = Period.End(p) >= activity
-                    ? TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format).Amount
+                    ? TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format, now).Amount
                     : 0;
                 var paid = t.Payments.Where(x => Period.Of(x.Period) == p).Sum(x => x.Amount);
                 return Math.Max(earned, paid);
@@ -106,15 +108,18 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
 
     private static void Unpaid(List<InsightAlert> alerts, DateTime now, DateTime period, CenterSettings settings, List<Student> students)
     {
-        var dueDay = Math.Clamp(settings.PaymentDueDay, 1, DateTime.DaysInMonth(period.Year, period.Month));
-        if (now.Day <= dueDay) return;
-        var unpaid = students.Where(s => s.IsActive).Select(s => (s, Balance: Billing.Balance(s, period))).Where(x => x.Balance > 0)
+        // Late: a pack of sessions started more than the payment delay ago and is still not fully paid.
+        var delay = Math.Max(0, settings.PaymentDueDay);
+        var unpaid = students.Where(s => s.IsActive)
+            .Select(s => (s, Lines: Billing.Allocate(s, now)))
+            .Select(x => (x.s, Balance: x.Lines.Sum(l => l.Rest), Since: x.Lines.FirstOrDefault(l => l.Rest > 0)?.Charge.Date))
+            .Where(x => x.Balance > 0 && x.Since is { } d && (now.Date - d.Date).Days > delay)
             .OrderByDescending(x => x.Balance).ThenBy(x => x.s.LastName).ThenBy(x => x.s.FirstName).ToList();
         if (unpaid.Count == 0) return;
         var n = unpaid.Count;
         alerts.Add(new InsightAlert(AlertKind.UnpaidStudents, AlertSeverity.Critical,
-            $"{n} élève{S(n)} n'{(n > 1 ? "ont" : "a")} pas réglé {Labels.Month(period).ToLowerInvariant()}",
-            $"{Money.Format(unpaid.Sum(x => x.Balance))} à percevoir · échéance le {dueDay}",
+            $"{n} élève{S(n)} {(n > 1 ? "ont" : "a")} des séances non réglées",
+            $"{Money.Format(unpaid.Sum(x => x.Balance))} à percevoir · délai de paiement dépassé ({delay} j)",
             "Voir les paiements", new InsightTarget(InsightLink.Payments, Date: period),
             unpaid.Take(TopItems).Select(x => new InsightItem(x.s.FullName, Money.Format(x.Balance), new InsightTarget(InsightLink.Student, x.s.Id))).ToList(), n));
     }
@@ -148,7 +153,7 @@ public sealed class InsightsService(IDbContextFactory<AppDbContext> factory, Tim
         {
             var rows = teachers.Select(t =>
             {
-                var earned = TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format).Amount;
+                var earned = TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format, now).Amount;
                 var paid = t.Payments.Where(x => Period.Of(x.Period) == p).Sum(x => x.Amount);
                 return (t, Remaining: Math.Max(0, earned - paid));
             }).Where(x => x.Remaining > 0).OrderByDescending(x => x.Remaining).ThenBy(x => x.t.LastName).ToList();

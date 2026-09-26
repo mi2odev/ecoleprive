@@ -167,7 +167,7 @@ public class DashboardInsightsTests
         Assert.True(page.CollectionChart.IsEmpty);
         Assert.True(page.AttendanceChart.IsEmpty);
         Assert.True(page.LevelsChart.IsEmpty);
-        Assert.Equal("Aucune mensualité attendue ce mois", page.CollectionSummary);
+        Assert.Equal("Aucune séance facturée ce mois", page.CollectionSummary);
         Assert.Equal("Aucun appel enregistré sur la période", page.AttendanceSummary);
     }
 

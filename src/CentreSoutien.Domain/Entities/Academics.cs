@@ -23,15 +23,18 @@ public class Room : Entity
 }
 
 /// <summary>
-/// A class: a subject taught at a level, with its monthly price, teacher, room, capacity, timetable and students,
-/// e.g. "Mathématiques · 3AS A" at 4 500 DZD. (Older versions had a separate "course" level above groups.)
+/// A class: a subject taught at a level, with its price per pack of sessions, teacher, room, capacity, timetable and
+/// students, e.g. "Mathématiques · 3AS A" at 4 500 DZD for 4 sessions. (Older versions had a separate "course" level.)
 /// </summary>
 public class Group : Entity
 {
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
     public string Level { get; set; } = "";
-    public decimal MonthlyPrice { get; set; }
+    /// <summary>Price of one pack of <see cref="SessionsPerPack"/> sessions.</summary>
+    public decimal Price { get; set; }
+    /// <summary>Sessions paid at once (4, 8…): students pay when they join, then every N sessions.</summary>
+    public int SessionsPerPack { get; set; } = 4;
     public string Name { get; set; } = "A";
     public int? TeacherId { get; set; }
     public Teacher? Teacher { get; set; }
@@ -48,6 +51,8 @@ public class Group : Entity
     /// <summary>"Mathématiques · 3AS" — subject and level without the group letter.</summary>
     public string SubjectLevel => $"{Subject?.Name ?? "?"} · {Level}";
     public string FullName => $"{SubjectLevel} {Name}".TrimEnd();
+    /// <summary>"4 500 DZD / 4 séances".</summary>
+    public string PriceLabel => $"{Calculations.Money.Format(Price)} / {SessionsPerPack} séance{(SessionsPerPack > 1 ? "s" : "")}";
     public override string ToString() => FullName;
 }
 

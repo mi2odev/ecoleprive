@@ -10,8 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CentreSoutien.Presentation.ViewModels.Pages;
 
-/// <summary>One student line of the monthly payments table.</summary>
-public sealed record PayLine(PaymentRow Item, IRelayCommand Open, IRelayCommand Collect)
+/// <summary>One student line of the payments table: packs of sessions left to pay.</summary>
+/// <param name="Waiting">"12 j" since the oldest unpaid pack started, "—" when nothing is due.</param>
+public sealed record PayLine(PaymentRow Item, string Waiting, IRelayCommand Open, IRelayCommand Collect)
 {
     public int StudentId => Item.StudentId;
     public string Name => Item.FullName;
@@ -19,7 +20,9 @@ public sealed record PayLine(PaymentRow Item, IRelayCommand Open, IRelayCommand 
     public string Discount => Item.Discount is null ? "" : " · " + DiscountValue(Item.Discount);
     public string Due => Money.Format(Item.Due);
     public string Paid => Money.Format(Item.Paid);
-    public string Rest => Money.Format(Item.Balance);
+    public string PackPrice => Item.PackPrice > 0 ? Money.Format(Item.PackPrice) : "—";
+    public string Progress => Item.Progress.Length > 0 ? Item.Progress : "Aucun groupe";
+    public string Rest => Item.Credit > 0 ? $"+{Money.Format(Item.Credit)} d'avance" : Money.Format(Item.Balance);
     public decimal BalanceValue => Item.Balance;
     public Badge State => Badge.For(Item.State);
     public bool CanCollect => Item.Balance > 0;
@@ -56,7 +59,7 @@ public sealed partial class ReminderLine(
     public string Phone => string.IsNullOrWhiteSpace(item.ParentPhone) ? "Pas de téléphone" : item.ParentPhone;
     public string Rest => Money.Format(item.Balance);
     public string Due => Money.Format(item.Due);
-    /// <summary>Days since the due date of the month (negative before it).</summary>
+    /// <summary>Days since the payment was due (pack start + payment delay; negative before it).</summary>
     public int DaysLate => daysLate;
     public string DelayLabel => daysLate > 0 ? $"{daysLate} j de retard" : daysLate == 0 ? "Échéance aujourd'hui" : $"Échéance dans {-daysLate} j";
     public Badge Delay => delay;
@@ -90,6 +93,7 @@ public sealed partial class PaymentsViewModel(
     [ObservableProperty] private Option<DateTime>? _selectedMonth;
     [ObservableProperty] private string _monthLabel = "";
     [ObservableProperty] private string _tab = "monthly";
+    private List<StudentPayment> _monthReceipts = [];
 
     [ObservableProperty] private IReadOnlyList<Kpi> _kpis = [];
     [ObservableProperty] private IReadOnlyList<string> _filters = ["Tous", "Payé", "Partiel", "Impayé"];
@@ -107,7 +111,7 @@ public sealed partial class PaymentsViewModel(
     [ObservableProperty] private string _dueDateLabel = "";
     /// <summary>"Tout sélectionner" checkbox; null when only some rows are selected.</summary>
     [ObservableProperty] private bool? _allRemindersSelected = true;
-    /// <summary>No student is billed for the selected month ("Mensualités" tab empty state).</summary>
+    /// <summary>No active student ("Séances" tab empty state).</summary>
     [ObservableProperty] private bool _hasNoData;
     /// <summary>Students are billed but the search / status filter hides all of them.</summary>
     [ObservableProperty] private bool _hasNoResults;
@@ -158,24 +162,38 @@ public sealed partial class PaymentsViewModel(
         var month = Month;
         MonthLabel = Labels.Month(month);
         _settings = await settings.GetAsync();
-        _all = await payments.MonthOverviewAsync(month);
-        var studentList = await students.ListAsync(month);
-        var due = _all.Sum(r => r.Due);
-        var paid = _all.Sum(r => Math.Min(r.Due, r.Paid));
+        _all = await payments.OverviewAsync();
+        var studentList = await students.ListAsync(clock.GetLocalNow().DateTime);
+        await LoadReceiptsAsync();
         var rest = _all.Sum(r => r.Balance);
-        var late = _all.Count(r => r.Balance > 0);
+        var owing = _all.Count(r => r.Balance > 0);
+        var late = _all.Count(r => DaysLate(r) > 0);
+        var advance = _all.Sum(r => r.Credit);
         Kpis =
         [
-            new("Attendu ce mois", Money.Format(due), $"{_all.Count(r => r.Due > 0)} élèves facturés"),
-            new("Encaissé", Money.Format(paid), "Mensualités du mois"),
-            new("Reste à percevoir", Money.Format(rest), $"{late} élève{(late > 1 ? "s" : "")} concerné{(late > 1 ? "s" : "")}"),
-            new("Taux de recouvrement", $"{Math.Round(paid * 100 / Math.Max(1, due))} %", MonthLabel),
+            new("Reste à percevoir", Money.Format(rest), $"{owing} élève{S(owing)} concerné{S(owing)}"),
+            new("En retard", late.ToString(), $"délai de paiement de {_settings.PaymentDueDay} j dépassé"),
+            new("Encaissé", Money.Format(_monthReceipts.Sum(p => p.Amount)), MonthLabel),
+            new("Payé d'avance", Money.Format(advance), $"{_all.Count(r => r.Credit > 0)} élève{S(_all.Count(r => r.Credit > 0))}"),
         ];
         ApplyFilter();
         LoadReminders(studentList);
-        await LoadReceiptsAsync();
         await LoadDiscountsAsync(studentList);
     }, notifier);
+
+    private static string S(int n) => n > 1 ? "s" : "";
+
+    /// <summary>Days since the oldest unpaid pack became due (its start + the payment delay); null when nothing is due.</summary>
+    private int? DaysLate(PaymentRow r) => r.Balance > 0 && r.DueSince is { } since
+        ? (clock.GetLocalNow().Date - since.Date).Days - Math.Max(0, _settings.PaymentDueDay)
+        : null;
+
+    private string Waiting(PaymentRow r)
+    {
+        if (r.Balance <= 0 || r.DueSince is not { } since) return "—";
+        var days = (clock.GetLocalNow().Date - since.Date).Days;
+        return days <= 0 ? "aujourd'hui" : $"{days} j";
+    }
 
     private void ApplyFilter()
     {
@@ -184,7 +202,7 @@ public sealed partial class PaymentsViewModel(
             .Where(r => SelectedFilter == "Tous" || Labels.Of(r.State) == SelectedFilter)
             .Where(r => q.Length == 0 || $"{r.FullName} {r.Matricule} {r.ParentPhone}".ToLowerInvariant().Contains(q))
             .ToList();
-        Rows = list.Select(r => new PayLine(r,
+        Rows = list.Select(r => new PayLine(r, Waiting(r),
             new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(r.StudentId)),
             new AsyncRelayCommand(() => CollectAsync(r.StudentId)))).ToList();
         CountLabel = $"{list.Count} élève{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
@@ -208,6 +226,7 @@ public sealed partial class PaymentsViewModel(
     {
         var month = Month;
         var list = await payments.ReceiptsAsync(month, Period.End(month));
+        _monthReceipts = list;
         LatestReceipts = list.Take(12).Select(p => new PayRecentReceipt(
             p.Student?.FullName ?? "—", $"{p.ReceiptNumber} · {p.Date:dd/MM} · {Labels.Of(p.Method)}", Money.Format(p.Amount),
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)))).ToList();
@@ -238,7 +257,6 @@ public sealed partial class PaymentsViewModel(
     {
         var dialog = services.GetRequiredService<CollectPaymentDialogViewModel>();
         if (!await RunAsync(() => dialog.InitializeAsync(null), notifier)) return;
-        SelectMonth(dialog);
         if (await dialogs.ShowAsync(dialog)) await ReloadAsync();
     }
 
@@ -246,15 +264,7 @@ public sealed partial class PaymentsViewModel(
     {
         var dialog = services.GetRequiredService<CollectPaymentDialogViewModel>();
         if (!await RunAsync(() => dialog.InitializeAsync(studentId), notifier)) return;
-        SelectMonth(dialog);
         if (await dialogs.ShowAsync(dialog)) await ReloadAsync();
-    }
-
-    private void SelectMonth(CollectPaymentDialogViewModel dialog)
-    {
-        var month = Month;
-        if (dialog.SelectedMonth?.Value != month && dialog.Months.FirstOrDefault(m => m.Value == month) is { } option)
-            dialog.SelectedMonth = option;
     }
 
     private async Task PrintReceiptAsync(int paymentId)
@@ -308,14 +318,15 @@ public sealed partial class PaymentsViewModel(
     [RelayCommand]
     private async Task Export()
     {
-        var month = Month;
-        var path = files.SaveFile("Exporter les paiements", $"paiements-{month:yyyy-MM}.xlsx", "Classeur Excel|*.xlsx");
+        var today = clock.GetLocalNow().DateTime;
+        var path = files.SaveFile("Exporter les paiements", $"paiements-{today:yyyy-MM-dd}.xlsx", "Classeur Excel|*.xlsx");
         if (path is null) return;
         await RunAsync(async () =>
         {
-            await export.ExportTableAsync(path, "Paiements " + month.ToString("yyyy-MM"),
-                ["Matricule", "Élève", "Niveau", "Remise", "Mensualité", "Payé", "Reste", "Statut", "Téléphone parent"],
-                _all.Select(r => (IReadOnlyList<object?>)[r.Matricule, r.FullName, r.Level, r.Discount, r.Due, r.Paid, r.Balance, Labels.Of(r.State), r.ParentPhone]));
+            await export.ExportTableAsync(path, "Paiements " + today.ToString("yyyy-MM-dd"),
+                ["Matricule", "Élève", "Niveau", "Groupes et séances", "Remise", "Prix des séances", "Facturé", "Payé", "Reste", "Payé d'avance", "Statut", "Téléphone parent"],
+                _all.Select(r => (IReadOnlyList<object?>)[r.Matricule, r.FullName, r.Level, r.Progress, r.Discount, r.PackPrice, r.Due, r.Paid, r.Balance, r.Credit,
+                    Labels.Of(r.State), r.ParentPhone]));
             notifier.Info("Export Excel généré");
             shell.Reveal(path);
         }, notifier);
@@ -323,27 +334,23 @@ public sealed partial class PaymentsViewModel(
 
     // ----- Relances -----
 
-    /// <summary>Due date of the selected month (<see cref="CenterSettings.PaymentDueDay"/>, clamped to the month length).</summary>
-    private DateTime DueDate(DateTime month) =>
-        new(month.Year, month.Month, Math.Clamp(_settings.PaymentDueDay, 1, DateTime.DaysInMonth(month.Year, month.Month)));
+    /// <summary>Date a student's payment was due: start of the oldest unpaid pack + the payment delay.</summary>
+    private DateTime DueDate(PaymentRow r) => (r.DueSince ?? clock.GetLocalNow().Date).Date.AddDays(Math.Max(0, _settings.PaymentDueDay));
 
     private void LoadReminders(List<StudentListItem> studentList)
     {
-        var month = Month;
-        var due = DueDate(month);
-        var today = clock.GetLocalNow().DateTime.Date;
-        var daysLate = (today - due).Days;
-        var delay = daysLate >= Math.Max(1, _settings.ReminderAfterDays) ? new Badge("À relancer", BadgeKind.Bad)
-            : daysLate > 0 ? new Badge("En retard", BadgeKind.Warn)
-            : new Badge("À échoir", BadgeKind.Neutral);
         var parents = studentList.ToDictionary(s => s.Id, s => s.ParentName);
-        DueDateLabel = $"Échéance le {due:dd/MM/yyyy}";
+        DueDateLabel = $"Délai de paiement : {_settings.PaymentDueDay} j après le début des séances";
 
-        var lines = _all.Where(r => r.Balance > 0).Select(r =>
+        var lines = _all.Where(r => r.Balance > 0).OrderByDescending(r => DaysLate(r)).ThenBy(r => r.FullName).Select(r =>
         {
+            var daysLate = DaysLate(r) ?? 0;
+            var delay = daysLate >= Math.Max(1, _settings.ReminderAfterDays) ? new Badge("À relancer", BadgeKind.Bad)
+                : daysLate > 0 ? new Badge("En retard", BadgeKind.Warn)
+                : new Badge("À échoir", BadgeKind.Neutral);
             var parent = parents.GetValueOrDefault(r.StudentId);
-            var message = MessageTemplates.PaymentReminder(_settings, parent, r.FullName, month, r.Due, r.Balance);
-            var sms = MessageTemplates.ShortPaymentReminder(_settings, r.FullName, month, r.Balance);
+            var message = MessageTemplates.PaymentReminder(_settings, parent, r.FullName, r.DueSince ?? clock.GetLocalNow().Date, r.Progress, r.PackPrice, r.Balance);
+            var sms = MessageTemplates.ShortPaymentReminder(_settings, r.FullName, r.Balance);
             var url = MessageTemplates.WhatsAppUrl(r.ParentPhone, _settings.PhoneCountryCode, message);
             var line = new ReminderLine(r, parent, daysLate, delay, message, sms, url,
                 new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(r.StudentId)),
@@ -357,7 +364,7 @@ public sealed partial class PaymentsViewModel(
         HasNoReminders = lines.Count == 0;
         var total = lines.Sum(l => l.Item.Balance);
         RemindersSummary = lines.Count == 0
-            ? "Aucun impayé pour ce mois"
+            ? "Aucune séance impayée"
             : $"{lines.Count} élève{(lines.Count > 1 ? "s" : "")} · {Money.Format(total)} à percevoir";
         UpdateSelection();
     }
@@ -427,7 +434,7 @@ public sealed partial class PaymentsViewModel(
     {
         var list = SelectedReminders;
         if (list.Count > 0) return list;
-        notifier.Info(Reminders.Count == 0 ? "Aucun impayé pour ce mois" : "Sélectionnez au moins un élève");
+        notifier.Info(Reminders.Count == 0 ? "Aucune séance impayée" : "Sélectionnez au moins un élève");
         return null;
     }
 
@@ -445,12 +452,11 @@ public sealed partial class PaymentsViewModel(
     private async Task PrintReminderLetters()
     {
         if (RequireSelection() is not { } list) return;
-        var month = Month;
         var today = clock.GetLocalNow().DateTime.Date;
         await RunAsync(() =>
         {
             var cfg = _settings;
-            var pages = list.Select(l => new PrintPage("Rappel de paiement", Labels.Month(month),
+            var pages = list.Select(l => new PrintPage("Rappel de paiement", l.Item.Progress,
             [
                 new PrintParagraph($"Le {today:dd/MM/yyyy}", Muted: true, AlignRight: true),
                 new PrintParagraph($"À l'attention de {l.ParentName ?? MessageTemplates.NoParentGreeting}", Bold: true),
@@ -461,17 +467,17 @@ public sealed partial class PaymentsViewModel(
                 new PrintFields(
                 [
                     ("Élève", l.Name),
-                    ("Mois", Labels.Month(month)),
-                    ("Mensualité", Money.Format(l.Item.Due)),
+                    ("Groupes", l.Item.Progress),
+                    ("Séances facturées", Money.Format(l.Item.Due)),
                     ("Déjà réglé", Money.Format(l.Item.Paid)),
                     ("Reste à payer", Money.Format(l.Item.Balance)),
-                    ("Échéance", DueDate(month).ToString("dd/MM/yyyy")),
+                    ("Échéance", DueDate(l.Item).ToString("dd/MM/yyyy")),
                 ]),
                 .. string.IsNullOrWhiteSpace(cfg.PaymentRulesNote) ? Array.Empty<PrintBlock>() : [new PrintSpacer(8), new PrintParagraph(cfg.PaymentRulesNote, Muted: true, Size: 10.5)],
                 new PrintSpacer(24),
                 new PrintSignature("La direction"),
             ])).ToList();
-            printer.PrintPages($"Relances {month:yyyy-MM}", cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, StorageAreas.Images), pages);
+            printer.PrintPages($"Relances {today:yyyy-MM-dd}", cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, StorageAreas.Images), pages);
             return Task.CompletedTask;
         }, notifier);
     }
@@ -480,13 +486,13 @@ public sealed partial class PaymentsViewModel(
     private async Task ExportReminders()
     {
         if (RequireSelection() is not { } list) return;
-        var month = Month;
-        var path = files.SaveFile("Exporter les relances", $"relances-{month:yyyy-MM}.xlsx", "Classeur Excel|*.xlsx");
+        var today = clock.GetLocalNow().DateTime;
+        var path = files.SaveFile("Exporter les relances", $"relances-{today:yyyy-MM-dd}.xlsx", "Classeur Excel|*.xlsx");
         if (path is null) return;
         await RunAsync(async () =>
         {
-            await export.ExportTableAsync(path, "Relances " + month.ToString("yyyy-MM"),
-                ["Matricule", "Élève", "Niveau", "Parent", "Téléphone", "Numéro WhatsApp", "Mensualité", "Payé", "Reste", "Jours de retard", "Message"],
+            await export.ExportTableAsync(path, "Relances " + today.ToString("yyyy-MM-dd"),
+                ["Matricule", "Élève", "Niveau", "Parent", "Téléphone", "Numéro WhatsApp", "Séances facturées", "Payé", "Reste", "Jours de retard", "Message"],
                 list.Select(l => (IReadOnlyList<object?>)[l.Item.Matricule, l.Name, l.Item.Level, l.ParentName, l.Item.ParentPhone,
                     MessageTemplates.NormalizePhone(l.Item.ParentPhone, _settings.PhoneCountryCode), l.Item.Due, l.Item.Paid, l.Item.Balance,
                     Math.Max(0, l.DaysLate), l.Message]));

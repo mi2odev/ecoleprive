@@ -26,7 +26,8 @@ public class InsightsServiceTests
         var teacher = new Teacher { FirstName = "Karima", LastName = "Boudiaf", CompensationType = CompensationType.FixedMonthly, CompensationValue = 20000 };
         var group = new Group
         {
-            Subject = subject, Level = "3AS", MonthlyPrice = 4000, Name = "A", Teacher = teacher, Capacity = 2,
+            // Paid every 5 Saturdays: from April 1st the packs start on Apr 1, May 2, Jun 6, Jul 11, Aug 15 and Sep 19 — one a month.
+            Subject = subject, Level = "3AS", Price = 4000, SessionsPerPack = 5, Name = "A", Teacher = teacher, Capacity = 2,
             Slots = [new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) }],
         };
         var alice = new Student { Matricule = "E1", FirstName = "Alice", LastName = "Amrani", Level = "3AS", EnrolledOn = april };
@@ -40,9 +41,9 @@ public class InsightsServiceTests
         for (var m = 0; m < 6; m++)
         {
             var p = april.AddMonths(m);
-            db.StudentPayments.Add(new StudentPayment { ReceiptNumber = $"R{receipt++}", Student = alice, Amount = 4000, Period = p, Date = p.AddDays(2), Kind = PaymentKind.Monthly });
+            db.StudentPayments.Add(new StudentPayment { ReceiptNumber = $"R{receipt++}", Student = alice, Amount = 4000, Period = p, Date = p.AddDays(2), Kind = PaymentKind.Sessions });
             if (p.Month != 9)
-                db.StudentPayments.Add(new StudentPayment { ReceiptNumber = $"R{receipt++}", Student = bilal, Amount = 4000, Period = p, Date = p.AddDays(3), Kind = PaymentKind.Monthly });
+                db.StudentPayments.Add(new StudentPayment { ReceiptNumber = $"R{receipt++}", Student = bilal, Amount = 4000, Period = p, Date = p.AddDays(3), Kind = PaymentKind.Sessions });
             db.Expenses.Add(new Expense { Date = p.AddDays(4), Category = "Loyer", Description = "Loyer", Amount = 10000 });
             if (p.Month <= 7) db.TeacherPayments.Add(new TeacherPayment { Teacher = teacher, Period = p, Date = p.AddMonths(1).AddDays(-1), Amount = 20000 });
         }
@@ -173,7 +174,7 @@ public class InsightsServiceTests
         Assert.Equal(AlertSeverity.Warning, due.Severity);
         Assert.Equal(new DateTime(2026, 9, 1), due.Target!.Date);
 
-        // Before the payment due day nothing is reported as unpaid; after the session ends only.
+        // Before the September pack starts nothing is unpaid; attendance is missing only once the session has ended.
         var early = (await service.GetAsync(new DateTime(2026, 9, 5, 10, 0, 0))).Alerts;
         Assert.DoesNotContain(early, a => a.Kind == AlertKind.UnpaidStudents);
         var morning = (await service.GetAsync(Now.Date.AddHours(10))).Alerts;

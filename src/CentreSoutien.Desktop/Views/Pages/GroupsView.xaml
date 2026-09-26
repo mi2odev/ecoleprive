@@ -40,7 +40,7 @@
                         <TextBlock Grid.Column="2" Text="Salle" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="3" Text="Horaire" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="4" Text="Inscrits" Style="{StaticResource ColumnHeader}" />
-                        <TextBlock Grid.Column="5" Text="Prix / mois" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="5" Text="Prix" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="6" Text="Statut" Style="{StaticResource ColumnHeader}" />
                         <!-- Keeps header columns aligned with the row actions. -->
                         <StackPanel Grid.Column="6" Orientation="Horizontal" Visibility="Hidden">

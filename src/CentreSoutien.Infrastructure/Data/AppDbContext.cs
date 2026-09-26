@@ -87,6 +87,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.HasIndex(x => new { x.SubjectId, x.Level, x.Name }).IsUnique();
             e.Ignore(x => x.FullName);
             e.Ignore(x => x.SubjectLevel);
+            e.Ignore(x => x.PriceLabel);
         });
 
         b.Entity<ScheduleSlot>(e =>

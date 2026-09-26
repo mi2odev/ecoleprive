@@ -64,7 +64,7 @@ public sealed partial class ReportsViewModel(
         var r = _report = await reports.FinanceAsync(month);
         Summary =
         [
-            new("Mensualités attendues", Money.Format(r.Expected), MonthLabel),
+            new("Séances facturées", Money.Format(r.Expected), MonthLabel),
             new("Encaissé", Money.Format(r.Collected), "Recouvrement " + Pct(r.Collected, r.Expected)),
             new("Frais d'inscription / autres", Money.Format(r.RegistrationFees)),
             new("Impayés", Money.Format(r.Outstanding), $"{r.Unpaid.Count} élève{(r.Unpaid.Count > 1 ? "s" : "")}"),

@@ -14,9 +14,12 @@ public sealed record QuickAmountOption(string Label, decimal Value, IRelayComman
     public string Text => $"{Label} · {Money.Format(Value)}";
 }
 
-/// <summary>Collect a student payment and generate its receipt.</summary>
+/// <summary>
+/// Collect a student payment and generate its receipt. Groups are paid by packs of sessions: the amount proposed is
+/// what the student owes (packs started and not paid), or the next pack when everything is paid.
+/// </summary>
 public sealed partial class CollectPaymentDialogViewModel(
-    IPaymentService payments, ISettingsService settings, IFileStorage storage, IPrintService printer, INotifier notifier, TimeProvider clock) : DialogViewModel
+    IPaymentService payments, ISettingsService settings, IFileStorage storage, IPrintService printer, INotifier notifier) : DialogViewModel
 {
     private List<PaymentRow> _rows = [];
     private decimal? _registrationFee;
@@ -31,8 +34,6 @@ public sealed partial class CollectPaymentDialogViewModel(
     [ObservableProperty] private IReadOnlyList<Option<int>> _students = [];
     [ObservableProperty] private Option<int>? _selectedStudent;
     [ObservableProperty] private string _studentName = "";
-    [ObservableProperty] private IReadOnlyList<Option<DateTime>> _months = [];
-    [ObservableProperty] private Option<DateTime>? _selectedMonth;
     [ObservableProperty] private Option<PaymentKind>? _selectedKind;
     [ObservableProperty] private Option<PaymentMethod>? _selectedMethod;
     [ObservableProperty] private string _amount = "";
@@ -41,9 +42,9 @@ public sealed partial class CollectPaymentDialogViewModel(
     [ObservableProperty] private bool _printReceipt = true;
     /// <summary>"reste 3 000 DZD" / "à jour" next to the student's name.</summary>
     [ObservableProperty] private string _studentBalance = "";
-    /// <summary>Chips that fill the amount: remaining balance, full monthly fee, half, registration fee.</summary>
+    /// <summary>Chips that fill the amount: left to pay, next pack, registration fee.</summary>
     [ObservableProperty] private IReadOnlyList<QuickAmountOption> _quickAmounts = [];
-    /// <summary>"Reste après ce paiement : 1 500 DZD", updated while typing (monthly fees only).</summary>
+    /// <summary>"Reste après ce paiement : 1 500 DZD", updated while typing (session payments only).</summary>
     [ObservableProperty] private string _remainingAfter = "";
 
     public bool HasQuickAmounts => QuickAmounts.Count > 0;
@@ -56,75 +57,67 @@ public sealed partial class CollectPaymentDialogViewModel(
 
     public async Task InitializeAsync(int? studentId)
     {
-        var now = clock.GetLocalNow().DateTime;
-        Months = Options.Months(now);
-        SelectedMonth = Months.First(m => m.Value == Period.Of(now));
         SelectedKind = Kinds[0];
         SelectedMethod = Methods[0];
         _registrationFee = (await settings.GetAsync()).RegistrationFee;
-        await LoadRowsAsync();
+        _rows = await payments.OverviewAsync();
         CanPickStudent = studentId is null;
         Students = _rows.Select(r => new Option<int>(r.StudentId, r.Balance > 0 ? $"{r.FullName} — reste {Money.Format(r.Balance)}" : $"{r.FullName} — à jour")).ToList();
         SelectedStudent = studentId is null ? null : Students.FirstOrDefault(s => s.Value == studentId);
         if (studentId is not null && SelectedStudent is null)
-            throw new BusinessException("Cet élève est inactif : réactivez-le pour encaisser une mensualité.");
+            throw new BusinessException("Cet élève est inactif : réactivez-le pour encaisser un paiement.");
         OnPropertyChanged(nameof(CanPickStudent));
         UpdateSuggestion();
     }
 
-    private async Task LoadRowsAsync() => _rows = await payments.MonthOverviewAsync(SelectedMonth?.Value ?? Period.Current);
-
     partial void OnSelectedStudentChanged(Option<int>? value) => UpdateSuggestion();
     partial void OnSelectedKindChanged(Option<PaymentKind>? value) => UpdateSuggestion();
 
-    async partial void OnSelectedMonthChanged(Option<DateTime>? value)
-    {
-        if (value is null || Students.Count == 0) return;
-        await LoadRowsAsync();
-        UpdateSuggestion();
-    }
+    private PaymentRow? Row => _rows.FirstOrDefault(r => r.StudentId == SelectedStudent?.Value);
 
-    private async void UpdateSuggestion()
+    private void UpdateSuggestion()
     {
-        var row = _rows.FirstOrDefault(r => r.StudentId == SelectedStudent?.Value);
+        var row = Row;
         StudentName = row?.FullName ?? "";
-        StudentBalance = row is null ? "" : row.Balance > 0 ? $"reste {Money.Format(row.Balance)}" : "à jour";
+        StudentBalance = row is null ? "" : row.Balance > 0 ? $"reste {Money.Format(row.Balance)}" : row.Credit > 0 ? $"{Money.Format(row.Credit)} d'avance" : "à jour";
         QuickAmounts = row is null ? [] : BuildQuickAmounts(row);
         if (row is null)
         {
-            Summary = SelectedMonth?.Label ?? "";
+            Summary = "";
             UpdateRemainingAfter();
             return;
         }
         if (SelectedKind?.Value == PaymentKind.Registration)
         {
-            var fee = _registrationFee ?? (await settings.GetAsync()).RegistrationFee;
-            Amount = Money.Number(fee);
+            Amount = _registrationFee is > 0 ? Money.Number(_registrationFee.Value) : "";
             Summary = "Frais d'inscription";
             UpdateRemainingAfter();
             return;
         }
-        Amount = row.Balance > 0 ? Money.Number(row.Balance) : "";
-        Summary = $"{SelectedMonth?.Label} · mensualité {Money.Format(row.Due)} · payé {Money.Format(row.Paid)} · reste {Money.Format(row.Balance)}"
-            + (row.Discount is null ? "" : $" · remise {row.Discount} incluse");
+        // Owes something: propose it. Up to date: propose the next pack (paid in advance).
+        Amount = row.Balance > 0 ? Money.Number(row.Balance) : row.PackPrice > 0 ? Money.Number(row.PackPrice) : "";
+        Summary = string.Join(" · ", new[]
+        {
+            row.Progress.Length > 0 ? row.Progress : "Aucun groupe",
+            row.Balance > 0 ? $"reste {Money.Format(row.Balance)}" : "séances payées",
+            row.Discount is null ? null : $"remise {row.Discount} incluse",
+        }.Where(x => x is not null));
         UpdateRemainingAfter();
     }
 
     private List<QuickAmountOption> BuildQuickAmounts(PaymentRow row)
     {
         var list = new List<QuickAmountOption>();
-        if (row.Balance > 0) list.Add(new("Solde restant", row.Balance, new RelayCommand(() => UseMonthlyAmount(row.Balance))));
-        if (row.Due > 0) list.Add(new("Mensualité complète", row.Due, new RelayCommand(() => UseMonthlyAmount(row.Due))));
-        var half = Math.Round((row.Balance > 0 ? row.Balance : row.Due) / 2, 0, MidpointRounding.AwayFromZero);
-        if (half > 0) list.Add(new("Moitié", half, new RelayCommand(() => UseMonthlyAmount(half))));
+        if (row.Balance > 0) list.Add(new("Reste à payer", row.Balance, new RelayCommand(() => UseSessionsAmount(row.Balance))));
+        if (row.PackPrice > 0 && row.PackPrice != row.Balance)
+            list.Add(new("Prochaines séances", row.PackPrice, new RelayCommand(() => UseSessionsAmount(row.PackPrice))));
         if (_registrationFee is { } fee && fee > 0) list.Add(new("Frais d'inscription", fee, new RelayCommand(UseRegistrationFee)));
         return list;
     }
 
-    /// <summary>Chip "Solde restant" / "Mensualité complète" / "Moitié": a monthly fee payment of that amount.</summary>
-    private void UseMonthlyAmount(decimal value)
+    private void UseSessionsAmount(decimal value)
     {
-        if (SelectedKind?.Value == PaymentKind.Registration) SelectedKind = Kinds.First(k => k.Value == PaymentKind.Monthly);
+        if (SelectedKind?.Value != PaymentKind.Sessions) SelectedKind = Kinds.First(k => k.Value == PaymentKind.Sessions);
         Amount = Money.Number(value);
     }
 
@@ -138,8 +131,8 @@ public sealed partial class CollectPaymentDialogViewModel(
 
     private void UpdateRemainingAfter()
     {
-        var row = _rows.FirstOrDefault(r => r.StudentId == SelectedStudent?.Value);
-        if (row is null || SelectedKind?.Value != PaymentKind.Monthly)
+        var row = Row;
+        if (row is null || SelectedKind?.Value != PaymentKind.Sessions)
         {
             RemainingAfter = "";
             return;
@@ -147,7 +140,7 @@ public sealed partial class CollectPaymentDialogViewModel(
         var rest = row.Balance - (Parse.Amount(Amount) ?? 0);
         RemainingAfter = rest >= 0
             ? $"Reste après ce paiement : {Money.Format(rest)}"
-            : $"Reste après ce paiement : {Money.Format(0)} · {Money.Format(-rest)} de plus que le reste dû";
+            : $"Reste après ce paiement : {Money.Format(0)} · {Money.Format(-rest)} payés d'avance";
     }
 
     protected override async Task<bool> OnConfirmAsync()
@@ -155,7 +148,7 @@ public sealed partial class CollectPaymentDialogViewModel(
         if (SelectedStudent is null) throw new BusinessException("Choisissez un élève.");
         var amount = Parse.Amount(Amount) ?? 0;
         if (amount <= 0) throw new BusinessException("Saisissez un montant.");
-        var p = await payments.RecordAsync(SelectedStudent.Value, amount, SelectedMethod!.Value, SelectedKind!.Value, SelectedMonth!.Value, Note);
+        var p = await payments.RecordAsync(SelectedStudent.Value, amount, SelectedMethod!.Value, SelectedKind!.Value, Note);
         Result = new StudentPaymentResult(p.Id, p.ReceiptNumber);
         notifier.Info($"Paiement enregistré · reçu {p.ReceiptNumber} généré");
         if (PrintReceipt)

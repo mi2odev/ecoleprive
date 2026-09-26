@@ -47,7 +47,7 @@ public class AcademicTests
         var groups = host.Page<GroupsViewModel>();
         Assert.False(groups.HasError, groups.Error);
         Assert.Equal(11, groups.Rows.Count);
-        Assert.Contains(groups.Rows, r => r.Name == "Mathématiques · 3AS B" && r.Teacher == "Karima Boudiaf" && r.Room == "Salle 1" && r.Price == "4 500 DZD");
+        Assert.Contains(groups.Rows, r => r.Name == "Mathématiques · 3AS B" && r.Teacher == "Karima Boudiaf" && r.Room == "Salle 1" && r.Price == "4 500 DZD / 8 séances");
 
         await nav.NavigateAsync<RoomsViewModel>();
         var rooms = host.Page<RoomsViewModel>();
@@ -110,11 +110,17 @@ public class AcademicTests
         await groupDialog.ConfirmCommand.ExecuteAsync(null);
         Assert.Contains("prix", groupDialog.Error, StringComparison.OrdinalIgnoreCase); // price is required
         groupDialog.Price = "3 500";
+        Assert.Equal("4", groupDialog.SessionsPerPack); // paid every 4 sessions by default
+        Assert.Equal("L'élève paie 3 500 DZD en rejoignant le groupe, puis à nouveau toutes les 4 séances.", groupDialog.PaymentHint);
+        groupDialog.SessionsPerPack = "0";
+        await groupDialog.ConfirmCommand.ExecuteAsync(null);
+        Assert.Contains("séances", groupDialog.Error);
+        groupDialog.SessionsPerPack = "8";
         Assert.Equal("A", groupDialog.Name);
         await groupDialog.ConfirmCommand.ExecuteAsync(null);
         await add;
         Assert.False(groupDialog.HasError, groupDialog.Error);
-        Assert.Contains(host.Page<GroupsViewModel>().Rows, r => r.Name == "Économie · 3AS A" && r.Price == "3 500 DZD");
+        Assert.Contains(host.Page<GroupsViewModel>().Rows, r => r.Name == "Économie · 3AS A" && r.Price == "3 500 DZD / 8 séances");
 
         var detail = await OpenGroupAsync(host, "Économie · 3AS A");
         Assert.Equal("3 500", detail.Price);
@@ -138,8 +144,8 @@ public class AcademicTests
         await detail.Saving;
         Assert.False(detail.HasError, detail.Error);
         var all = await host.Get<IGroupService>().ListAsync();
-        Assert.Equal(5000, all.Single(g => g.FullName == "Mathématiques · 3AS A").MonthlyPrice);
-        Assert.Equal(4500, all.Single(g => g.FullName == "Mathématiques · 3AS B").MonthlyPrice); // each group has its own price
+        Assert.Equal(5000, all.Single(g => g.FullName == "Mathématiques · 3AS A").Price);
+        Assert.Equal(4500, all.Single(g => g.FullName == "Mathématiques · 3AS B").Price); // each group has its own price
         Assert.Equal("Prix mis à jour", host.Get<Notifier>().Message);
 
         // Teacher without conflict (Hakim Zitouni teaches Sunday/Thursday).

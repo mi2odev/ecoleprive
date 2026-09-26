@@ -10,11 +10,15 @@ namespace CentreSoutien.Infrastructure.Services;
 internal static class Queries
 {
     /// <summary>Students with everything billing needs.</summary>
-    public static IQueryable<Student> StudentsForBilling(this AppDbContext db) => db.Students.AsNoTracking()
+    /// <summary>Students with what billing needs: payments, discount, and each group's timetable and sessions
+    /// (sessions count towards the packs). Groups are shared between students (identity resolution).</summary>
+    public static IQueryable<Student> StudentsForBilling(this AppDbContext db) => db.Students.AsNoTrackingWithIdentityResolution()
         .Include(s => s.Parent)
         .Include(s => s.Discount)
         .Include(s => s.Payments)
         .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
+        .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
+        .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
         .AsSplitQuery();
 
     /// <summary>Groups with everything teacher earnings and the timetable need.</summary>
@@ -34,7 +38,8 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var students = await db.StudentsForBilling().ToListAsync(ct);
-        var today = clock.GetLocalNow().Date;
+        var now = clock.GetLocalNow().DateTime;
+        var today = now.Date;
         var p = Period.Of(period);
         return students
             .OrderBy(s => s.LastName).ThenBy(s => s.FirstName)
@@ -43,7 +48,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
                 var current = s.Enrollments.Where(e => e.CoversMonth(p.Year, p.Month)).ToList();
                 var courses = string.Join(", ", current.Select(e => e.Group?.Subject?.Display).Where(x => x is not null).Distinct());
                 return new StudentListItem(s.Id, s.Matricule, s.FullName, s.Initials, s.Level, courses.Length == 0 ? "—" : courses,
-                    s.Parent?.FullName, s.Parent?.Phone ?? s.Phone, Billing.MonthlyDue(s, p), Billing.Balance(s, p), Billing.State(s, p),
+                    s.Parent?.FullName, s.Parent?.Phone ?? s.Phone, Billing.PackPrice(s, now), Billing.Balance(s, now), Billing.State(s, now),
                     s.IsActive, (today - s.EnrolledOn.Date).TotalDays <= 30, s.Discount?.ToString());
             })
             .ToList();
@@ -52,7 +57,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
     public async Task<Student?> GetAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        return await db.Students.AsNoTracking()
+        return await db.Students.AsNoTrackingWithIdentityResolution()
             .Include(s => s.Parent)
             .Include(s => s.Discount)
             .Include(s => s.Payments)
@@ -60,6 +65,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
+            .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
             .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id, ct);
     }

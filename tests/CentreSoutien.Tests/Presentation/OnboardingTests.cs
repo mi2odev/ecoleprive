@@ -233,8 +233,7 @@ public class CollectPaymentQuickAmountsTests
 {
     private static async Task<(CollectPaymentDialogViewModel Dialog, PaymentRow Row)> OpenAsync(TestHost host, Func<PaymentRow, bool> pick)
     {
-        var month = new DateTime(2026, 9, 1);
-        var row = (await host.Get<IPaymentService>().MonthOverviewAsync(month)).First(pick);
+        var row = (await host.Get<IPaymentService>().OverviewAsync()).First(pick);
         var dialog = host.Get<CollectPaymentDialogViewModel>();
         await dialog.InitializeAsync(row.StudentId);
         return (dialog, row);
@@ -249,32 +248,26 @@ public class CollectPaymentQuickAmountsTests
 
         Assert.Equal($"reste {Money.Format(row.Balance)}", dialog.StudentBalance);
         Assert.True(dialog.HasQuickAmounts);
-        Assert.Equal(["Solde restant", "Mensualité complète", "Moitié", "Frais d'inscription"], dialog.QuickAmounts.Select(q => q.Label));
+        Assert.Equal("Reste à payer", dialog.QuickAmounts[0].Label);
+        Assert.Equal("Frais d'inscription", dialog.QuickAmounts[^1].Label);
         // Suggested amount = the balance, so nothing is left.
         Assert.Equal(Money.Number(row.Balance), dialog.Amount);
         Assert.Equal($"Reste après ce paiement : {Money.Format(0)}", dialog.RemainingAfter);
-
-        dialog.QuickAmounts.Single(q => q.Label == "Moitié").Apply.Execute(null);
-        var half = Math.Round(row.Balance / 2, 0, MidpointRounding.AwayFromZero);
-        Assert.Equal(Money.Number(half), dialog.Amount);
-        Assert.Equal($"Reste après ce paiement : {Money.Format(row.Balance - half)}", dialog.RemainingAfter);
+        Assert.Contains("séance", dialog.Summary); // groups and where the student is in the pack
 
         dialog.Amount = "1000";
         Assert.Equal($"Reste après ce paiement : {Money.Format(row.Balance - 1000)}", dialog.RemainingAfter);
 
         dialog.Amount = Money.Number(row.Balance + 500);
-        Assert.Contains("500 DZD de plus", dialog.RemainingAfter);
+        Assert.Contains("500 DZD payés d'avance", dialog.RemainingAfter);
 
         dialog.QuickAmounts.Single(q => q.Label == "Frais d'inscription").Apply.Execute(null);
         Assert.Equal(PaymentKind.Registration, dialog.SelectedKind!.Value);
         Assert.Equal(Money.Number(fee), dialog.Amount);
         Assert.False(dialog.HasRemainingAfter);
 
-        dialog.QuickAmounts.Single(q => q.Label == "Mensualité complète").Apply.Execute(null);
-        Assert.Equal(PaymentKind.Monthly, dialog.SelectedKind!.Value);
-        Assert.Equal(Money.Number(row.Due), dialog.Amount);
-
-        dialog.QuickAmounts.Single(q => q.Label == "Solde restant").Apply.Execute(null);
+        dialog.QuickAmounts.Single(q => q.Label == "Reste à payer").Apply.Execute(null);
+        Assert.Equal(PaymentKind.Sessions, dialog.SelectedKind!.Value);
         Assert.Equal(Money.Number(row.Balance), dialog.Amount);
 
         // The receipt is still printed.
@@ -289,8 +282,10 @@ public class CollectPaymentQuickAmountsTests
         await using var host = await UiHost.CreateAsync();
         var (dialog, row) = await OpenAsync(host, r => r.Balance <= 0 && r.Due > 0);
         Assert.Equal("à jour", dialog.StudentBalance);
-        Assert.DoesNotContain(dialog.QuickAmounts, q => q.Label == "Solde restant");
-        Assert.Contains(dialog.QuickAmounts, q => q.Label == "Mensualité complète" && q.Value == row.Due);
+        Assert.DoesNotContain(dialog.QuickAmounts, q => q.Label == "Reste à payer");
+        // Up to date: the next pack is proposed (paid in advance).
+        Assert.Contains(dialog.QuickAmounts, q => q.Label == "Prochaines séances" && q.Value == row.PackPrice);
+        Assert.Equal(Money.Number(row.PackPrice), dialog.Amount);
 
         var picker = host.Get<CollectPaymentDialogViewModel>();
         await picker.InitializeAsync(null);

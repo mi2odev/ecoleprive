@@ -37,7 +37,7 @@ public sealed partial class DiscountEditorDialogViewModel(ICrudService<Discount>
     }
 
     partial void OnSelectedTypeChanged(Option<DiscountType>? value) =>
-        ValueHint = value?.Value == DiscountType.FixedAmount ? $"Montant retiré de la mensualité ({Money.Currency})" : "Pourcentage retiré de la mensualité (0 à 100)";
+        ValueHint = value?.Value == DiscountType.FixedAmount ? $"Montant retiré du prix des séances ({Money.Currency})" : "Pourcentage retiré du prix des séances (0 à 100)";
 
     protected override async Task<bool> OnConfirmAsync()
     {

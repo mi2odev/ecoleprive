@@ -402,7 +402,7 @@
                         <TextBlock Text="Taux de recouvrement" Style="{StaticResource H2}" />
                     </DockPanel>
                     <TextBlock Text="{Binding CollectionSummary}" Style="{StaticResource Small}" Margin="0,0,0,14" />
-                    <ui:BarChart Data="{Binding CollectionChart}" ShowLegend="False" Height="250" EmptyText="Aucune mensualité attendue" />
+                    <ui:BarChart Data="{Binding CollectionChart}" ShowLegend="False" Height="250" EmptyText="Aucune séance facturée" />
                 </StackPanel>
             </Border>
 

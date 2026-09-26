@@ -8,7 +8,7 @@
              xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:DiscountPickerDialogViewModel}">
     <StackPanel>
-        <TextBlock Text="Remise appliquée aux mensualités" Style="{StaticResource FieldLabel}" />
+        <TextBlock Text="Remise appliquée au prix des séances" Style="{StaticResource FieldLabel}" />
         <ComboBox ItemsSource="{Binding DiscountOptions}" SelectedItem="{Binding SelectedDiscount}" DisplayMemberPath="Label" />
         <TextBlock Text="Les remises se gèrent dans Paiements → Remises." Style="{StaticResource Small}" Margin="0,10,0,0" />
     </StackPanel>

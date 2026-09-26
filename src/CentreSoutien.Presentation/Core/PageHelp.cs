@@ -105,10 +105,11 @@ public static class PageHelp
             [New + "ajouter une matière", Refresh]),
 
         ["groups"] = new("Groupes",
-            "Un groupe, c'est une classe : une matière, un niveau, un prix mensuel, un enseignant, une salle, un horaire et ses élèves " +
-            "(ex. « Mathématiques · 3AS A » à 4 500 DZD). Un groupe complet est signalé.",
+            "Un groupe, c'est une classe : une matière, un niveau, un enseignant, une salle, un horaire et ses élèves " +
+            "(ex. « Mathématiques · 3AS A »). Il a un prix pour un paquet de séances (ex. 4 500 DZD pour 4 séances) : l'élève paie " +
+            "en rejoignant le groupe, puis à nouveau toutes les 4 séances. Un groupe complet est signalé.",
             [
-                "Ajouter : « Nouveau groupe », puis choisissez la matière, le niveau, le prix, l'enseignant, la salle, les jours et les heures.",
+                "Ajouter : « Nouveau groupe », puis choisissez la matière, le niveau, le paiement (toutes les 4 ou 8 séances, et le prix), l'enseignant, la salle, les jours et les heures.",
                 "Cliquez sur un groupe pour ouvrir sa page : prix, enseignant, salle, horaire, élèves, recettes et présences.",
                 "Sur la page du groupe, « Nouveau groupe » crée un autre groupe de la même matière et du même niveau (groupe B…).",
                 "Pour inscrire un élève : sur la page du groupe (« Ajouter ») ou sur la fiche de l'élève (« Inscrire dans un groupe »).",
@@ -182,14 +183,15 @@ public static class PageHelp
             [New + "nouvel examen", Refresh]),
 
         ["payments"] = new("Paiements des élèves",
-            "Les mensualités de chaque élève pour le mois choisi : ce qui est dû, payé et restant. " +
+            "Ce que chaque élève reste à payer. Un élève paie en rejoignant un groupe, puis à chaque fin de paquet de séances " +
+            "(toutes les 4 ou 8 séances, selon le groupe). " +
             "Les onglets donnent aussi les reçus émis, les remises et les relances aux parents.",
             [
                 "Encaisser : « Encaisser un paiement » ou « Encaisser » sur la ligne de l'élève ; le reçu s'imprime.",
                 "Onglet « Reçus » : réimprimer ou annuler un reçu.",
                 "Onglet « Remises » : créer une remise (fratrie, cas social…), puis l'appliquer depuis la fiche de l'élève.",
                 "Onglet « Relances » : messages prêts à envoyer par WhatsApp ou SMS, lettres de relance à imprimer.",
-                "« Exporter » crée un fichier Excel des mensualités.",
+                "« Exporter » crée un fichier Excel de la situation de chaque élève.",
             ],
             ["Ctrl+3 : ouvrir les paiements", Search, Refresh]),
 

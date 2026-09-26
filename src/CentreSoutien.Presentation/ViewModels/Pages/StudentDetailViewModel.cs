@@ -85,15 +85,16 @@ public sealed partial class StudentDetailViewModel(
             PhotoPath = s.PhotoFile is null ? null : storage.GetPath(s.PhotoFile, "images");
             IsActive = s.IsActive;
             Subtitle = string.Join(" · ", new[] { s.Matricule, s.Level, "Inscrit le " + s.EnrolledOn.ToString("dd/MM/yyyy"), s.School }.Where(x => !string.IsNullOrWhiteSpace(x)));
-            State = Badge.For(Billing.State(s, period));
+            State = Badge.For(Billing.State(s, now));
 
             var today = now.Date;
             Enrollments = s.Enrollments.Where(e => e.IsActiveOn(today) || e.StartDate > today).Select(e =>
             {
                 var g = e.Group!;
+                var pack = Packs.Status(e, now);
                 return new EnrollmentRow(g.Id, g.Id, g.FullName,
-                    $"{g.Teacher?.FullName ?? "Sans enseignant"} · {Labels.Slots(g.Slots)}",
-                    Money.Format(g.MonthlyPrice),
+                    $"{g.Teacher?.FullName ?? "Sans enseignant"} · {Labels.Slots(g.Slots)} · séance {Math.Min(pack.Done + 1, pack.Size)}/{pack.Size}",
+                    g.PriceLabel,
                     new AsyncRelayCommand(() => nav.NavigateAsync<GroupDetailViewModel>(new GroupDetailViewModel.Target(g.Id))),
                     new AsyncRelayCommand(() => ChangeGroupAsync(g.Id)),
                     new AsyncRelayCommand(() => UnenrollAsync(g)));
@@ -110,15 +111,16 @@ public sealed partial class StudentDetailViewModel(
                 new("Remise", s.Discount?.ToString() ?? "Aucune"),
             ];
 
-            MonthTitle = Labels.Month(period);
-            var gross = Billing.GrossMonthlyFee(s, period);
-            var due = Billing.MonthlyDue(s, period);
+            // Payments by packs of sessions: everything billed so far (at joining, then every N sessions) against everything paid.
+            MonthTitle = "Paiement des séances";
+            var due = Billing.Due(s, now);
+            var paid = Billing.Paid(s);
             MonthFinance =
             [
-                new("Mensualité", Money.Format(gross)),
-                new("Remise", gross > due ? "−" + Money.Format(gross - due) : "—"),
-                new("Payé", Money.Format(Billing.PaidForPeriod(s, period))),
-                new("Reste à payer", Money.Format(Billing.Balance(s, period))),
+                new("Séances facturées", Money.Format(due)),
+                new("Payé", Money.Format(paid)),
+                paid > due ? new("Payé d'avance", Money.Format(paid - due)) : new("Reste à payer", Money.Format(due - paid)),
+                new("Prochain paiement", Billing.PackPrice(s, now) is > 0 and var next ? Money.Format(next) : "—"),
             ];
             HasParent = s.Parent is not null;
             ParentName = s.Parent is null ? "Aucun parent lié" : $"{s.Parent.FullName}{(string.IsNullOrWhiteSpace(s.Parent.Relation) ? "" : " · " + s.Parent.Relation)}";

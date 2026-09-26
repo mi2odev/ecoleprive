@@ -10,19 +10,26 @@ namespace CentreSoutien.Infrastructure.Services;
 
 public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, TimeProvider clock) : IPaymentService
 {
-    public async Task<List<PaymentRow>> MonthOverviewAsync(DateTime period, CancellationToken ct = default)
+    public async Task<List<PaymentRow>> OverviewAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var p = Period.Of(period);
+        var now = clock.GetLocalNow().DateTime;
         var students = await db.StudentsForBilling().Where(s => s.IsActive).ToListAsync(ct);
-        return students.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).Select(s => Row(s, p)).ToList();
+        return students.OrderBy(s => s.LastName).ThenBy(s => s.FirstName).Select(s => Row(s, now)).ToList();
     }
 
-    internal static PaymentRow Row(Student s, DateTime p) => new(
-        s.Id, s.Matricule, s.FullName, s.Level, Billing.GrossMonthlyFee(s, p), Billing.MonthlyDue(s, p), Billing.PaidForPeriod(s, p),
-        Billing.Balance(s, p), Billing.State(s, p), s.Discount?.ToString(), s.Parent?.Phone ?? s.Phone);
+    internal static PaymentRow Row(Student s, DateTime now)
+    {
+        var lines = Billing.Allocate(s, now);
+        var due = lines.Sum(l => l.Charge.Amount);
+        var paid = Billing.Paid(s);
+        return new(s.Id, s.Matricule, s.FullName, s.Level, Billing.PackPrice(s, now), due, paid, Math.Max(0, due - paid), Billing.State(s, now),
+            s.Discount?.ToString(), s.Parent?.Phone ?? s.Phone, Math.Max(0, paid - due),
+            lines.FirstOrDefault(l => l.Rest > 0)?.Charge.Date,
+            string.Join(" · ", Billing.Progress(s, now).Select(x => x.Label)));
+    }
 
-    public async Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, DateTime period, string? note, CancellationToken ct = default)
+    public async Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default)
     {
         if (amount <= 0) throw new BusinessException("Le montant doit être positif.");
         await using var db = await factory.CreateDbContextAsync(ct);
@@ -39,7 +46,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
         var payment = new StudentPayment
         {
             ReceiptNumber = number, StudentId = student.Id, Amount = amount, Method = method, Kind = kind,
-            Period = Period.Of(period), Date = clock.GetLocalNow().DateTime, Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
+            Period = Period.Of(clock.GetLocalNow().DateTime), Date = clock.GetLocalNow().DateTime, Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
         };
         db.StudentPayments.Add(payment);
         await db.SaveChangesAsync(ct);
@@ -79,16 +86,16 @@ public sealed class TeacherPaymentService(IDbContextFactory<AppDbContext> factor
     public async Task<List<TeacherPayRow>> MonthOverviewAsync(DateTime period, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        return await Rows(db, Period.Of(period), ct);
+        return await Rows(db, Period.Of(period), clock.GetLocalNow().DateTime, ct);
     }
 
-    internal static async Task<List<TeacherPayRow>> Rows(AppDbContext db, DateTime p, CancellationToken ct)
+    internal static async Task<List<TeacherPayRow>> Rows(AppDbContext db, DateTime p, DateTime now, CancellationToken ct)
     {
         var teachers = await db.Teachers.AsNoTracking().Include(t => t.Subject).Include(t => t.Payments).Where(t => t.IsActive).ToListAsync(ct);
         var groups = await db.GroupsFull().ToListAsync(ct);
         return teachers.OrderBy(t => t.LastName).Select(t =>
         {
-            var e = TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format);
+            var e = TeacherEarnings.Compute(t, groups.Where(g => g.TeacherId == t.Id), p, Money.Format, now);
             var pays = t.Payments.Where(x => Period.Of(x.Period) == p).ToList();
             var paid = pays.Sum(x => x.Amount);
             return new TeacherPayRow(t.Id, t.FullName, t.Subject?.Name ?? "—", e.Rule, e.Amount, paid, Math.Max(0, e.Amount - paid),
@@ -142,7 +149,7 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
         var teachers = await db.Teachers.AsNoTracking().ToListAsync(ct);
         var groups = await db.GroupsFull().Where(g => g.IsActive).ToListAsync(ct);
         var courses = groups.Select(g => (g.SubjectId, g.Level)).Distinct().Count();
-        var teacherRows = await TeacherPaymentService.Rows(db, p, ct);
+        var teacherRows = await TeacherPaymentService.Rows(db, p, now, ct);
         var expenses = (await db.Expenses.AsNoTracking().Where(e => e.Date >= p && e.Date <= Period.End(p)).ToListAsync(ct));
         var monthPayments = await db.StudentPayments.AsNoTracking().Where(x => x.Date >= p && x.Date < p.AddMonths(1)).ToListAsync(ct);
         var todayPayments = monthPayments.Where(x => x.Date.Date == today).ToList();
@@ -160,8 +167,9 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
             todays = groups.SelectMany(g => g.Slots.Where(sl => sl.Day == today.DayOfWeek).Select(sl =>
                 new TodaySession(null, g.Id, g.FullName, g.Teacher?.FullName ?? "—", g.Room?.Name ?? "—", sl.Start, sl.End))).ToList();
 
-        var expected = active.Sum(s => Billing.MonthlyDue(s, p));
-        var collectedMonthly = active.Sum(s => Math.Min(Billing.MonthlyDue(s, p), Billing.PaidForPeriod(s, p)));
+        // Packs of sessions that started this month (joining students, and every N sessions after that).
+        var expected = active.Sum(s => Billing.Charges(s, now).Where(c => c.Date >= p).Sum(c => c.Amount));
+        var balances = active.Select(s => Billing.Balance(s, now)).ToList();
         var teacherCost = teacherRows.Sum(r => r.Earned);
         var expenseTotal = expenses.Sum(e => e.Amount);
         return new DashboardData
@@ -180,8 +188,8 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
             ReceiptsToday = todayPayments.Count,
             RevenueMonth = monthPayments.Sum(x => x.Amount),
             ExpectedMonth = expected,
-            Outstanding = active.Sum(s => Billing.Balance(s, p)),
-            OutstandingStudents = active.Count(s => Billing.Balance(s, p) > 0),
+            Outstanding = balances.Sum(),
+            OutstandingStudents = balances.Count(b => b > 0),
             TeacherPaymentsDue = teacherRows.Sum(r => r.Remaining),
             TeacherCostMonth = teacherCost,
             ExpensesMonth = expenseTotal,
@@ -193,48 +201,41 @@ public sealed class DashboardService(IDbContextFactory<AppDbContext> factory, IS
     }
 }
 
-public sealed class ReportService(IDbContextFactory<AppDbContext> factory) : IReportService
+public sealed class ReportService(IDbContextFactory<AppDbContext> factory, TimeProvider clock) : IReportService
 {
     public async Task<FinanceReport> FinanceAsync(DateTime period, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var p = Period.Of(period);
+        var now = clock.GetLocalNow().DateTime;
+        var end = Period.End(p).AddDays(1);
+        // A past month is seen as it stood at its end; the current month as of now.
+        var asOf = now < end ? now : end.AddTicks(-1);
         var students = await db.StudentsForBilling().Where(s => s.IsActive).ToListAsync(ct);
-        var payments = await db.StudentPayments.AsNoTracking().Where(x => x.Period == p).ToListAsync(ct);
+        var payments = await db.StudentPayments.AsNoTracking().Where(x => x.Date >= p && x.Date < end).ToListAsync(ct);
         var expenses = await db.Expenses.AsNoTracking().Where(e => e.Date >= p && e.Date <= Period.End(p)).ToListAsync(ct);
-        var teachers = await TeacherPaymentService.Rows(db, p, ct);
-        var groups = await db.Groups.AsNoTracking().Include(g => g.Subject).ToListAsync(ct);
+        var teachers = await TeacherPaymentService.Rows(db, p, now, ct);
 
-        var byCourse = groups.Select(g =>
-        {
-            decimal exp = 0, col = 0;
-            foreach (var s in students)
-            {
-                var n = s.Enrollments.Count(e => e.GroupId == g.Id && e.CoversMonth(p.Year, p.Month));
-                if (n == 0) continue;
-                var gross = Billing.GrossMonthlyFee(s, p);
-                var due = Billing.MonthlyDue(s, p);
-                var share = gross == 0 ? 0 : g.MonthlyPrice * n / gross;
-                exp += due * share;
-                col += Math.Min(due, Billing.PaidForPeriod(s, p)) * share;
-            }
-            return (Course: g.FullName, Expected: Math.Round(exp), Collected: Math.Round(col));
-        }).Where(x => x.Expected > 0).OrderByDescending(x => x.Expected).ToList();
+        // Packs that started during the month, and how much of them is paid (oldest packs are paid first).
+        var monthLines = students.SelectMany(s => Billing.Allocate(s, asOf)).Where(l => l.Charge.Date >= p).ToList();
+        var byCourse = monthLines.GroupBy(l => l.Charge.Group)
+            .Select(g => (Course: g.Key, Expected: g.Sum(l => l.Charge.Amount), Collected: g.Sum(l => l.Paid)))
+            .Where(x => x.Expected > 0).OrderByDescending(x => x.Expected).ToList();
 
         return new FinanceReport
         {
             Period = p,
-            Expected = students.Sum(s => Billing.MonthlyDue(s, p)),
-            Collected = payments.Where(x => x.Kind == PaymentKind.Monthly).Sum(x => x.Amount),
-            RegistrationFees = payments.Where(x => x.Kind != PaymentKind.Monthly).Sum(x => x.Amount),
-            Outstanding = students.Sum(s => Billing.Balance(s, p)),
+            Expected = monthLines.Sum(l => l.Charge.Amount),
+            Collected = payments.Where(x => x.Kind == PaymentKind.Sessions).Sum(x => x.Amount),
+            RegistrationFees = payments.Where(x => x.Kind != PaymentKind.Sessions).Sum(x => x.Amount),
+            Outstanding = students.Sum(s => Billing.Balance(s, asOf)),
             TeacherCost = teachers.Sum(t => t.Earned),
             TeacherPaid = teachers.Sum(t => t.Paid),
             Expenses = expenses.Sum(e => e.Amount),
             ExpensesByCategory = expenses.GroupBy(e => e.Category).Select(g => (g.Key, g.Sum(e => e.Amount))).OrderByDescending(x => x.Item2).ToList(),
             CollectedByMethod = payments.GroupBy(x => x.Method).Select(g => (Labels.Of(g.Key), g.Sum(x => x.Amount))).OrderByDescending(x => x.Item2).ToList(),
             ByCourse = byCourse,
-            Unpaid = students.Where(s => Billing.Balance(s, p) > 0).OrderByDescending(s => Billing.Balance(s, p)).Select(s => PaymentService.Row(s, p)).ToList(),
+            Unpaid = students.Select(s => PaymentService.Row(s, asOf)).Where(r => r.Balance > 0).OrderByDescending(r => r.Balance).ToList(),
             Teachers = teachers,
         };
     }

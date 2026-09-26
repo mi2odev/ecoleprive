@@ -59,7 +59,7 @@ public sealed class SearchService(IDbContextFactory<AppDbContext> factory, TimeP
         var groups = await db.Groups.AsNoTracking()
             .Select(g => new
             {
-                g.Id, g.Name, g.Capacity, Active = g.IsActive, g.MonthlyPrice,
+                g.Id, g.Name, g.Capacity, Active = g.IsActive, g.Price, g.SessionsPerPack,
                 Subject = g.Subject!.Name, Short = g.Subject.ShortName, g.Level,
                 Teacher = g.Teacher == null ? null : g.Teacher.FirstName + " " + g.Teacher.LastName,
                 Room = g.Room == null ? null : g.Room.Name,
@@ -70,7 +70,7 @@ public sealed class SearchService(IDbContextFactory<AppDbContext> factory, TimeP
         {
             var title = $"{g.Subject} · {g.Level} {g.Name}";
             var rank = m.Rank(title, [$"{g.Subject} {g.Level}", $"{g.Short} {g.Level} {g.Name}", $"{g.Level} {g.Subject}", $"groupe {g.Name}"], []);
-            var subtitle = Join(g.Teacher, g.Room, $"{g.Enrolled}/{g.Capacity} élèves", Money.Format(g.MonthlyPrice) + " / mois", g.Active ? null : "Inactif");
+            var subtitle = Join(g.Teacher, g.Room, $"{g.Enrolled}/{g.Capacity} élèves", $"{Money.Format(g.Price)} / {g.SessionsPerPack} séances", g.Active ? null : "Inactif");
             return (new SearchHit(SearchCategory.Group, g.Id, title, subtitle, g.Id, rank), g.Active);
         }).Where(h => h.Item1.Rank >= 0));
 

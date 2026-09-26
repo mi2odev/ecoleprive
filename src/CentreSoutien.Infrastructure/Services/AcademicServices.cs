@@ -16,12 +16,13 @@ public sealed class TeacherService(IDbContextFactory<AppDbContext> factory, Time
         var p = Period.Of(period);
         var teachers = await db.Teachers.AsNoTracking().Include(t => t.Subject).Include(t => t.Payments).ToListAsync(ct);
         var groups = await db.GroupsFull().ToListAsync(ct);
-        var today = clock.GetLocalNow().Date;
+        var now = clock.GetLocalNow().DateTime;
+        var today = now.Date;
         return teachers.OrderBy(t => t.LastName).ThenBy(t => t.FirstName).Select(t =>
         {
             var gs = groups.Where(g => g.TeacherId == t.Id && g.IsActive).ToList();
             var students = gs.SelectMany(g => g.Enrollments.Where(e => e.IsActiveOn(today))).Select(e => e.StudentId).Distinct().Count();
-            var earned = TeacherEarnings.Compute(t, gs, p, Money.Format).Amount;
+            var earned = TeacherEarnings.Compute(t, gs, p, Money.Format, now).Amount;
             var paid = t.Payments.Where(x => Period.Of(x.Period) == p).Sum(x => x.Amount);
             return new TeacherListItem(t.Id, t.FullName, t.Initials, t.Subject?.Name ?? "—", gs.Count, students,
                 TeacherEarnings.RuleLabel(t, Money.Format), t.IsActive, t.Phone, earned, paid >= earned && earned > 0);
@@ -38,7 +39,7 @@ public sealed class TeacherService(IDbContextFactory<AppDbContext> factory, Time
         var ids = groups.Where(g => g.IsActive).SelectMany(g => g.Enrollments.Where(e => e.IsActiveOn(today))).Select(e => e.StudentId).Distinct().ToList();
         var students = await db.Students.AsNoTracking().Where(s => ids.Contains(s.Id)).ToListAsync(ct);
         var p = Period.Of(period);
-        var earnings = TeacherEarnings.Compute(t, groups, p, Money.Format);
+        var earnings = TeacherEarnings.Compute(t, groups, p, Money.Format, clock.GetLocalNow().DateTime);
         var paid = t.Payments.Where(x => Period.Of(x.Period) == p).Sum(x => x.Amount);
         return new TeacherDetail(t, groups.OrderBy(g => g.FullName).ToList(), students.OrderBy(s => s.LastName).ToList(), earnings, paid,
             t.Payments.OrderByDescending(x => x.Date).ToList());
@@ -89,22 +90,17 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         var group = await db.GroupsFull().FirstOrDefaultAsync(g => g.Id == id, ct);
         if (group is null) return null;
         var p = Period.Of(period);
-        var today = clock.GetLocalNow().Date;
+        var now = clock.GetLocalNow().DateTime;
+        var today = now.Date;
 
-        // Revenue of the group: each enrolled student's payments for the month, pro-rated on this group's share of the student's fee.
+        // Revenue of the group this month: its packs of sessions that started this month, and the part already paid
+        // (each student's payments cover their oldest packs first).
         var studentIds = group.Enrollments.Select(e => e.StudentId).Distinct().ToList();
         var students = await db.StudentsForBilling().Where(s => studentIds.Contains(s.Id)).ToListAsync(ct);
-        decimal expected = 0, collected = 0;
-        foreach (var e in group.Enrollments.Where(e => e.CoversMonth(p.Year, p.Month)))
-        {
-            var s = students.First(x => x.Id == e.StudentId);
-            if (!s.IsActive) continue;
-            var gross = Billing.GrossMonthlyFee(s, p);
-            var due = Billing.MonthlyDue(s, p);
-            var share = gross == 0 ? 0 : group.MonthlyPrice / gross;
-            expected += due * share;
-            collected += Math.Min(due, Billing.PaidForPeriod(s, p)) * share;
-        }
+        var lines = students.Where(s => s.IsActive).SelectMany(s => Billing.Allocate(s, now))
+            .Where(l => l.Charge.GroupId == group.Id && l.Charge.Date >= p).ToList();
+        var expected = lines.Sum(l => l.Charge.Amount);
+        var collected = lines.Sum(l => l.Paid);
 
         var sessionIds = group.Sessions.Select(s => s.Id).ToList();
         var marks = await db.Attendance.AsNoTracking().Where(a => sessionIds.Contains(a.SessionId)).Select(a => a.Status).ToListAsync(ct);
@@ -113,8 +109,13 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         var enrolledNow = group.Enrollments.Where(e => e.IsActiveOn(today)).Select(e => e.StudentId).ToHashSet();
         var current = students.Where(s => enrolledNow.Contains(s.Id)).OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ToList();
         var eligible = await db.Students.AsNoTracking().Where(s => s.IsActive && s.Level == group.Level).ToListAsync(ct);
+        var progress = current.ToDictionary(s => s.Id, s =>
+        {
+            var e = s.Enrollments.First(x => x.GroupId == group.Id && x.IsActiveOn(today));
+            return (Status: Packs.Status(e, now), Balance: Billing.Balance(s, now));
+        });
         return new GroupDetail(group, current, Math.Round(expected), Math.Round(collected), rate,
-            eligible.Where(s => !enrolledNow.Contains(s.Id)).OrderBy(s => s.LastName).ToList());
+            eligible.Where(s => !enrolledNow.Contains(s.Id)).OrderBy(s => s.LastName).ToList(), progress);
     }
 
     public async Task<List<Group>> ListAsync(CancellationToken ct = default)
@@ -177,7 +178,8 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
     {
         if (group.SubjectId == 0) throw new BusinessException("Choisissez une matière.");
         if (string.IsNullOrWhiteSpace(group.Level)) throw new BusinessException("Le niveau est obligatoire.");
-        if (group.MonthlyPrice < 0) throw new BusinessException("Le prix doit être positif.");
+        if (group.Price < 0) throw new BusinessException("Le prix doit être positif.");
+        if (group.SessionsPerPack is < 1 or > 60) throw new BusinessException("Le nombre de séances par paiement doit être entre 1 et 60.");
         if (string.IsNullOrWhiteSpace(group.Name)) throw new BusinessException("Le nom du groupe est obligatoire.");
         if (group.Capacity <= 0) throw new BusinessException("La capacité doit être positive.");
         var slotList = slots.Select(s => new ScheduleSlot { Day = s.Day, Start = s.Start, End = s.End, RoomId = s.RoomId }).ToList();
@@ -193,7 +195,7 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         if (group.Id == 0) db.Groups.Add(entity);
         db.Entry(entity).CurrentValues.SetValues(new
         {
-            group.SubjectId, Level = level, group.MonthlyPrice, Name = group.Name.Trim(), group.TeacherId, group.RoomId,
+            group.SubjectId, Level = level, group.Price, group.SessionsPerPack, Name = group.Name.Trim(), group.TeacherId, group.RoomId,
             group.Capacity, group.IsActive, group.Description,
         });
         db.Slots.RemoveRange(entity.Slots);

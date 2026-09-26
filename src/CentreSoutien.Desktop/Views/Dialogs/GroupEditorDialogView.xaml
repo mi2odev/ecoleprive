@@ -12,8 +12,8 @@
         </Style>
     </UserControl.Resources>
     <StackPanel>
-        <!-- What is taught: subject, level, monthly price and the group's letter -->
-        <UniformGrid Columns="4" Margin="0,0,-16,0">
+        <!-- What is taught: subject, level and the group's letter -->
+        <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Matière *" Style="{StaticResource FieldLabel}" />
                 <ComboBox ItemsSource="{Binding SubjectOptions}" SelectedItem="{Binding SelectedSubject}" DisplayMemberPath="Label" MaxDropDownHeight="320"
@@ -24,14 +24,28 @@
                 <ComboBox ItemsSource="{Binding Levels}" Text="{Binding Level, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" ToolTip="ex. 3AS, 4AM" />
             </StackPanel>
             <StackPanel Style="{StaticResource Cell}">
-                <TextBlock Text="Prix mensuel (DZD) *" Style="{StaticResource FieldLabel}" />
-                <TextBox Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 4 500" ui:Enter.Command="{Binding ConfirmCommand}" />
-            </StackPanel>
-            <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Nom du groupe *" Style="{StaticResource FieldLabel}" />
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="ex. A" ui:Enter.Command="{Binding ConfirmCommand}"
                          ToolTip="Lettre du groupe : A, B, C… (proposée automatiquement)" />
             </StackPanel>
+        </UniformGrid>
+
+        <!-- Payment: a price for every N sessions, due when the student joins, then every N sessions -->
+        <UniformGrid Columns="3" Margin="0,0,-16,0">
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Paiement toutes les *" Style="{StaticResource FieldLabel}" />
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="séances" Style="{StaticResource Body}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                    <ComboBox ItemsSource="{Binding PackSizes}" Text="{Binding SessionsPerPack, UpdateSourceTrigger=PropertyChanged}" IsEditable="True"
+                              ToolTip="Nombre de séances payées à la fois : 4, 8… (vous pouvez saisir un autre nombre)" />
+                </DockPanel>
+            </StackPanel>
+            <StackPanel Style="{StaticResource Cell}">
+                <TextBlock Text="Prix (DZD) *" Style="{StaticResource FieldLabel}" />
+                <TextBox Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}" Tag="ex. 4 500" ui:Enter.Command="{Binding ConfirmCommand}"
+                         ToolTip="Prix de ces séances" />
+            </StackPanel>
+            <TextBlock Text="{Binding PaymentHint}" Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,8,16,14" />
         </UniformGrid>
         <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">

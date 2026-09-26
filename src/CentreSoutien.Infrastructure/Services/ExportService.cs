@@ -15,10 +15,10 @@ public sealed class ExportService(IDbContextFactory<AppDbContext> factory) : IEx
         using var wb = new XLWorkbook();
 
         var students = await db.StudentsForBilling().ToListAsync(ct);
-        var p = Period.Current;
-        Sheet(wb, "Élèves", ["Matricule", "Nom", "Prénom", "Niveau", "Établissement", "Date de naissance", "Téléphone", "Parent", "Téléphone parent", "Actif", "Inscrit le", "Remise", "Mensualité", "Reste du mois"],
+        var now = DateTime.Now;
+        Sheet(wb, "Élèves", ["Matricule", "Nom", "Prénom", "Niveau", "Établissement", "Date de naissance", "Téléphone", "Parent", "Téléphone parent", "Actif", "Inscrit le", "Remise", "Prix des séances", "Reste à payer"],
             students.OrderBy(s => s.LastName).Select(s => Row(s.Matricule, s.LastName, s.FirstName, s.Level, s.School, s.BirthDate, s.Phone, s.Parent?.FullName, s.Parent?.Phone,
-                s.IsActive ? "Oui" : "Non", s.EnrolledOn, s.Discount?.Name, Billing.MonthlyDue(s, p), Billing.Balance(s, p))));
+                s.IsActive ? "Oui" : "Non", s.EnrolledOn, s.Discount?.Name, Billing.PackPrice(s, now), Billing.Balance(s, now))));
 
         var parents = await db.Parents.AsNoTracking().Include(x => x.Children).ToListAsync(ct);
         Sheet(wb, "Parents", ["Nom", "Lien", "Téléphone", "Téléphone 2", "E-mail", "Adresse", "Enfants"],
@@ -29,9 +29,9 @@ public sealed class ExportService(IDbContextFactory<AppDbContext> factory) : IEx
             teachers.OrderBy(t => t.LastName).Select(t => Row(t.LastName, t.FirstName, t.Subject?.Name, t.Phone, t.Email, t.StartYear, Labels.Of(t.CompensationType), t.CompensationValue, t.IsActive ? "Oui" : "Non")));
 
         var groups = await db.GroupsFull().ToListAsync(ct);
-        Sheet(wb, "Groupes", ["Matière · niveau", "Groupe", "Enseignant", "Salle", "Capacité", "Inscrits", "Horaire", "Prix / mois"],
+        Sheet(wb, "Groupes", ["Matière · niveau", "Groupe", "Enseignant", "Salle", "Capacité", "Inscrits", "Horaire", "Prix", "Séances par paiement"],
             groups.OrderBy(g => g.FullName).Select(g => Row(g.SubjectLevel, g.Name, g.Teacher?.FullName, g.Room?.Name, g.Capacity,
-                g.Enrollments.Count(e => e.IsActiveOn(DateTime.Today)), Labels.Slots(g.Slots), g.MonthlyPrice)));
+                g.Enrollments.Count(e => e.IsActiveOn(DateTime.Today)), Labels.Slots(g.Slots), g.Price, g.SessionsPerPack)));
 
         var pays = await db.StudentPayments.AsNoTracking().Include(x => x.Student).ToListAsync(ct);
         Sheet(wb, "Paiements élèves", ["Reçu", "Date", "Élève", "Matricule", "Type", "Mois", "Mode", "Montant", "Note"],

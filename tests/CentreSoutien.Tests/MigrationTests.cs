@@ -1,4 +1,5 @@
 using CentreSoutien.Application.Abstractions;
+using CentreSoutien.Domain.Entities;
 using CentreSoutien.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -32,7 +33,10 @@ public class MigrationTests
                 INSERT INTO "Students" ("Id","Matricule","FirstName","LastName","Gender","Level","IsActive","EnrolledOn","CreatedAt")
                     VALUES (1,'E1001','Lina','Kaci',0,'3AS',1,'2026-09-01','2026-09-01');
                 INSERT INTO "Enrollments" ("Id","StudentId","GroupId","StartDate","CreatedAt") VALUES (1,1,101,'2026-09-01','2026-09-01');
+                INSERT INTO "Slots" ("GroupId","Day","Start","End","CreatedAt") VALUES
+                    (101,6,'09:00:00','11:00:00','2026-09-01'), (101,2,'17:00:00','19:00:00','2026-09-01');
                 """);
+            await db.Database.ExecuteSqlAsync($"""UPDATE "CenterSettings" SET "PaymentReminderTemplate" = {CenterSettings.OldMonthlyPaymentReminderTemplate}""");
             await db.GetService<IMigrator>().MigrateAsync(); // upgrade to the current schema
         }
 
@@ -40,7 +44,8 @@ public class MigrationTests
         Assert.Equal(3, groups.Count);
         var b = groups.Single(g => g.Id == 101);
         Assert.Equal("Mathématiques · 3AS B", b.FullName);
-        Assert.Equal(4500m, b.MonthlyPrice);
+        Assert.Equal(4500m, b.Price);
+        Assert.Equal(8, b.SessionsPerPack); // was monthly: 2 sessions a week → paid every 8 sessions
         Assert.Equal("Préparation BAC", b.Description);
         Assert.True(b.IsActive);
         Assert.Single(b.Enrollments);
@@ -48,11 +53,15 @@ public class MigrationTests
         var physics = groups.Single(g => g.Id == 102);
         Assert.Equal("Physique", physics.Subject!.Name);
         Assert.Equal("2AS", physics.Level);
-        Assert.Equal(4000m, physics.MonthlyPrice);
+        Assert.Equal(4000m, physics.Price);
         Assert.False(physics.IsActive); // its course was inactive
+        Assert.Equal(4, physics.SessionsPerPack); // no timetable: every 4 sessions
 
-        // Billing still uses the (now group) price.
+        // The default reminder spoke of a monthly fee: it follows the new default.
+        Assert.Equal(CenterSettings.DefaultPaymentReminderTemplate, (await host.Get<ISettingsService>().GetAsync()).PaymentReminderTemplate);
+
+        // Billing uses the group price: the first pack is due on joining.
         var students = await host.Get<IStudentService>().ListAsync(new DateTime(2026, 9, 26));
-        Assert.Equal(4500m, students.Single().MonthlyDue);
+        Assert.Equal(4500m, students.Single().PackPrice);
     }
 }

@@ -73,7 +73,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
         };
         var groups = groupDefs.Select(g => new Group
         {
-            Subject = S(g.Subj), Level = g.Level, MonthlyPrice = g.Price, Name = g.Name, Teacher = Tc(g.Teacher), Room = Rm(g.Room), Capacity = g.Cap,
+            Subject = S(g.Subj), Level = g.Level, Price = g.Price, SessionsPerPack = g.Slots.Length * 4, Name = g.Name, Teacher = Tc(g.Teacher), Room = Rm(g.Room), Capacity = g.Cap,
             Slots = g.Slots.Select(s => new ScheduleSlot { Day = s.Item1, Start = TimeSpan.FromHours(s.Item2), End = TimeSpan.FromHours(s.Item3) }).ToList(),
         }).ToList();
         db.Groups.AddRange(groups);
@@ -130,7 +130,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
         foreach (var st in students.Where(s => s.IsActive))
         {
             st.Enrollments = groups.SelectMany(g => g.Enrollments).Where(e => e.StudentId == st.Id).ToList();
-            var due = Billing.MonthlyDue(st, period);
+            var due = Billing.Balance(st, clock.GetLocalNow().DateTime);
             var x = R();
             var amount = x < 0.6 ? due : x < 0.82 ? Math.Round(due / 200) * 100 : 0;
             if (amount <= 0) continue;
@@ -138,7 +138,7 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
             db.StudentPayments.Add(new StudentPayment
             {
                 ReceiptNumber = settings.ReceiptPrefix + settings.NextReceiptNumber++.ToString("0000"), StudentId = st.Id, Amount = amount,
-                Kind = PaymentKind.Monthly, Period = period, Date = period.AddDays(day - 1).AddHours(9 + (int)(R() * 9)),
+                Kind = PaymentKind.Sessions, Period = period, Date = period.AddDays(day - 1).AddHours(9 + (int)(R() * 9)),
                 Method = Pick(new[] { PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.BaridiMob, PaymentMethod.Ccp }),
             });
         }

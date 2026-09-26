@@ -104,8 +104,9 @@ public interface IExamService
 
 public interface IPaymentService
 {
-    Task<List<PaymentRow>> MonthOverviewAsync(DateTime period, CancellationToken ct = default);
-    Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, DateTime period, string? note, CancellationToken ct = default);
+    /// <summary>Payment situation of every active student today (packs billed, paid, left to pay).</summary>
+    Task<List<PaymentRow>> OverviewAsync(CancellationToken ct = default);
+    Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default);
     Task<List<StudentPayment>> ReceiptsAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<StudentPayment?> GetReceiptAsync(int paymentId, CancellationToken ct = default);
     Task DeleteAsync(int paymentId, CancellationToken ct = default);

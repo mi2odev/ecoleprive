@@ -42,7 +42,8 @@ public enum PaymentMethod
 
 public enum PaymentKind
 {
-    Monthly = 0,
+    /// <summary>Payment for packs of sessions (was "Monthly" when groups were billed per month).</summary>
+    Sessions = 0,
     Registration = 1,
     Other = 2,
 }

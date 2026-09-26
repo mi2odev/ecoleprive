@@ -130,8 +130,8 @@ public sealed partial class StudentsViewModel(
         await RunAsync(async () =>
         {
             await export.ExportTableAsync(path, "Élèves",
-                ["Matricule", "Nom", "Niveau", "Matières", "Parent", "Téléphone parent", "Mensualité", "Reste à payer", "Statut"],
-                Rows.Select(r => (IReadOnlyList<object?>)[r.Matricule, r.Name, r.Level, r.Courses, r.Item.ParentName, r.Item.ParentPhone, r.Item.MonthlyDue, r.Item.Balance, r.State.Text]));
+                ["Matricule", "Nom", "Niveau", "Matières", "Parent", "Téléphone parent", "Prix des séances", "Reste à payer", "Statut"],
+                Rows.Select(r => (IReadOnlyList<object?>)[r.Matricule, r.Name, r.Level, r.Courses, r.Item.ParentName, r.Item.ParentPhone, r.Item.PackPrice, r.Item.Balance, r.State.Text]));
             notifier.Info("Export Excel généré");
             shell.Reveal(path);
         }, notifier);

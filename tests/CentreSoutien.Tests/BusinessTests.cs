@@ -9,25 +9,81 @@ public class BusinessTests
 {
     private static readonly DateTime Sept = new(2026, 9, 1);
 
-    private static Group G(decimal price, string level = "3AS") =>
-        new() { Id = Random.Shared.Next(1, 100000), MonthlyPrice = price, Level = level, Subject = new Subject { Name = "Maths" } };
+    private static Group G(decimal price, string level = "3AS", int pack = 4) =>
+        new() { Id = Random.Shared.Next(1, 100000), Price = price, SessionsPerPack = pack, Level = level, Subject = new Subject { Name = "Maths" } };
+
+    /// <summary>Group meeting every Saturday 9:00–11:00 (September 2026: 5, 12, 19, 26).</summary>
+    private static Group Saturdays(decimal price, int pack = 4)
+    {
+        var g = G(price, pack: pack);
+        g.Slots.Add(new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) });
+        return g;
+    }
 
     [Fact]
-    public void Monthly_due_sums_enrollments_and_applies_discount()
+    public void A_pack_is_due_on_joining_then_every_N_sessions()
     {
+        var g = Saturdays(4000);
         var s = new Student { IsActive = true, Discount = new Discount { Type = DiscountType.Percent, Value = 10, IsActive = true } };
-        s.Enrollments.Add(new Enrollment { Group = G(4500), StartDate = new(2026, 9, 10) });
-        s.Enrollments.Add(new Enrollment { Group = G(3000), StartDate = new(2026, 8, 1), EndDate = new(2026, 8, 31) }); // ended
-        Assert.Equal(4500, Billing.GrossMonthlyFee(s, Sept));
-        Assert.Equal(4050, Billing.MonthlyDue(s, Sept));
-        Assert.Equal(PaymentState.Unpaid, Billing.State(s, Sept));
-        s.Payments.Add(new StudentPayment { Amount = 2000, Period = Sept, Kind = PaymentKind.Monthly });
-        Assert.Equal(PaymentState.Partial, Billing.State(s, Sept));
-        Assert.Equal(2050, Billing.Balance(s, Sept));
-        s.Payments.Add(new StudentPayment { Amount = 2050, Period = Sept, Kind = PaymentKind.Monthly });
-        Assert.Equal(PaymentState.Paid, Billing.State(s, Sept));
+        var e = new Enrollment { Group = g, StartDate = new(2026, 9, 5) };
+        s.Enrollments.Add(e);
+
+        // Joining: the first pack (discount included) is due right away.
+        var join = new DateTime(2026, 9, 5, 8, 0, 0);
+        Assert.Equal(3600, Billing.Due(s, join));
+        Assert.Equal(new DateTime(2026, 9, 5), Billing.Charges(s, join).Single().Date);
+        Assert.Equal(PaymentState.Unpaid, Billing.State(s, join));
+
+        // 3 sessions held: still the first pack, on its 4th and last session.
+        var beforeFourth = new DateTime(2026, 9, 26, 8, 0, 0);
+        Assert.Single(Billing.Charges(s, beforeFourth));
+        Assert.Equal("Maths · 3AS A · séance 4/4", Packs.Status(e, beforeFourth).Label);
+
+        // The 4th session is held: the pack is used up and the next one is due.
+        var afterFourth = new DateTime(2026, 9, 26, 12, 0, 0);
+        var charges = Billing.Charges(s, afterFourth);
+        Assert.Equal(2, charges.Count);
+        Assert.Equal(new DateTime(2026, 9, 26, 9, 0, 0), charges[1].Date);
+        Assert.Equal("Maths · 3AS A · séance 1/4", Packs.Status(e, afterFourth).Label);
+
+        // Payments cover the oldest pack first.
+        s.Payments.Add(new StudentPayment { Amount = 3600, Kind = PaymentKind.Sessions });
+        Assert.Equal(PaymentState.Unpaid, Billing.State(s, afterFourth));
+        s.Payments.Add(new StudentPayment { Amount = 1000, Kind = PaymentKind.Sessions });
+        s.Payments.Add(new StudentPayment { Amount = 5000, Kind = PaymentKind.Registration }); // not a session payment
+        Assert.Equal(PaymentState.Partial, Billing.State(s, afterFourth));
+        Assert.Equal(2600, Billing.Balance(s, afterFourth));
+        s.Payments.Add(new StudentPayment { Amount = 3000, Kind = PaymentKind.Sessions });
+        Assert.Equal(PaymentState.Paid, Billing.State(s, afterFourth));
+        Assert.Equal(400, Billing.Credit(s, afterFourth)); // paid in advance
+        Assert.Equal(3600, Billing.PackPrice(s, afterFourth));
+
         s.IsActive = false;
-        Assert.Equal(0, Billing.MonthlyDue(s, Sept));
+        Assert.Equal(PaymentState.Inactive, Billing.State(s, afterFourth));
+    }
+
+    [Fact]
+    public void Cancelled_sessions_do_not_count_and_leaving_bills_only_the_packs_begun()
+    {
+        var g = Saturdays(4000);
+        g.Sessions.Add(new Session { Date = new(2026, 9, 12), Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11), Status = SessionStatus.Cancelled });
+        var s = new Student { IsActive = true };
+        var e = new Enrollment { Group = g, StartDate = new(2026, 9, 5) };
+        s.Enrollments.Add(e);
+        var now = new DateTime(2026, 9, 26, 12, 0, 0);
+        Assert.Equal(3, Packs.Held(g, e.StartDate, null, now).Count); // 5, 19, 26 (12 cancelled)
+        Assert.Single(Billing.Charges(s, now));
+
+        // Left after 5 sessions of packs of 4: the second pack was begun, nothing more.
+        var eight = Saturdays(4000);
+        var leaver = new Student { IsActive = true };
+        leaver.Enrollments.Add(new Enrollment { Group = eight, StartDate = new(2026, 9, 5), EndDate = new(2026, 10, 4) });
+        Assert.Equal(8000, Billing.Due(leaver, new DateTime(2026, 12, 1)));
+
+        // Packs of 8: one pack for the whole month.
+        var big = new Student { IsActive = true };
+        big.Enrollments.Add(new Enrollment { Group = Saturdays(8000, pack: 8), StartDate = new(2026, 9, 5) });
+        Assert.Equal(8000, Billing.Due(big, now));
     }
 
     [Fact]
@@ -38,7 +94,9 @@ public class BusinessTests
         g.Enrollments.AddRange([new Enrollment { StudentId = 1, StartDate = Sept }, new Enrollment { StudentId = 2, StartDate = Sept }]);
         g.Slots.Add(new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) });
         var pct = new Teacher { Id = 1, CompensationType = CompensationType.Percentage, CompensationValue = 40 };
-        Assert.Equal(3200, TeacherEarnings.Compute(pct, [g], Sept, Money.Format).Amount);
+        // Two students, packs of 4 Saturdays: a pack each on joining (1st), a second after the 4th Saturday (26th).
+        Assert.Equal(3200, TeacherEarnings.Compute(pct, [g], Sept, Money.Format, new DateTime(2026, 9, 20)).Amount);
+        Assert.Equal(6400, TeacherEarnings.Compute(pct, [g], Sept, Money.Format).Amount);
 
         var per = new Teacher { Id = 1, CompensationType = CompensationType.PerSession, CompensationValue = 2000 };
         // September 2026 has 4 Saturdays; no generated sessions → timetable projection.
@@ -72,14 +130,14 @@ public class BusinessTests
         var room = await rooms.SaveAsync(new Room { Name = "Salle 1", Capacity = 12 });
         var t = await teachers.SaveAsync(new Teacher { FirstName = "Karima", LastName = "Boudiaf", SubjectId = maths.Id });
         var slot = new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) };
-        var a = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "A", TeacherId = t.Id, RoomId = room.Id, Capacity = 1 }, [slot]);
+        var a = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", Price = 4500, Name = "A", TeacherId = t.Id, RoomId = room.Id, Capacity = 1 }, [slot]);
 
         // Same room, overlapping time → rejected.
         var ex = await Assert.ThrowsAsync<BusinessException>(() => groups.SaveAsync(
-            new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "B", RoomId = room.Id, Capacity = 5 },
+            new Group { SubjectId = maths.Id, Level = "3AS", Price = 4500, Name = "B", RoomId = room.Id, Capacity = 5 },
             [new ScheduleSlot { Day = DayOfWeek.Saturday, Start = TimeSpan.FromHours(10), End = TimeSpan.FromHours(12) }]));
         Assert.Contains("Salle déjà occupée", ex.Message);
-        var b = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", MonthlyPrice = 4500, Name = "B", Capacity = 5 },
+        var b = await groups.SaveAsync(new Group { SubjectId = maths.Id, Level = "3AS", Price = 4500, Name = "B", Capacity = 5 },
             [new ScheduleSlot { Day = DayOfWeek.Sunday, Start = TimeSpan.FromHours(10), End = TimeSpan.FromHours(12) }]);
 
         var s1 = await studentsSvc.SaveAsync(new Student { FirstName = "Yacine", LastName = "Benali", Level = "3AS" });
@@ -93,12 +151,12 @@ public class BusinessTests
         await studentsSvc.EnrollAsync(s2.Id, a.Id);
 
         var period = new DateTime(2026, 9, 1);
-        var p1 = await payments.RecordAsync(s1.Id, 4500, PaymentMethod.Cash, PaymentKind.Monthly, period, null);
-        var p2 = await payments.RecordAsync(s2.Id, 1000, PaymentMethod.Ccp, PaymentKind.Monthly, period, null);
+        var p1 = await payments.RecordAsync(s1.Id, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null);
+        var p2 = await payments.RecordAsync(s2.Id, 1000, PaymentMethod.Ccp, PaymentKind.Sessions, null);
         Assert.Equal("REC-2026-0001", p1.ReceiptNumber);
         Assert.Equal("REC-2026-0002", p2.ReceiptNumber);
 
-        var rows = await payments.MonthOverviewAsync(period);
+        var rows = await payments.OverviewAsync(); // joined today: first pack of 4 sessions due
         Assert.Equal(PaymentState.Paid, rows.Single(r => r.StudentId == s1.Id).State);
         Assert.Equal(3500, rows.Single(r => r.StudentId == s2.Id).Balance);
 

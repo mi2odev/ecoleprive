@@ -66,8 +66,8 @@ public class MessageTemplatesTests
     public void Default_templates_produce_the_expected_messages()
     {
         var s = new CenterSettings { CenterName = "Future Leaders Academy", Phone = "021 45 67 89" };
-        var reminder = MessageTemplates.PaymentReminder(s, "Karim Benali", "Yacine Benali", new DateTime(2026, 9, 1), 4500, 2000);
-        Assert.Equal("Bonjour Karim Benali, sauf erreur de notre part, la mensualité de septembre 2026 pour Yacine Benali n'est pas encore réglée. " +
+        var reminder = MessageTemplates.PaymentReminder(s, "Karim Benali", "Yacine Benali", new DateTime(2026, 9, 1), "Mathématiques · 3AS A · séance 1/4", 4500, 2000);
+        Assert.Equal("Bonjour Karim Benali, sauf erreur de notre part, les séances de Yacine Benali ne sont pas encore réglées (Mathématiques · 3AS A · séance 1/4). " +
                      "Reste à payer : 2 000 DZD. Merci de passer au centre. Future Leaders Academy – 021 45 67 89", reminder);
 
         var absence = MessageTemplates.AbsenceNotice(s, null, "Yacine Benali", "Mathématiques", new DateTime(2026, 9, 26));
@@ -120,14 +120,14 @@ public class RemindersTests
         Assert.Equal(unpaid, page.Reminders.Select(r => r.StudentId).Order());
         Assert.All(page.Reminders, r => Assert.True(r.IsSelected));
         Assert.Equal($"{page.Reminders.Count} sélectionnés", page.SelectionLabel);
-        Assert.Equal("Échéance le 05/09/2026", page.DueDateLabel);
+        Assert.Equal("Délai de paiement : 5 j après le début des séances", page.DueDateLabel);
 
-        // 26/09 vs due day 5 → 21 days late, beyond the 10-day reminder threshold.
+        // Late = days since the oldest unpaid pack started, minus the 5-day payment delay; the most late come first.
+        Assert.Equal(page.Reminders.Select(r => r.DaysLate).OrderDescending(), page.Reminders.Select(r => r.DaysLate));
         var line = page.Reminders.First(r => r.ParentName is not null && r.CanWhatsApp);
-        Assert.Equal(21, line.DaysLate);
-        Assert.Equal("21 j de retard", line.DelayLabel);
-        Assert.Equal(BadgeKind.Bad, line.Delay.Kind);
-        Assert.StartsWith($"Bonjour {line.ParentName}, sauf erreur de notre part, la mensualité de septembre 2026 pour {line.Name}", line.Message);
+        Assert.Equal((new DateTime(2026, 9, 26) - line.Item.DueSince!.Value.Date).Days - 5, line.DaysLate);
+        Assert.Equal(line.DaysLate >= 10 ? BadgeKind.Bad : line.DaysLate > 0 ? BadgeKind.Warn : BadgeKind.Neutral, line.Delay.Kind);
+        Assert.StartsWith($"Bonjour {line.ParentName}, sauf erreur de notre part, les séances de {line.Name} ne sont pas encore réglées ({line.Item.Progress})", line.Message);
         Assert.Contains($"Reste à payer : {line.Rest}.", line.Message);
         Assert.StartsWith("https://wa.me/213", line.WhatsAppUrl);
     }
@@ -176,7 +176,7 @@ public class RemindersTests
         await page.PrintReminderLettersCommand.ExecuteAsync(null);
         Assert.False(page.HasError, page.Error);
         var (job, pages) = Assert.Single(fake.PrintedPages);
-        Assert.Equal("Relances 2026-09", job);
+        Assert.Equal("Relances 2026-09-26", job);
         Assert.Equal(2, pages.Count);
         Assert.All(pages, p => Assert.Equal("Rappel de paiement", p.Title));
         Assert.Contains(pages[0].Blocks, b => b is PrintParagraph p && p.Text == page.Reminders[0].Message);
@@ -210,18 +210,18 @@ public class RemindersTests
         Assert.Contains("{parent}", settings.PlaceholderHelp);
         Assert.StartsWith("Bonjour M. Benali, sauf erreur", settings.PaymentPreview);
 
-        settings.PaymentTemplate = "Rappel {eleve} : {reste} ({mois})";
+        settings.PaymentTemplate = "Rappel {eleve} : {reste} ({seances})";
         Assert.StartsWith("Rappel Yacine Benali : 2 000 DZD", settings.PaymentPreview);
         settings.Form.PhoneCountryCode = "+33";
         await settings.SaveCommand.ExecuteAsync(null);
         Assert.False(settings.HasError, settings.Error);
         var saved = await host.Get<ISettingsService>().GetAsync();
-        Assert.Equal("Rappel {eleve} : {reste} ({mois})", saved.PaymentReminderTemplate);
+        Assert.Equal("Rappel {eleve} : {reste} ({seances})", saved.PaymentReminderTemplate);
         Assert.Equal("33", saved.PhoneCountryCode);
 
         var page = await OpenRemindersAsync(host);
         var line = page.Reminders.First(r => r.CanWhatsApp);
-        Assert.Equal($"Rappel {line.Name} : {line.Rest} (septembre 2026)", line.Message);
+        Assert.Equal($"Rappel {line.Name} : {line.Rest} ({line.Item.Progress})", line.Message);
         Assert.StartsWith("https://wa.me/33", line.WhatsAppUrl);
 
         // Reset to the default text and reject an invalid country code.

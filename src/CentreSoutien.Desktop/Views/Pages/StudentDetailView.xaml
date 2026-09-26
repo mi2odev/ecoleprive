@@ -25,7 +25,7 @@
         <!-- Most used actions stay visible; the others are grouped in "Plus". -->
         <WrapPanel Margin="0,0,0,22">
             <Button Content="Ajouter un paiement" Command="{Binding AddPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
-                    ToolTip="Encaisser une mensualité ou des frais ; le reçu est imprimé" />
+                    ToolTip="Encaisser des séances ou des frais ; le reçu est imprimé" />
             <Button Content="Modifier l'élève" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8"
                     ToolTip="Modifier la fiche : identité, niveau, parent, remise, photo" />
             <!-- Enrolled: change group; not enrolled yet: the same command opens the enrollment. -->
@@ -54,7 +54,7 @@
                         <MenuItem Header="Changer de groupe" Command="{Binding ChangeGroupCommand}" Icon="&#xE8AB;"
                                   ToolTip="Passer l'élève dans un autre groupe" />
                         <MenuItem Header="Appliquer une remise" Command="{Binding ApplyDiscountCommand}" Icon="&#xE8EF;"
-                                  ToolTip="Fratrie, cas social… la remise s'applique aux prochaines mensualités" />
+                                  ToolTip="Fratrie, cas social… la remise s'applique au prix des séances" />
                         <MenuItem Header="Ajouter un document" Command="{Binding AddDocumentCommand}" Icon="&#xE8A5;"
                                   ToolTip="Joindre un fichier à la fiche (certificat, pièce d'identité…)" />
                         <MenuItem Header="Saisir une note" Command="{Binding EnterGradesCommand}" Icon="&#xE7BE;"

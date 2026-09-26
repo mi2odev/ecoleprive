@@ -111,7 +111,7 @@ public sealed partial class DashboardViewModel(
                 new("Impayés élèves", Money.Format(d.Outstanding), $"{d.OutstandingStudents} élève{(d.OutstandingStudents > 1 ? "s" : "")} concerné{(d.OutstandingStudents > 1 ? "s" : "")}"),
                 new("Paiements enseignants", Money.Format(d.TeacherPaymentsDue), "Reste à verser ce mois"),
                 new("Dépenses", Money.Format(d.ExpensesMonth), $"{d.ExpenseCount} poste{(d.ExpenseCount > 1 ? "s" : "")} ce mois"),
-                new("Bénéfice estimé", Money.Format(d.EstimatedProfit), "Mensualités − charges"),
+                new("Bénéfice estimé", Money.Format(d.EstimatedProfit), "Séances facturées − charges"),
             ];
             Blocks =
             [
@@ -167,7 +167,7 @@ public sealed partial class DashboardViewModel(
     /// <summary>The most frequent tasks, one click away.</summary>
     public IReadOnlyList<QuickAction> QuickActions => _quickActions ??=
     [
-        new("collect", "\uE8C7", "Encaisser un paiement", "Mensualité ou inscription, reçu imprimé", CollectPaymentCommand),
+        new("collect", "\uE8C7", "Encaisser un paiement", "Séances ou inscription, reçu imprimé", CollectPaymentCommand),
         new("student", "\uE8FA", "Inscrire un élève", "Nouvelle fiche élève et son groupe", AddStudentCommand),
         new("attendance", "\uE73A", "Faire l'appel", "Présences des séances d'aujourd'hui", TakeAttendanceCommand),
         new("expense", "\uE8EF", "Ajouter une dépense", "Loyer, fournitures, factures…", AddExpenseCommand),
@@ -295,7 +295,7 @@ public sealed partial class DashboardViewModel(
         var current = i.Months.Count > 0 ? i.Months[^1] : null;
         CollectionSummary = current?.CollectionRate is { } rate
             ? $"Ce mois : {rate:0} % ({Money.Format(current.Collected)} sur {Money.Format(current.Expected)})"
-            : "Aucune mensualité attendue ce mois";
+            : "Aucune séance facturée ce mois";
 
         AttendanceChart = new ChartData(i.Weeks.Select(w => ChartLabels.Week(w.WeekStart)).ToList(),
             [new("Taux de présence", i.Weeks.Select(w => w.Rate ?? double.NaN).ToList(), ChartColor.Accent, ChartSeriesKind.Line)],

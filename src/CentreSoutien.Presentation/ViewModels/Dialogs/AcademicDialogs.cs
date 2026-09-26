@@ -107,7 +107,7 @@ public sealed partial class SlotEditor : ObservableObject
 }
 
 /// <summary>
-/// Create or edit a group: subject, level, monthly price, name, teacher, room, capacity and weekly timetable,
+/// Create or edit a group: subject, level, name, payment (price for every N sessions), teacher, room, capacity and weekly timetable,
 /// with live conflict detection.
 /// </summary>
 public sealed partial class GroupEditorDialogViewModel(
@@ -128,7 +128,19 @@ public sealed partial class GroupEditorDialogViewModel(
     [ObservableProperty] private IReadOnlyList<string> _levels = Options.DefaultLevels;
     [ObservableProperty] private string _level = "";
     [ObservableProperty] private string _price = "";
+    /// <summary>Sessions per payment ("4", "8"…): typed or picked from <see cref="PackSizes"/>.</summary>
+    [ObservableProperty] private string _sessionsPerPack = "4";
     [ObservableProperty] private string? _description;
+
+    public IReadOnlyList<string> PackSizes { get; } = ["4", "8", "12"];
+
+    /// <summary>"L'élève paie 4 500 DZD à l'inscription, puis toutes les 4 séances."</summary>
+    public string PaymentHint => (Parse.Amount(Price), int.TryParse(SessionsPerPack?.Trim(), out var n) ? n : 0) is ({ } p and > 0, > 0 and var k)
+        ? $"L'élève paie {Money.Format(p)} en rejoignant le groupe, puis à nouveau toutes les {k} séance{(k > 1 ? "s" : "")}."
+        : "L'élève paie en rejoignant le groupe, puis à nouveau à chaque fin de paquet de séances.";
+
+    partial void OnPriceChanged(string value) => OnPropertyChanged(nameof(PaymentHint));
+    partial void OnSessionsPerPackChanged(string value) => OnPropertyChanged(nameof(PaymentHint));
     [ObservableProperty] private string _name = "A";
     [ObservableProperty] private IReadOnlyList<Option<int?>> _teacherOptions = [];
     [ObservableProperty] private Option<int?>? _selectedTeacher;
@@ -160,7 +172,8 @@ public sealed partial class GroupEditorDialogViewModel(
             {
                 _group.SubjectId = template.SubjectId;
                 _group.Level = template.Level;
-                _group.MonthlyPrice = template.MonthlyPrice;
+                _group.Price = template.Price;
+                _group.SessionsPerPack = template.SessionsPerPack;
                 _group.TeacherId = template.TeacherId;
                 _group.RoomId = template.RoomId;
                 _group.Capacity = template.Capacity;
@@ -171,7 +184,8 @@ public sealed partial class GroupEditorDialogViewModel(
             var levels = await students.LevelsAsync();
             Levels = Options.DefaultLevels.Union(levels).Where(l => !string.IsNullOrWhiteSpace(l)).OrderBy(Domain.Calculations.Levels.Order).ToList();
             Level = _group.Level;
-            Price = _group.Id == 0 && template is null ? "" : Money.Number(_group.MonthlyPrice);
+            Price = _group.Id == 0 && template is null ? "" : Money.Number(_group.Price);
+            SessionsPerPack = _group.SessionsPerPack.ToString();
             Description = _group.Description;
 
             var period = clock.GetLocalNow().DateTime;
@@ -273,7 +287,8 @@ public sealed partial class GroupEditorDialogViewModel(
         Id = _group.Id,
         SubjectId = SelectedSubject?.Value ?? 0,
         Level = (Level ?? "").Trim().ToUpperInvariant(),
-        MonthlyPrice = Parse.Amount(Price) ?? 0,
+        Price = Parse.Amount(Price) ?? 0,
+        SessionsPerPack = int.TryParse(SessionsPerPack?.Trim(), out var pack) ? pack : 0,
         Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
         Name = (Name ?? "").Trim(),
         TeacherId = SelectedTeacher?.Value,
@@ -320,7 +335,9 @@ public sealed partial class GroupEditorDialogViewModel(
     {
         if (SelectedSubject is null) throw new BusinessException("Choisissez une matière.");
         if (string.IsNullOrWhiteSpace(Level)) throw new BusinessException("Le niveau est obligatoire.");
-        if (Parse.Amount(Price) is not { } price || price < 0) throw new BusinessException("Saisissez un prix mensuel valide.");
+        if (!int.TryParse(SessionsPerPack?.Trim(), out var pack) || pack is < 1 or > 60)
+            throw new BusinessException("Indiquez toutes les combien de séances l'élève paie (ex. 4 ou 8).");
+        if (Parse.Amount(Price) is not { } price || price < 0) throw new BusinessException("Saisissez un prix valide.");
         if (string.IsNullOrWhiteSpace(Name)) throw new BusinessException("Le nom du groupe est obligatoire.");
         if (!int.TryParse(Capacity?.Trim(), out var cap) || cap <= 0) throw new BusinessException("Saisissez une capacité valide (nombre de places).");
         var slots = new List<ScheduleSlot>();

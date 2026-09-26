@@ -17,16 +17,8 @@
         <TextBlock Visibility="{Binding CanPickStudent, Converter={StaticResource BoolToCollapsed}}" FontSize="14" Margin="0,0,0,16">
             <Run Text="Bénéficiaire : " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentName, Mode=OneWay}" Foreground="{DynamicResource InkBrush}" /><Run Text=" — " Foreground="{DynamicResource MutedBrush}" /><Run Text="{Binding StudentBalance, Mode=OneWay}" Foreground="{DynamicResource MutedBrush}" />
         </TextBlock>
-        <UniformGrid Columns="2" Margin="0,0,0,12">
-            <StackPanel Margin="0,0,8,0">
-                <TextBlock Text="Objet" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" DisplayMemberPath="Label" />
-            </StackPanel>
-            <StackPanel Margin="8,0,0,0">
-                <TextBlock Text="Mois concerné" Style="{StaticResource FieldLabel}" />
-                <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth}" DisplayMemberPath="Label" />
-            </StackPanel>
-        </UniformGrid>
+        <TextBlock Text="Objet" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,10" />
         <TextBlock Text="{Binding Summary}" Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,16" />
         <TextBlock Text="Montant (DZD)" Style="{StaticResource FieldLabel}" />
         <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" ui:FocusOnShow.Enabled="{Binding CanPickStudent, Converter={StaticResource Not}}" />

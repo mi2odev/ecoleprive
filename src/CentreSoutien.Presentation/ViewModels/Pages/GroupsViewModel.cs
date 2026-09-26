@@ -20,7 +20,7 @@ public sealed record GroupRow(Group Group, int Enrolled, IRelayCommand Open, IRe
     public string Fill => $"{Enrolled} / {Group.Capacity}";
     public bool IsFull => Enrolled >= Group.Capacity;
     public Badge FullBadge => new(Fill, BadgeKind.Warn);
-    public string Price => Money.Format(Group.MonthlyPrice);
+    public string Price => Group.PriceLabel;
     public Badge Status => Badge.Active(Group.IsActive);
 }
 

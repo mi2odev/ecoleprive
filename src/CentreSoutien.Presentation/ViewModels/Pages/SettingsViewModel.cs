@@ -106,7 +106,7 @@ public sealed partial class SettingsViewModel(
     private void UpdatePreviews()
     {
         var month = Period.Of(clock.GetLocalNow().DateTime);
-        PaymentPreview = MessageTemplates.PaymentReminder(Form, "M. Benali", "Yacine Benali", month, 4500, 2000);
+        PaymentPreview = MessageTemplates.PaymentReminder(Form, "M. Benali", "Yacine Benali", month, "Mathématiques · 3AS A · séance 1/4", 4500, 2000);
         AbsencePreview = MessageTemplates.AbsenceNotice(Form, "M. Benali", "Yacine Benali", "Mathématiques", clock.GetLocalNow().DateTime.Date);
     }
 

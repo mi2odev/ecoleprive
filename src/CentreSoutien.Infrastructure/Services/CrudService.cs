@@ -123,6 +123,8 @@ public sealed class ParentService(IDbContextFactory<AppDbContext> factory) : IPa
         await using var db = await factory.CreateDbContextAsync(ct);
         return await db.Parents.AsNoTracking()
             .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
+            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
+            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
             .Include(p => p.Children).ThenInclude(s => s.Payments)
             .Include(p => p.Children).ThenInclude(s => s.Discount)
             .AsSplitQuery()
@@ -165,7 +167,7 @@ public sealed class SettingsService(IDbContextFactory<AppDbContext> factory) : I
     {
         if (string.IsNullOrWhiteSpace(settings.CenterName)) throw new BusinessException("Le nom du centre est obligatoire.");
         if (settings.AutoLockMinutes < 0 || settings.AutoLockMinutes > 240) throw new BusinessException("Délai de verrouillage invalide (0 à 240 minutes).");
-        if (settings.PaymentDueDay is < 1 or > 28) throw new BusinessException("Le jour d'échéance doit être entre 1 et 28.");
+        if (settings.PaymentDueDay is < 0 or > 60) throw new BusinessException("Le délai de paiement doit être entre 0 et 60 jours.");
         if (settings.GradeScale <= 0) throw new BusinessException("Le barème doit être positif.");
         await using var db = await factory.CreateDbContextAsync(ct);
         db.Settings.Update(settings);

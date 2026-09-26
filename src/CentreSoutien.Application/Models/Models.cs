@@ -6,7 +6,7 @@ namespace CentreSoutien.Application.Models;
 
 public sealed record StudentListItem(
     int Id, string Matricule, string FullName, string Initials, string Level, string Courses,
-    string? ParentName, string? ParentPhone, decimal MonthlyDue, decimal Balance, PaymentState State,
+    string? ParentName, string? ParentPhone, decimal PackPrice, decimal Balance, PaymentState State,
     bool IsActive, bool IsNew, string? DiscountLabel);
 
 public sealed record StudentAttendanceItem(DateTime Date, string Group, AttendanceStatus Status);
@@ -19,8 +19,9 @@ public sealed record TeacherListItem(int Id, string FullName, string Initials, s
 public sealed record TeacherDetail(Teacher Teacher, List<Group> Groups, List<Student> Students, EarningsResult Earnings,
     decimal PaidThisMonth, List<TeacherPayment> Payments);
 
+/// <param name="Progress">Per current student: pack status in this group ("séance 3/4") and what the student owes in total.</param>
 public sealed record GroupDetail(Group Group, List<Student> Students, decimal Expected, decimal Collected, double AttendanceRate,
-    List<Student> EligibleStudents);
+    List<Student> EligibleStudents, IReadOnlyDictionary<int, (PackStatus Status, decimal Balance)> Progress);
 
 public sealed record RoomAvailability(Room Room, bool IsFree, string? OccupiedBy, TimeSpan? FreeUntil);
 
@@ -59,8 +60,13 @@ public sealed class GradeLine
     public string? Comment { get; set; }
 }
 
-public sealed record PaymentRow(int StudentId, string Matricule, string FullName, string Level, decimal Gross, decimal Due, decimal Paid,
-    decimal Balance, PaymentState State, string? Discount, string? ParentPhone);
+/// <summary>
+/// A student's payment situation: <see cref="Due"/> is every pack of sessions billed so far, <see cref="Paid"/> every
+/// session payment, <see cref="Balance"/> what is left to pay (<see cref="Credit"/> when paid in advance).
+/// <see cref="DueSince"/> is the date of the oldest pack not fully paid; <see cref="Progress"/> "Maths 3AS A · séance 3/4".
+/// </summary>
+public sealed record PaymentRow(int StudentId, string Matricule, string FullName, string Level, decimal PackPrice, decimal Due, decimal Paid,
+    decimal Balance, PaymentState State, string? Discount, string? ParentPhone, decimal Credit = 0, DateTime? DueSince = null, string Progress = "");
 
 public sealed record TeacherPayRow(int TeacherId, string FullName, string Subject, string Rule, decimal Earned, decimal Paid, decimal Remaining,
     DateTime? LastPaymentDate);
@@ -129,7 +135,7 @@ public static class Labels
 
     public static string Of(PaymentKind k) => k switch
     {
-        PaymentKind.Monthly => "Mensualité",
+        PaymentKind.Sessions => "Séances",
         PaymentKind.Registration => "Frais d'inscription",
         _ => "Autre",
     };
@@ -159,7 +165,7 @@ public static class Labels
 
     public static string Of(CompensationType c) => c switch
     {
-        CompensationType.Percentage => "Pourcentage des mensualités",
+        CompensationType.Percentage => "Pourcentage des séances payées",
         CompensationType.PerSession => "Tarif par séance",
         _ => "Forfait mensuel",
     };

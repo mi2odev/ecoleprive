@@ -34,8 +34,11 @@ public class FinanceTests
         var page = host.Page<PaymentsViewModel>();
         Assert.False(page.HasError, page.Error);
         Assert.Equal("Septembre 2026", page.MonthLabel);
-        Assert.Equal(["Attendu ce mois", "Encaissé", "Reste à percevoir", "Taux de recouvrement"], page.Kpis.Select(k => k.Label));
+        Assert.Equal(["Reste à percevoir", "En retard", "Encaissé", "Payé d'avance"], page.Kpis.Select(k => k.Label));
         Assert.NotEmpty(page.Rows);
+        // Each row shows the student's groups and where they are in the pack of sessions.
+        Assert.Contains(page.Rows, r => r.Progress.Contains("séance ") && r.PackPrice.EndsWith("DZD"));
+        Assert.All(page.Rows.Where(r => r.BalanceValue > 0), r => Assert.NotEqual("—", r.Waiting));
         Assert.NotEmpty(page.LatestReceipts);
         Assert.True(page.LatestReceipts.Count <= 12);
         Assert.NotEmpty(page.Receipts);

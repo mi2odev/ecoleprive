@@ -14,6 +14,7 @@ public sealed record MessageValues
     public string? Month { get; init; }
     public string? Balance { get; init; }
     public string? MonthlyFee { get; init; }
+    public string? Sessions { get; init; }
     public string? Course { get; init; }
     public string? Date { get; init; }
     public string? Center { get; init; }
@@ -34,9 +35,10 @@ public static partial class MessageTemplates
     [
         ("{parent}", "nom du parent"),
         ("{eleve}", "nom de l'élève"),
-        ("{mois}", "mois concerné"),
+        ("{seances}", "groupes et séances (ex. Maths 3AS A · séance 3/4)"),
         ("{reste}", "reste à payer"),
-        ("{mensualite}", "mensualité du mois"),
+        ("{prix}", "prix des prochaines séances"),
+        ("{mois}", "mois depuis lequel un paiement est dû"),
         ("{cours}", "cours (absences)"),
         ("{date}", "date de la séance"),
         ("{centre}", "nom du centre"),
@@ -78,7 +80,8 @@ public static partial class MessageTemplates
         "eleve" => v.Student ?? "",
         "mois" => v.Month ?? "",
         "reste" => v.Balance ?? "",
-        "mensualite" => v.MonthlyFee ?? "",
+        "mensualite" or "prix" => v.MonthlyFee ?? "",
+        "seances" => v.Sessions ?? "",
         "cours" => v.Course ?? "",
         "date" => v.Date ?? "",
         "centre" => v.Center ?? "",
@@ -93,17 +96,20 @@ public static partial class MessageTemplates
     public static string DateText(DateTime date) => Labels.LongDate(date).ToLowerInvariant();
 
     /// <summary>Payment reminder built from <see cref="CenterSettings.PaymentReminderTemplate"/> (or the default one if empty).</summary>
-    public static string PaymentReminder(CenterSettings s, string? parent, string student, DateTime month, decimal due, decimal balance) =>
+    /// <param name="since">Start of the oldest pack of sessions not paid.</param>
+    /// <param name="sessions">"Maths 3AS A · séance 3/4".</param>
+    /// <param name="packPrice">Price of the next pack of sessions.</param>
+    public static string PaymentReminder(CenterSettings s, string? parent, string student, DateTime since, string sessions, decimal packPrice, decimal balance) =>
         Fill(Or(s.PaymentReminderTemplate, CenterSettings.DefaultPaymentReminderTemplate), new MessageValues
         {
-            Parent = parent, Student = student, Month = MonthText(month), Balance = Money.Format(balance), MonthlyFee = Money.Format(due),
-            Center = s.CenterName, Phone = s.Phone,
+            Parent = parent, Student = student, Month = MonthText(since), Balance = Money.Format(balance), MonthlyFee = Money.Format(packPrice),
+            Sessions = sessions, Center = s.CenterName, Phone = s.Phone,
         });
 
     /// <summary>Short reminder for an SMS (fits in one or two SMS, no greeting).</summary>
-    public static string ShortPaymentReminder(CenterSettings s, string student, DateTime month, decimal balance)
+    public static string ShortPaymentReminder(CenterSettings s, string student, decimal balance)
     {
-        var text = $"{s.CenterName} : mensualité de {MonthText(month)} de {student} non réglée, reste {Money.Format(balance)}. Merci.";
+        var text = $"{s.CenterName} : séances de {student} non réglées, reste {Money.Format(balance)}. Merci.";
         return string.IsNullOrWhiteSpace(s.Phone) ? text : $"{text} {s.Phone.Trim()}";
     }
 
