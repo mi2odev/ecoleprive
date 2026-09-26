@@ -1,0 +1,189 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Pages.TeacherDetailView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:vm="clr-namespace:CentreSoutien.Presentation.ViewModels.Pages;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=vm:TeacherDetailViewModel}">
+    <StackPanel>
+        <Button Content="← Enseignants" Command="{Binding BackCommand}" Style="{StaticResource BackButton}" Margin="0,0,0,22" />
+
+        <!-- Header -->
+        <DockPanel Margin="0,0,0,22">
+            <ui:Avatar Size="64" Initials="{Binding Initials}" ImagePath="{Binding PhotoPath}" DockPanel.Dock="Left" Margin="0,0,18,0" />
+            <StackPanel VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource H1}" />
+                    <ContentControl Content="{Binding State}" Focusable="False" VerticalAlignment="Center" Margin="12,6,0,0" />
+                </StackPanel>
+                <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Muted}" Margin="0,4,0,0" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Direct actions -->
+        <WrapPanel Margin="0,0,0,22">
+            <Button Content="Enregistrer un paiement" Command="{Binding RecordPaymentCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button Content="Modifier" Command="{Binding EditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+            <Button Content="Emploi du temps" Command="{Binding OpenScheduleCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+            <Button Content="Ajouter un document" Command="{Binding AddDocumentCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,8" />
+            <Button Command="{Binding ToggleActiveCommand}" Margin="0,0,8,8">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                        <Setter Property="Content" Value="Rendre inactif" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsActive}" Value="False">
+                                <Setter Property="Content" Value="Réactiver" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+            <Button Content="Supprimer" Command="{Binding DeleteCommand}" Style="{StaticResource DangerOutlineButton}" Margin="0,0,8,8" />
+        </WrapPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.5*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Left column ===== -->
+            <StackPanel>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}">
+                            <TextBlock Text="Cours et horaires" Style="{StaticResource H2}" />
+                        </Border>
+                        <TextBlock Text="Aucun cours cette année." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding HasNoGroups, Converter={StaticResource BoolToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Groups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:TeacherGroupRow}">
+                                    <Button Command="{Binding Open}" Style="{StaticResource RowButton}" Padding="20,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.4*" />
+                                                <ColumnDefinition Width="1.6*" />
+                                                <ColumnDefinition Width="70" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding When}" Style="{StaticResource Muted}" Margin="0,0,12,0" TextWrapping="Wrap" TextTrimming="None" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Fill}" Style="{StaticResource Body}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding StudentsTitle}" Style="{StaticResource H2}" Margin="0,0,0,12" />
+                        <TextBlock Text="Aucun élève inscrit dans ses groupes." Style="{StaticResource Muted}"
+                                   Visibility="{Binding Students, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Students}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:TeacherStudentChip}">
+                                    <Button Content="{Binding Name}" Command="{Binding Open}" Style="{StaticResource SmallSecondaryButton}"
+                                            Height="28" Padding="10,0" Margin="0,0,6,6" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Ajouter un document" Command="{Binding AddDocumentCommand}" Style="{StaticResource LinkButton}" />
+                                <TextBlock Text="Documents" Style="{StaticResource H2}" />
+                            </DockPanel>
+                        </Border>
+                        <TextBlock Text="Aucun document." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding Documents, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding Documents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:DocumentRow}">
+                                    <Border Style="{StaticResource TableRow}" Padding="20,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="140" />
+                                                <ColumnDefinition Width="90" />
+                                                <ColumnDefinition Width="60" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrong}" Margin="0,0,12,0" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Category}" Style="{StaticResource Muted}" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Date}" Style="{StaticResource Muted}" />
+                                            <TextBlock Grid.Column="3" Text="{Binding Size}" Style="{StaticResource Muted}" />
+                                            <Button Grid.Column="4" Content="Ouvrir" Command="{Binding Open}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
+                                            <Button Grid.Column="5" Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== Right column ===== -->
+            <StackPanel Grid.Column="2">
+                <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding EarningsTitle}" Style="{StaticResource Small}" />
+                        <TextBlock Text="{Binding Earnings}" Style="{StaticResource Kpi}" Margin="0,8,0,8" />
+                        <TextBlock Text="{Binding Rule}" Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" />
+                        <TextBlock Text="{Binding PaidSummary}" Style="{StaticResource Muted}" Margin="0,4,0,10" />
+                        <ContentControl Content="{Binding PayState}" Focusable="False" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <Border Style="{StaticResource CardHeader}" Padding="20,14">
+                            <TextBlock Text="Historique des paiements" Style="{StaticResource Small}" />
+                        </Border>
+                        <TextBlock Text="Aucun paiement enregistré." Style="{StaticResource EmptyText}"
+                                   Visibility="{Binding History, Converter={StaticResource NullToVisible}}" />
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:TeacherPayHistoryRow}">
+                                    <Border Style="{StaticResource TableRow}" Padding="20,11">
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Amount}" Style="{StaticResource BodyStrong}" HorizontalAlignment="Right" />
+                                                <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}" HorizontalAlignment="Right" Margin="0,3,0,0" />
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding Month}" Style="{StaticResource Body}" />
+                                                <TextBlock Style="{StaticResource Small}" Margin="0,2,0,0">
+                                                    <Run Text="{Binding Date, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Method, Mode=OneWay}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource PaddedCard}" Padding="20,18,0,4">
+                    <ItemsControl ItemsSource="{Binding Info}" />
+                </Border>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</UserControl>
