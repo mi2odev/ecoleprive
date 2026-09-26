@@ -9,20 +9,23 @@ public static class PasswordBinding
 {
     public static readonly DependencyProperty PasswordProperty = DependencyProperty.RegisterAttached(
         "Password", typeof(string), typeof(PasswordBinding),
-        new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPasswordChanged));
+        // Default is null (not ""): the change callback that hooks PasswordChanged must fire even when the
+        // bound view-model value is the empty string, otherwise typed passwords never reach the view model.
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPasswordChanged));
 
     private static readonly DependencyProperty IsUpdatingProperty = DependencyProperty.RegisterAttached(
         "IsUpdating", typeof(bool), typeof(PasswordBinding));
 
-    public static string GetPassword(DependencyObject d) => (string)d.GetValue(PasswordProperty);
+    public static string? GetPassword(DependencyObject d) => (string?)d.GetValue(PasswordProperty);
     public static void SetPassword(DependencyObject d, string value) => d.SetValue(PasswordProperty, value);
 
     private static void OnPasswordChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not PasswordBox box) return;
         box.PasswordChanged -= OnBoxChanged;
-        if (!(bool)box.GetValue(IsUpdatingProperty) && box.Password != (string?)e.NewValue)
-            box.Password = (string?)e.NewValue ?? "";
+        var value = (string?)e.NewValue ?? "";
+        if (!(bool)box.GetValue(IsUpdatingProperty) && box.Password != value)
+            box.Password = value;
         box.PasswordChanged += OnBoxChanged;
     }
 
