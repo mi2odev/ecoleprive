@@ -18,7 +18,7 @@ public class BackupTests
             await File.WriteAllBytesAsync(photo, [1, 2, 3]);
             var stored = source.Get<IFileStorage>().Import(photo, StorageAreas.Images);
 
-            backupFile = await source.Get<IBackupService>().BackupAsync(Path.GetTempPath());
+            backupFile = await source.Get<IBackupService>().BackupAsync(Path.Combine(source.Folder, "export"));
             Assert.True(File.Exists(backupFile));
             var raw = await File.ReadAllBytesAsync(backupFile);
             Assert.DoesNotContain("Kaci", System.Text.Encoding.UTF8.GetString(raw));
@@ -35,7 +35,6 @@ public class BackupTests
             Assert.True((await target.Get<IAuthService>().LoginAsync("admin", "Centre2026!")).Succeeded);
             Assert.True(File.Exists(target.Get<IFileStorage>().GetPath(stored, StorageAreas.Images)));
         }
-        File.Delete(backupFile);
     }
 
     [Fact]
