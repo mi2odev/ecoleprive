@@ -81,6 +81,27 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
     }
 
+    public async Task<CashJournal> CashJournalAsync(DateTime day, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var from = day.Date;
+        var to = from.AddDays(1);
+        var receipts = await db.StudentPayments.IgnoreQueryFilters().AsNoTracking()
+            .Include(p => p.Student).Include(p => p.Group).ThenInclude(g => g!.Subject)
+            .Where(p => (p.Date >= from && p.Date < to) || (p.CancelledAt >= from && p.CancelledAt < to))
+            .ToListAsync(ct);
+        return new CashJournal
+        {
+            Day = from,
+            // Receipts issued that day and still valid; cancellations made that day (whatever the receipt date).
+            Receipts = receipts.Where(p => !p.IsCancelled && p.Date >= from).OrderBy(p => p.Date).ThenBy(p => p.Id).ToList(),
+            Cancelled = receipts.Where(p => p.CancelledAt >= from && p.CancelledAt < to).OrderBy(p => p.CancelledAt).ToList(),
+            Expenses = await db.Expenses.AsNoTracking().Where(e => e.Date >= from && e.Date < to).OrderBy(e => e.Id).ToListAsync(ct),
+            TeacherPayments = await db.TeacherPayments.AsNoTracking().Include(t => t.Teacher)
+                .Where(t => t.Date >= from && t.Date < to).OrderBy(t => t.Date).ToListAsync(ct),
+        };
+    }
+
     public async Task CancelAsync(int paymentId, string reason, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(reason)) throw new BusinessException("Indiquez le motif de l'annulation.");

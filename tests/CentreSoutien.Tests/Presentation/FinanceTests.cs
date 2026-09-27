@@ -1,4 +1,6 @@
 using CentreSoutien.Application.Abstractions;
+using CentreSoutien.Domain.Calculations;
+using CentreSoutien.Domain.Entities;
 using CentreSoutien.Domain.Enums;
 using CentreSoutien.Presentation.Core;
 using CentreSoutien.Presentation.ViewModels.Dialogs;
@@ -94,6 +96,49 @@ public class FinanceTests
         Assert.Contains("1 annulé", page.ReceiptsTotal);
         Assert.DoesNotContain(page.LatestReceipts, r => r.Details.StartsWith(dialog.Result.ReceiptNumber));
         Assert.True(page.Rows.Single(r => r.StudentId == row.StudentId && r.GroupId == row.GroupId).CanCollect);
+    }
+
+    [Fact]
+    public async Task Cash_journal_sums_the_day_and_prints()
+    {
+        await using var host = await UiHost.CreateAsync();
+        var payments = host.Get<IPaymentService>();
+        var row = (await payments.OverviewAsync()).First(r => r.GroupAccounts.Any(a => a.Status is not null));
+        var group = row.GroupAccounts.First(a => a.Status is not null).GroupId;
+        var cash = await payments.RecordAsync(row.StudentId, group, 3000, PaymentMethod.Cash, PaymentKind.Sessions, null);
+        var ccp = await payments.RecordAsync(row.StudentId, group, 1000, PaymentMethod.Ccp, PaymentKind.Sessions, null);
+        await payments.CancelAsync(ccp.Id, "Doublon");
+        await host.Get<ICrudService<Expense>>().SaveAsync(new Expense
+            { Date = new DateTime(2026, 9, 26), Category = "Fournitures", Description = "Marqueurs", Amount = 500, Method = PaymentMethod.Cash });
+
+        var journal = await payments.CashJournalAsync(new DateTime(2026, 9, 26));
+        Assert.Contains(journal.Receipts, p => p.Id == cash.Id);
+        Assert.DoesNotContain(journal.Receipts, p => p.Id == ccp.Id);
+        Assert.Contains(journal.Cancelled, p => p.Id == ccp.Id);
+        Assert.Equal(journal.Receipts.Sum(p => p.Amount), journal.Collected);
+        Assert.Equal(journal.CashIn - journal.CashOut, journal.CashBalance);
+        Assert.Contains(journal.Expenses, e => e.Description == "Marqueurs");
+
+        await host.Get<Navigator>().NavigateAsync<PaymentsViewModel>();
+        var page = host.Page<PaymentsViewModel>();
+        var dialog = await WithDialogAsync<CashJournalDialogViewModel>(host, () => page.CashJournalCommand.ExecuteAsync(null), d =>
+        {
+            Assert.Equal("Samedi 26 septembre 2026", d.DayLabel);
+            Assert.StartsWith(Money.Format(journal.Collected), d.Totals[0].Value);
+            Assert.Contains(d.Lines, l => l.Label == $"Reçu {cash.ReceiptNumber} · {row.FullName}" && l.Amount == "+3 000 DZD");
+            Assert.Contains(d.Lines, l => l.Label.StartsWith($"Reçu {ccp.ReceiptNumber} annulé") && l.Details.EndsWith("motif : Doublon"));
+            Assert.Contains(d.Lines, l => l.Label == "Dépense · Fournitures" && l.Amount == "−500 DZD");
+        }, confirm: false);
+        Assert.False(dialog.HasError, dialog.Error);
+
+        // Print keeps the dialog open; another day can be chosen.
+        var again = host.Get<CashJournalDialogViewModel>();
+        await again.InitializeAsync(new DateTime(2026, 9, 26));
+        await again.ConfirmCommand.ExecuteAsync(null);
+        Assert.Contains("Journal de caisse — Samedi 26 septembre 2026", host.Get<FakePlatform>().Printed);
+        again.PreviousDayCommand.Execute(null);
+        for (var i = 0; i < 100 && again.DayLabel != "Vendredi 25 septembre 2026"; i++) await Task.Delay(10);
+        Assert.Equal("Vendredi 25 septembre 2026", again.DayLabel);
     }
 
     [Fact]

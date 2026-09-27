@@ -49,6 +49,8 @@
                     ToolTip="Autres actions : inscription à un autre cours, remise, document, statut, suppression">
                 <Button.ContextMenu>
                     <ContextMenu>
+                        <MenuItem Header="Imprimer le relevé de compte" Command="{Binding PrintStatementCommand}" Icon="&#xE749;"
+                                  ToolTip="Pour les parents : séances facturées et paiements, groupe par groupe, et reste à payer" />
                         <MenuItem Header="Inscrire dans un autre groupe" Command="{Binding EnrollCommand}" Icon="&#xE710;"
                                   ToolTip="Ajouter une inscription dans un groupe (l'élève garde ses autres cours)" />
                         <MenuItem Header="Changer de groupe" Command="{Binding ChangeGroupCommand}" Icon="&#xE8AB;"

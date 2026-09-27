@@ -303,3 +303,93 @@ public sealed partial class CancelReceiptDialogViewModel(IPaymentService payment
         return true;
     }
 }
+
+/// <summary>Line of the cash journal ("Journal de caisse").</summary>
+public sealed record CashLine(string Time, string Label, string Details, string Amount);
+
+/// <summary>
+/// Journal de caisse: everything paid in and out on a day, for the end-of-day check of the cash drawer, printable.
+/// </summary>
+public sealed partial class CashJournalDialogViewModel(
+    IPaymentService payments, ISettingsService settings, IPrintService printer, INotifier notifier, TimeProvider clock) : DialogViewModel
+{
+    private CashJournal? _journal;
+    private bool _ready;
+
+    public override string Title => "Journal de caisse";
+    public override string ConfirmText => "Imprimer";
+    public override string CancelText => "Fermer";
+    public override double Width => 720;
+
+    [ObservableProperty] private DateTime? _day;
+    [ObservableProperty] private string _dayLabel = "";
+    [ObservableProperty] private IReadOnlyList<Field> _totals = [];
+    [ObservableProperty] private IReadOnlyList<Field> _byMethod = [];
+    [ObservableProperty] private IReadOnlyList<CashLine> _lines = [];
+    [ObservableProperty] private bool _isEmpty;
+    [ObservableProperty] private string _cashBalance = "";
+
+    public async Task InitializeAsync(DateTime? day = null)
+    {
+        Day = (day ?? clock.GetLocalNow().DateTime).Date;
+        _ready = true;
+        await LoadAsync();
+    }
+
+    async partial void OnDayChanged(DateTime? value)
+    {
+        if (_ready && value is not null) await RunAsync(LoadAsync, notifier);
+    }
+
+    [RelayCommand] private void PreviousDay() => Day = (Day ?? clock.GetLocalNow().DateTime).Date.AddDays(-1);
+    [RelayCommand] private void NextDay() => Day = (Day ?? clock.GetLocalNow().DateTime).Date.AddDays(1);
+
+    private async Task LoadAsync()
+    {
+        var j = _journal = await payments.CashJournalAsync(Day!.Value);
+        DayLabel = Labels.LongDate(j.Day);
+        Totals =
+        [
+            new("Encaissé", $"{Money.Format(j.Collected)} · {j.Receipts.Count} reçu{(j.Receipts.Count > 1 ? "s" : "")}"),
+            new("Dépenses et paiements enseignants", Money.Format(j.Spent)),
+            new("Solde de la journée", Money.Format(j.Net)),
+        ];
+        ByMethod = j.ByMethod.Select(m => new Field(Labels.Of(m.Method), $"{Money.Format(m.Amount)} · {m.Count} reçu{(m.Count > 1 ? "s" : "")}")).ToList();
+        CashBalance = $"Espèces : {Money.Format(j.CashIn)} reçus − {Money.Format(j.CashOut)} sortis = {Money.Format(j.CashBalance)} à retrouver dans la caisse";
+        Lines = Rows(j).Select(r => new CashLine(r[0], r[1], r[2], r[3])).ToList();
+        IsEmpty = Lines.Count == 0;
+    }
+
+    /// <summary>Time, label, details, amount — shared by the screen and the printout.</summary>
+    private static List<string[]> Rows(CashJournal j) =>
+    [
+        .. j.Receipts.Select(p => new[] { $"{p.Date:HH:mm}", $"Reçu {p.ReceiptNumber} · {p.Student?.FullName}",
+            $"{p.Group?.FullName ?? Labels.Of(p.Kind)} · {Labels.Of(p.Method)}", "+" + Money.Format(p.Amount) }),
+        .. j.Expenses.Select(e => new[] { "", $"Dépense · {e.Category}", $"{e.Description} · {Labels.Of(e.Method)}", "−" + Money.Format(e.Amount) }),
+        .. j.TeacherPayments.Select(t => new[] { $"{t.Date:HH:mm}", $"Paiement enseignant · {t.Teacher?.FullName}",
+            $"{Labels.Month(t.Period)} · {Labels.Of(t.Method)}", "−" + Money.Format(t.Amount) }),
+        .. j.Cancelled.Select(p => new[] { $"{p.CancelledAt:HH:mm}", $"Reçu {p.ReceiptNumber} annulé · {p.Student?.FullName}",
+            $"du {p.Date:dd/MM/yyyy} · motif : {p.CancelReason}", $"({Money.Format(p.Amount)})" }),
+    ];
+
+    protected override async Task<bool> OnConfirmAsync()
+    {
+        if (_journal is not { } j) return false;
+        var cfg = await settings.GetAsync();
+        printer.PrintReport($"Journal de caisse — {Labels.LongDate(j.Day)}", $"{cfg.CenterName} · édité le {clock.GetLocalNow():dd/MM/yyyy HH:mm}", cfg,
+            [
+                ("Encaissé", Money.Format(j.Collected)),
+                .. j.ByMethod.Select(m => ($"   dont {Labels.Of(m.Method)}", Money.Format(m.Amount))),
+                ("Dépenses", Money.Format(j.Expenses.Sum(e => e.Amount))),
+                ("Paiements enseignants", Money.Format(j.TeacherPayments.Sum(t => t.Amount))),
+                ("Solde de la journée", Money.Format(j.Net)),
+                ("Espèces à retrouver dans la caisse", Money.Format(j.CashBalance)),
+            ],
+            [
+                new PrintTable("Opérations de la journée", ["Heure", "Opération", "Détails", "Montant"],
+                    Rows(j).Select(r => (IReadOnlyList<string>)r).ToList(), [3]),
+            ]);
+        notifier.Info("Journal de caisse envoyé à l'imprimante");
+        return false; // keep the journal open (another day can be printed)
+    }
+}

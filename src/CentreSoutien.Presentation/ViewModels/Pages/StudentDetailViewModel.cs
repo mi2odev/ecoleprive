@@ -248,6 +248,20 @@ public sealed partial class StudentDetailViewModel(
         }
     }
 
+    /// <summary>Prints the account statement (packs billed and payments, group by group) for the parents.</summary>
+    [RelayCommand]
+    private async Task PrintStatement()
+    {
+        if (_student is null) return;
+        await RunAsync(async () =>
+        {
+            var cfg = await settings.GetAsync();
+            printer.PrintPages($"Relevé {_student.Matricule}", cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, "images"),
+                [Printing.StatementPages.Build(_student, clock.GetLocalNow().DateTime)]);
+            notifier.Info("Relevé de compte envoyé à l'impression");
+        }, notifier);
+    }
+
     [RelayCommand]
     private async Task PrintDocuments()
     {

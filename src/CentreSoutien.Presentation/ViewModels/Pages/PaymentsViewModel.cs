@@ -293,6 +293,15 @@ public sealed partial class PaymentsViewModel(
         }, notifier);
     }
 
+    /// <summary>End-of-day cash journal (today by default).</summary>
+    [RelayCommand]
+    private async Task CashJournal()
+    {
+        var dialog = services.GetRequiredService<CashJournalDialogViewModel>();
+        if (!await RunAsync(() => dialog.InitializeAsync(), notifier)) return;
+        await dialogs.ShowAsync(dialog);
+    }
+
     private async Task CancelReceiptAsync(StudentPayment p)
     {
         var dialog = services.GetRequiredService<CancelReceiptDialogViewModel>();

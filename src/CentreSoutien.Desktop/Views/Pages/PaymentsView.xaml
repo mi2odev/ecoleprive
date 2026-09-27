@@ -11,6 +11,8 @@
         <DockPanel Margin="0,0,0,22">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
                 <ComboBox ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth}" DisplayMemberPath="Label" Width="170" Margin="0,0,8,0" />
+                <Button Content="Journal de caisse" Command="{Binding CashJournalCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                        ToolTip="Ce qui est entré et sorti de la caisse aujourd'hui (ou un autre jour), à imprimer en fin de journée" />
                 <Button Content="Exporter" Command="{Binding ExportCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" />
                 <Button Content="Encaisser un paiement" Command="{Binding CollectCommand}" Style="{StaticResource PrimaryButton}" />
             </StackPanel>

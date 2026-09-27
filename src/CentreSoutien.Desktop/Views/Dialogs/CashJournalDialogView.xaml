@@ -1,0 +1,77 @@
+<UserControl x:Class="CentreSoutien.Desktop.Views.Dialogs.CashJournalDialogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:ui="clr-namespace:CentreSoutien.Desktop.Controls"
+             xmlns:core="clr-namespace:CentreSoutien.Presentation.Core;assembly=CentreSoutien.Presentation"
+             xmlns:dlg="clr-namespace:CentreSoutien.Presentation.ViewModels.Dialogs;assembly=CentreSoutien.Presentation"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=dlg:CashJournalDialogViewModel}">
+    <StackPanel>
+        <!-- Day -->
+        <DockPanel Margin="0,0,0,14">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="←" Command="{Binding PreviousDayCommand}" Style="{StaticResource SmallSecondaryButton}" Margin="0,0,6,0" ToolTip="Jour précédent" />
+                <ui:DateInput SelectedDate="{Binding Day}" Width="150" Margin="0,0,6,0" />
+                <Button Content="→" Command="{Binding NextDayCommand}" Style="{StaticResource SmallSecondaryButton}" ToolTip="Jour suivant" />
+            </StackPanel>
+            <TextBlock Text="{Binding DayLabel}" Style="{StaticResource H2}" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <!-- Totals -->
+        <Border Style="{StaticResource PaddedCard}" Margin="0,0,0,12">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Totals}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type core:Field}">
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" Style="{StaticResource BodyStrong}" />
+                                <TextBlock Text="{Binding Label}" Style="{StaticResource Body}" />
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ItemsControl ItemsSource="{Binding ByMethod}" Focusable="False" Margin="12,0,0,6">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type core:Field}">
+                            <DockPanel Margin="0,0,0,2">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" Style="{StaticResource Small}" />
+                                <TextBlock Style="{StaticResource Small}"><Run Text="dont " /><Run Text="{Binding Label, Mode=OneWay}" /></TextBlock>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
+                    <TextBlock Text="{Binding CashBalance}" Style="{StaticResource BodyStrong}" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Operations -->
+        <TextBlock Text="Aucune opération ce jour-là." Style="{StaticResource Muted}" Margin="0,4"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisible}}" />
+        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToCollapsed}}">
+            <ItemsControl ItemsSource="{Binding Lines}" Focusable="False">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type dlg:CashLine}">
+                        <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,7">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="52" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Time}" Style="{StaticResource Muted}" />
+                                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                    <TextBlock Text="{Binding Label}" Style="{StaticResource Body}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Details}" Style="{StaticResource Small}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" HorizontalAlignment="Right" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </StackPanel>
+</UserControl>

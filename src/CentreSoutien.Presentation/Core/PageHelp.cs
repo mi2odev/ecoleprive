@@ -188,7 +188,8 @@ public static class PageHelp
             "Les onglets donnent aussi les reçus émis, les remises et les relances aux parents.",
             [
                 "Encaisser : « Encaisser un paiement » ou « Encaisser » sur la ligne de l'élève ; le reçu s'imprime.",
-                "Onglet « Reçus » : réimprimer ou annuler un reçu.",
+                "Onglet « Reçus » : réimprimer (marqué « DUPLICATA ») ou annuler un reçu avec un motif ; un reçu annulé reste dans la liste mais ne compte plus.",
+                "« Journal de caisse » : ce qui est entré et sorti de la caisse dans la journée, à imprimer en fin de journée.",
                 "Onglet « Remises » : créer une remise (fratrie, cas social…), puis l'appliquer depuis la fiche de l'élève.",
                 "Onglet « Relances » : messages prêts à envoyer par WhatsApp ou SMS, lettres de relance à imprimer.",
                 "« Exporter » crée un fichier Excel de la situation de chaque élève.",
@@ -240,7 +241,8 @@ public static class PageHelp
 
         ["settings"] = new("Paramètres",
             "Les réglages du centre : identité et logo, facturation et paiements, remises et rémunérations par défaut, " +
-            "présences et notes, reçus, messages aux parents, sauvegardes, langue et thème, sécurité.",
+            "présences et notes, reçus, messages aux parents, sauvegardes, langue et thème, sécurité, et le journal d'activité " +
+            "(tout ce qui a été fait dans l'application, avec la date et l'heure).",
             [
                 "Modifiez les champs de la section voulue puis cliquez sur « Enregistrer ».",
                 "« Sauvegarder maintenant » crée une sauvegarde chiffrée ; « Restaurer… » revient à une sauvegarde.",

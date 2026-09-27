@@ -125,6 +125,31 @@ public sealed class FinanceReport
     public List<TeacherPayRow> Teachers { get; init; } = [];
 }
 
+/// <summary>
+/// Money in and out of the center on one day (for the end-of-day check of the cash drawer): valid receipts,
+/// receipts cancelled that day, expenses and teacher payments. <see cref="CashBalance"/> is what the cash drawer
+/// should have gained (cash in − cash out).
+/// </summary>
+public sealed class CashJournal
+{
+    public DateTime Day { get; init; }
+    public List<StudentPayment> Receipts { get; init; } = [];
+    public List<StudentPayment> Cancelled { get; init; } = [];
+    public List<Expense> Expenses { get; init; } = [];
+    public List<TeacherPayment> TeacherPayments { get; init; } = [];
+
+    public decimal Collected => Receipts.Sum(p => p.Amount);
+    public decimal Spent => Expenses.Sum(e => e.Amount) + TeacherPayments.Sum(t => t.Amount);
+    public decimal Net => Collected - Spent;
+    public decimal CashIn => Receipts.Where(p => p.Method == PaymentMethod.Cash).Sum(p => p.Amount);
+    public decimal CashOut => Expenses.Where(e => e.Method == PaymentMethod.Cash).Sum(e => e.Amount)
+                              + TeacherPayments.Where(t => t.Method == PaymentMethod.Cash).Sum(t => t.Amount);
+    public decimal CashBalance => CashIn - CashOut;
+
+    public List<(PaymentMethod Method, int Count, decimal Amount)> ByMethod =>
+        Receipts.GroupBy(p => p.Method).Select(g => (g.Key, g.Count(), g.Sum(p => p.Amount))).OrderByDescending(x => x.Item3).ToList();
+}
+
 public sealed record GroupAttendanceReport(string Group, int Sessions, int Present, int Absent, int Late, double Rate);
 
 public sealed record GroupGradeReport(string Group, int Exams, decimal? Average, int Passing, int Failing);

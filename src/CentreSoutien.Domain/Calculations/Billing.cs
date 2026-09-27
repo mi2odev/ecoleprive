@@ -100,7 +100,7 @@ public static class Billing
 
     public static decimal Due(Student student, DateTime now) => Charges(student, now).Sum(c => c.Amount);
 
-    private static IEnumerable<StudentPayment> SessionPayments(Student student) => student.Payments.Where(x => x.Kind == PaymentKind.Sessions);
+    private static IEnumerable<StudentPayment> SessionPayments(Student student) => student.Payments.Where(x => x.Kind == PaymentKind.Sessions && !x.IsCancelled);
 
     /// <summary>Total of the student's session payments (registration fees and other payments excluded).</summary>
     public static decimal Paid(Student student) => SessionPayments(student).Sum(x => x.Amount);

@@ -115,6 +115,28 @@ public class BusinessTests
     }
 
     [Fact]
+    public void Statement_lists_each_groups_packs_and_the_payments()
+    {
+        var maths = Saturdays(4000);
+        var s = new Student { FirstName = "Lina", LastName = "Kaci", Matricule = "E1001", Level = "3AS", IsActive = true };
+        s.Enrollments.Add(new Enrollment { Group = maths, GroupId = maths.Id, StartDate = new(2026, 9, 5) });
+        s.Payments.Add(new StudentPayment { ReceiptNumber = "R1", Date = new(2026, 9, 5), Amount = 4000, Kind = PaymentKind.Sessions, GroupId = maths.Id, Group = maths });
+        s.Payments.Add(new StudentPayment { ReceiptNumber = "R2", Date = new(2026, 9, 6), Amount = 999, Kind = PaymentKind.Sessions, GroupId = maths.Id, CancelledAt = new(2026, 9, 6) });
+
+        var page = CentreSoutien.Presentation.Printing.StatementPages.Build(s, new DateTime(2026, 9, 26, 12, 0, 0));
+        Assert.Equal("Relevé de compte", page.Title);
+        var tables = page.Blocks.OfType<CentreSoutien.Presentation.Core.PrintTableBlock>().Select(t => t.Table).ToList();
+        var packs = tables[0];
+        Assert.StartsWith("Maths · 3AS A · 4 000 DZD les 4 séances", packs.Title);
+        Assert.Equal(2, packs.Rows.Count); // joined, then after the 4th Saturday
+        Assert.Equal(["n° 1", "05/09/2026", "4 000 DZD", "4 000 DZD", "0 DZD"], packs.Rows[0]);
+        Assert.Equal("4 000 DZD", packs.Rows[1][4]);
+        var receipts = tables[1];
+        Assert.Equal("R1", Assert.Single(receipts.Rows)[1]); // the cancelled receipt is not listed
+        Assert.Contains(page.Blocks.OfType<CentreSoutien.Presentation.Core.PrintFields>().Last().Rows, r => r == ("Reste à payer", "4 000 DZD"));
+    }
+
+    [Fact]
     public void Cancelled_sessions_do_not_count_and_leaving_bills_only_the_packs_begun()
     {
         var g = Saturdays(4000);

@@ -110,6 +110,8 @@ public interface IPaymentService
     Task<StudentPayment> RecordAsync(int studentId, int? groupId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default);
     Task<List<StudentPayment>> ReceiptsAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<StudentPayment?> GetReceiptAsync(int paymentId, CancellationToken ct = default);
+    /// <summary>Money in and out on <paramref name="day"/> (receipts, cancellations, expenses, teacher payments).</summary>
+    Task<CashJournal> CashJournalAsync(DateTime day, CancellationToken ct = default);
     /// <summary>Cancels a receipt (it stays numbered and listed, marked "Annulé", and no longer counts).</summary>
     Task CancelAsync(int paymentId, string reason, CancellationToken ct = default);
 }
