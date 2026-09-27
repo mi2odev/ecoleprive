@@ -44,6 +44,8 @@ public sealed partial class AttendanceStudentRow : ObservableObject
         _changed = changed;
         StudentId = line.StudentId;
         Name = line.FullName;
+        FirstName = line.FirstName;
+        LastName = line.LastName;
         Matricule = line.Matricule;
         Choices = new[] { AttendanceStatus.Present, AttendanceStatus.Absent, AttendanceStatus.Late, AttendanceStatus.Excused }
             .Select(s => new AttendanceChoice(s, Badge.For(s).Kind, new RelayCommand(() => Status = s))).ToList();
@@ -53,6 +55,8 @@ public sealed partial class AttendanceStudentRow : ObservableObject
 
     public int StudentId { get; }
     public string Name { get; }
+    public string FirstName { get; }
+    public string LastName { get; }
     public string Matricule { get; }
     public IReadOnlyList<AttendanceChoice> Choices { get; }
 
@@ -93,7 +97,7 @@ public sealed record AttendanceCount(string Label, int Value);
 
 public sealed partial class AttendanceViewModel(
     ISessionService sessions, IAttendanceService attendance, ISettingsService settings, DialogHost dialogs, INotifier notifier, TimeProvider clock,
-    IServiceProvider services) : PageViewModel
+    IServiceProvider services, IUserPreferences preferences) : PageViewModel
 {
     /// <summary>Navigation parameter: open the attendance sheet of a group on a date (or a specific session).</summary>
     public sealed record Target(DateTime Date, int? GroupId = null, int? SessionId = null);
@@ -115,7 +119,45 @@ public sealed partial class AttendanceViewModel(
     [ObservableProperty] private AttendanceSessionItem? _selected;
     [ObservableProperty] private string _sessionName = "";
     [ObservableProperty] private string _sessionDetails = "";
+    /// <summary>Every student of the sheet (what is saved).</summary>
     [ObservableProperty] private IReadOnlyList<AttendanceStudentRow> _rows = [];
+    /// <summary>The rows shown: filtered by <see cref="SearchText"/>, in the chosen order.</summary>
+    [ObservableProperty] private IReadOnlyList<AttendanceStudentRow> _visibleRows = [];
+    [ObservableProperty] private string _searchText = "";
+    [ObservableProperty] private string? _selectedSort;
+    /// <summary>The search hides every student ("Aucun élève ne correspond").</summary>
+    [ObservableProperty] private bool _hasNoMatch;
+
+    public IReadOnlyList<string> SortOptions { get; } = ["Nom", "Prénom", "Matricule", "À saisir"];
+
+    partial void OnRowsChanged(IReadOnlyList<AttendanceStudentRow> value) => ApplyView();
+    partial void OnSearchTextChanged(string value) => ApplyView();
+
+    partial void OnSelectedSortChanged(string? value)
+    {
+        if (value is not null) preferences.Set(PreferenceKeys.AttendanceSort, value);
+        ApplyView();
+    }
+
+    /// <summary>Search on first name, last name or matricule (in any order: "yacine ben" finds Yacine Benali), then sort.</summary>
+    private void ApplyView()
+    {
+        var words = SearchText.Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var list = Rows.Where(r => words.All(w => $"{r.Name} {r.Matricule}".ToLowerInvariant().Contains(w)));
+        list = (SelectedSort ?? "Nom") switch
+        {
+            "Prénom" => list.OrderBy(r => r.FirstName, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.LastName, StringComparer.CurrentCultureIgnoreCase),
+            "Matricule" => list.OrderBy(r => r.Matricule.Length).ThenBy(r => r.Matricule, StringComparer.OrdinalIgnoreCase),
+            // Students not marked yet first (then by name): handy to finish a sheet.
+            "À saisir" => list.OrderBy(r => r.Status is null ? 0 : 1).ThenBy(r => r.LastName, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.FirstName, StringComparer.CurrentCultureIgnoreCase),
+            _ => list.OrderBy(r => r.LastName, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.FirstName, StringComparer.CurrentCultureIgnoreCase),
+        };
+        VisibleRows = list.ToList();
+        HasNoMatch = Rows.Count > 0 && VisibleRows.Count == 0;
+    }
+
+    [RelayCommand]
+    private void ClearSearch() => SearchText = "";
     [ObservableProperty] private bool _hasNoStudent;
     [ObservableProperty] private IReadOnlyList<AttendanceCount> _counts = [];
     [ObservableProperty] private int _savedAbsentCount;
@@ -210,6 +252,8 @@ public sealed partial class AttendanceViewModel(
             s.Room?.Name ?? s.Group.Room?.Name ?? "Sans salle",
             s.Teacher?.FullName ?? s.Group.Teacher?.FullName ?? "Sans enseignant",
         });
+        SelectedSort ??= SortOptions.Contains(preferences.Get(PreferenceKeys.AttendanceSort, "Nom")) ? preferences.Get(PreferenceKeys.AttendanceSort, "Nom") : "Nom";
+        SearchText = "";
         Rows = sheet.Lines.Select(l => new AttendanceStudentRow(l, UpdateCounts)).ToList();
         HasNoStudent = Rows.Count == 0;
         SetSavedAbsents(sheet.Lines.Where(l => l.Status == AttendanceStatus.Absent).Select(l => l.StudentId));

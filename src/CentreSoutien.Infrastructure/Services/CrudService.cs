@@ -124,7 +124,7 @@ public sealed class ParentService(IDbContextFactory<AppDbContext> factory) : IPa
         return await db.Parents.AsNoTracking()
             .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
-            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
+            .Include(p => p.Children).ThenInclude(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions).ThenInclude(x => x.Attendance)
             .Include(p => p.Children).ThenInclude(s => s.Payments)
             .Include(p => p.Children).ThenInclude(s => s.Discount)
             .AsSplitQuery()

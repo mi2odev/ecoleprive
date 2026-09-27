@@ -45,7 +45,12 @@ public sealed partial class DateInput : Border
     };
     private readonly Button _button = new() { Width = 34, Focusable = false, Cursor = Cursors.Hand, ToolTip = "Choisir dans le calendrier" };
     private readonly Popup _popup = new() { StaysOpen = false, AllowsTransparency = true, Placement = PlacementMode.Bottom };
-    private readonly Calendar _calendar = new() { FirstDayOfWeek = DayOfWeek.Saturday, IsTodayHighlighted = true };
+    // Fixed size: measured without a width limit (inside a popup) the calendar can stretch across the whole screen.
+    private readonly Calendar _calendar = new()
+    {
+        FirstDayOfWeek = DayOfWeek.Saturday, IsTodayHighlighted = true, Width = 200, Height = 180,
+        HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+    };
     private bool _updating;
     private bool _invalid;
 
@@ -70,7 +75,13 @@ public sealed partial class DateInput : Border
         _button.Template = FlatButtonTemplate();
         _button.Click += (_, _) => OpenCalendar();
 
-        var calendarHost = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 4, 0, 0), Child = _calendar };
+        // Scaled up (a readable size) inside a fixed box.
+        var calendarHost = new Border
+        {
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 4, 0, 0), Padding = new Thickness(4),
+            Width = 300, Height = 272, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+            Child = new Viewbox { Stretch = Stretch.Uniform, Child = _calendar },
+        };
         calendarHost.SetResourceReference(Border.BackgroundProperty, "PanelBrush");
         calendarHost.SetResourceReference(Border.BorderBrushProperty, "LineBrush");
         _popup.Child = calendarHost;

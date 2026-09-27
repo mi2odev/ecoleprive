@@ -63,6 +63,30 @@ public class BusinessTests
     }
 
     [Fact]
+    public void A_group_can_leave_absences_out_of_the_paid_sessions()
+    {
+        var g = Saturdays(4000);
+        g.Sessions.Add(new Session
+        {
+            Date = new(2026, 9, 12), Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11), Status = SessionStatus.Done,
+            Attendance = [new AttendanceRecord { StudentId = 7, Status = AttendanceStatus.Absent }, new AttendanceRecord { StudentId = 8, Status = AttendanceStatus.Present }],
+        });
+        var absent = new Enrollment { Group = g, StudentId = 7, StartDate = new(2026, 9, 5) };
+        var present = new Enrollment { Group = g, StudentId = 8, StartDate = new(2026, 9, 5) };
+        var now = new DateTime(2026, 9, 26, 12, 0, 0); // 5, 12, 19, 26 held
+
+        // Absences count (default): both students have used their 4 sessions and owe a second pack.
+        Assert.Equal(2, Packs.Charges(absent, now).Count);
+        Assert.Equal(2, Packs.Charges(present, now).Count);
+
+        // Absences not counted: the absent student is only at 3 sessions (séance 4/4 next), the other is unchanged.
+        g.AbsencesCount = false;
+        Assert.Single(Packs.Charges(absent, now));
+        Assert.Equal("Maths · 3AS A · séance 4/4", Packs.Status(absent, now).Label);
+        Assert.Equal(2, Packs.Charges(present, now).Count);
+    }
+
+    [Fact]
     public void Each_group_is_paid_on_its_own()
     {
         var maths = Saturdays(4000);

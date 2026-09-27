@@ -30,7 +30,11 @@ public sealed class AttendanceService(IDbContextFactory<AppDbContext> factory) :
         var lines = students.Select(s =>
         {
             var rec = session.Attendance.FirstOrDefault(a => a.StudentId == s.Id);
-            return new AttendanceLine { StudentId = s.Id, Matricule = s.Matricule, FullName = s.FullName, Status = rec?.Status, Note = rec?.Note };
+            return new AttendanceLine
+            {
+                StudentId = s.Id, Matricule = s.Matricule, FullName = s.FullName, FirstName = s.FirstName, LastName = s.LastName,
+                Status = rec?.Status, Note = rec?.Note,
+            };
         }).ToList();
         return new AttendanceSheet { Session = session, Lines = lines };
     }

@@ -35,6 +35,11 @@ public class Group : Entity
     public decimal Price { get; set; }
     /// <summary>Sessions paid at once (4, 8…): students pay when they join, then every N sessions.</summary>
     public int SessionsPerPack { get; set; } = 4;
+    /// <summary>
+    /// True (default): every session of the group counts in the student's pack, even when absent. False: a session
+    /// where the student is marked absent or excused is not counted for them (their pack lasts longer).
+    /// </summary>
+    public bool AbsencesCount { get; set; } = true;
     public string Name { get; set; } = "A";
     public int? TeacherId { get; set; }
     public Teacher? Teacher { get; set; }

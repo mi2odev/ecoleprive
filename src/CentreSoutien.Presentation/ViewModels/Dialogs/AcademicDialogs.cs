@@ -134,6 +134,9 @@ public sealed partial class GroupEditorDialogViewModel(
 
     public IReadOnlyList<string> PackSizes { get; } = ["4", "8", "12"];
 
+    /// <summary>Checked (default): a session counts in the student's pack even when absent. Unchecked: absences are not counted.</summary>
+    [ObservableProperty] private bool _absencesCount = true;
+
     /// <summary>"L'élève paie 4 500 DZD à l'inscription, puis toutes les 4 séances."</summary>
     public string PaymentHint => (Parse.Amount(Price), int.TryParse(SessionsPerPack?.Trim(), out var n) ? n : 0) is ({ } p and > 0, > 0 and var k)
         ? $"L'élève paie {Money.Format(p)} en rejoignant le groupe, puis à nouveau toutes les {k} séance{(k > 1 ? "s" : "")}."
@@ -174,6 +177,7 @@ public sealed partial class GroupEditorDialogViewModel(
                 _group.Level = template.Level;
                 _group.Price = template.Price;
                 _group.SessionsPerPack = template.SessionsPerPack;
+                _group.AbsencesCount = template.AbsencesCount;
                 _group.TeacherId = template.TeacherId;
                 _group.RoomId = template.RoomId;
                 _group.Capacity = template.Capacity;
@@ -186,6 +190,7 @@ public sealed partial class GroupEditorDialogViewModel(
             Level = _group.Level;
             Price = _group.Id == 0 && template is null ? "" : Money.Number(_group.Price);
             SessionsPerPack = _group.SessionsPerPack.ToString();
+            AbsencesCount = _group.AbsencesCount;
             Description = _group.Description;
 
             var period = clock.GetLocalNow().DateTime;
@@ -289,6 +294,7 @@ public sealed partial class GroupEditorDialogViewModel(
         Level = (Level ?? "").Trim().ToUpperInvariant(),
         Price = Parse.Amount(Price) ?? 0,
         SessionsPerPack = int.TryParse(SessionsPerPack?.Trim(), out var pack) ? pack : 0,
+        AbsencesCount = AbsencesCount,
         Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim(),
         Name = (Name ?? "").Trim(),
         TeacherId = SelectedTeacher?.Value,

@@ -47,6 +47,12 @@
             </StackPanel>
             <TextBlock Text="{Binding PaymentHint}" Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,8,16,14" />
         </UniformGrid>
+        <CheckBox IsChecked="{Binding AbsencesCount}" Margin="0,0,0,14"
+                  ToolTip="Décoché : une séance où l'élève est marqué absent ou excusé ne compte pas dans ses séances payées (son paquet dure plus longtemps)">
+            <TextBlock TextWrapping="Wrap">
+                <Run Text="Les absences comptent dans les séances payées" /><Run Text=" (décochez pour ne pas compter les séances où l'élève est absent ou excusé)" Foreground="{DynamicResource MutedBrush}" />
+            </TextBlock>
+        </CheckBox>
         <UniformGrid Columns="3" Margin="0,0,-16,0">
             <StackPanel Style="{StaticResource Cell}">
                 <TextBlock Text="Enseignant" Style="{StaticResource FieldLabel}" />

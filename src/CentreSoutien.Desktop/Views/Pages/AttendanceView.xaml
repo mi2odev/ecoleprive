@@ -147,9 +147,26 @@
                             </ItemsControl>
                         </DockPanel>
                     </Border>
+                    <!-- Search a student and choose the order (remembered) -->
+                    <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="20,10"
+                            Visibility="{Binding HasNoStudent, Converter={StaticResource BoolToCollapsed}}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="16,0,0,0">
+                                <TextBlock Text="Trier par" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ListBox ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}" Style="{StaticResource ChipList}" VerticalAlignment="Center"
+                                         ToolTip="Ordre des élèves (« À saisir » met d'abord ceux qui n'ont pas encore de présence)" />
+                            </StackPanel>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged, Delay=100}" Tag="Rechercher un élève (nom, prénom ou matricule)"
+                                     MaxWidth="360" HorizontalAlignment="Left" MinWidth="240" />
+                        </DockPanel>
+                    </Border>
                     <TextBlock Text="Aucun élève inscrit dans ce groupe à cette date." Style="{StaticResource EmptyText}"
                                Visibility="{Binding HasNoStudent, Converter={StaticResource BoolToVisible}}" />
-                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                    <StackPanel Orientation="Horizontal" Margin="20,16" Visibility="{Binding HasNoMatch, Converter={StaticResource BoolToVisible}}">
+                        <TextBlock Text="Aucun élève ne correspond à la recherche." Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <Button Content="Effacer la recherche" Command="{Binding ClearSearchCommand}" Style="{StaticResource LinkButton}" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:AttendanceStudentRow}">
                                 <!-- Focusable row: P / A / R / E mark the student and move to the next row (ui:RowKeys). -->

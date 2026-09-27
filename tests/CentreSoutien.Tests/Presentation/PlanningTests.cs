@@ -142,6 +142,45 @@ public class PlanningTests
     }
 
     [Fact]
+    public async Task Attendance_sheet_can_be_searched_and_sorted()
+    {
+        await using var host = await UiHost.CreateAsync();
+        await host.Get<Navigator>().NavigateAsync<AttendanceViewModel>();
+        var page = host.Page<AttendanceViewModel>();
+        var item = page.SessionItems.OrderByDescending(i => i.Progress).First();
+        await ((IAsyncRelayCommand)item.Select).ExecuteAsync(null);
+        Assert.True(page.Rows.Count >= 2);
+        Assert.Equal("Nom", page.SelectedSort);
+        Assert.Equal(page.Rows.OrderBy(r => r.LastName).ThenBy(r => r.FirstName).Select(r => r.StudentId), page.VisibleRows.Select(r => r.StudentId));
+
+        page.SelectedSort = "Prénom";
+        Assert.Equal(page.Rows.OrderBy(r => r.FirstName).ThenBy(r => r.LastName).Select(r => r.StudentId), page.VisibleRows.Select(r => r.StudentId));
+        page.SelectedSort = "Matricule";
+        Assert.Equal(page.Rows.OrderBy(r => r.Matricule.Length).ThenBy(r => r.Matricule).Select(r => r.StudentId), page.VisibleRows.Select(r => r.StudentId));
+        page.VisibleRows[^1].Status = AttendanceStatus.Present;
+        page.SelectedSort = "À saisir";
+        Assert.Equal(AttendanceStatus.Present, page.VisibleRows[^1].Status); // marked students go last
+        Assert.Equal("À saisir", host.Get<IUserPreferences>().Get(PreferenceKeys.AttendanceSort, "")); // remembered
+
+        // Search by first name + part of the last name, in any order, or by matricule.
+        var target = page.Rows[1];
+        page.SearchText = $"{target.LastName[..2]} {target.FirstName}".ToUpperInvariant();
+        Assert.Contains(page.VisibleRows, r => r.StudentId == target.StudentId);
+        page.SearchText = target.Matricule;
+        Assert.Equal(target.StudentId, Assert.Single(page.VisibleRows).StudentId);
+        page.SearchText = "zzzz";
+        Assert.True(page.HasNoMatch);
+        page.ClearSearchCommand.Execute(null);
+        Assert.Equal(page.Rows.Count, page.VisibleRows.Count);
+        Assert.False(page.HasNoMatch);
+
+        // "Tous présents" still marks every student, shown or not.
+        page.SearchText = target.Matricule;
+        page.AllPresentCommand.Execute(null);
+        Assert.All(page.Rows, r => Assert.Equal(AttendanceStatus.Present, r.Status));
+    }
+
+    [Fact]
     public async Task Attendance_on_a_day_without_timetable_shows_empty_state()
     {
         await using var host = await UiHost.CreateAsync();

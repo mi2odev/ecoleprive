@@ -195,7 +195,7 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         if (group.Id == 0) db.Groups.Add(entity);
         db.Entry(entity).CurrentValues.SetValues(new
         {
-            group.SubjectId, Level = level, group.Price, group.SessionsPerPack, Name = group.Name.Trim(), group.TeacherId, group.RoomId,
+            group.SubjectId, Level = level, group.Price, group.SessionsPerPack, group.AbsencesCount, Name = group.Name.Trim(), group.TeacherId, group.RoomId,
             group.Capacity, group.IsActive, group.Description,
         });
         db.Slots.RemoveRange(entity.Slots);

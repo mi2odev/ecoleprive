@@ -36,6 +36,8 @@ public sealed class AttendanceLine
     public required int StudentId { get; init; }
     public required string Matricule { get; init; }
     public required string FullName { get; init; }
+    public string FirstName { get; init; } = "";
+    public string LastName { get; init; } = "";
     public AttendanceStatus? Status { get; set; }
     public string? Note { get; set; }
 }

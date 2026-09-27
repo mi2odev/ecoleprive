@@ -18,4 +18,6 @@ public static class PreferenceKeys
     public const string OnboardingDismissed = "ui.onboardingDismissed";
     /// <summary>True once the owner hid the page help panels by default.</summary>
     public const string HelpCollapsed = "ui.helpCollapsed";
+    /// <summary>Order of the attendance sheet: "Nom", "Prénom", "Matricule" or "À saisir".</summary>
+    public const string AttendanceSort = "ui.attendanceSort";
 }

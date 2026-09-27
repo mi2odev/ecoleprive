@@ -18,7 +18,7 @@ internal static class Queries
         .Include(s => s.Payments)
         .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
         .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
-        .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
+        .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions).ThenInclude(x => x.Attendance)
         .AsSplitQuery();
 
     /// <summary>Groups with everything teacher earnings and the timetable need.</summary>
@@ -28,7 +28,7 @@ internal static class Queries
         .Include(g => g.Room)
         .Include(g => g.Slots)
         .Include(g => g.Enrollments)
-        .Include(g => g.Sessions)
+        .Include(g => g.Sessions).ThenInclude(x => x.Attendance)
         .AsSplitQuery();
 }
 
@@ -65,7 +65,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Room)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Slots)
-            .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions)
+            .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Sessions).ThenInclude(x => x.Attendance)
             .AsSplitQuery()
             .FirstOrDefaultAsync(s => s.Id == id, ct);
     }

@@ -111,6 +111,7 @@ public sealed partial class GroupDetailViewModel(
                 Subtitle = string.Join(" · ", new[]
                 {
                     g.Teacher?.FullName ?? "Sans enseignant", g.Room?.Name ?? "Sans salle", Schedule, g.PriceLabel,
+                    g.AbsencesCount ? "absences comptées" : "absences non comptées",
                 });
 
                 Enrolled = d.Students

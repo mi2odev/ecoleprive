@@ -27,27 +27,33 @@ public sealed record PackStatus(int GroupId, string Group, int Pack, int Done, i
 
 /// <summary>
 /// Groups are paid by packs of sessions (4, 8…): a student owes the group's price when joining, then again each time
-/// a pack of N sessions of the group has been held. Sessions are the group's sessions (not the student's attendance):
-/// recorded sessions count unless cancelled, and days without recorded sessions follow the weekly timetable.
+/// a pack of N sessions of the group has been held. Recorded sessions count unless cancelled, and days without recorded
+/// sessions follow the weekly timetable. When the group does not count absences (<see cref="Group.AbsencesCount"/>),
+/// a session where the student was marked absent or excused is not counted for that student.
 /// </summary>
 public static class Packs
 {
     /// <summary>Start times of the group's sessions held from <paramref name="from"/> until <paramref name="until"/> (inclusive) and before <paramref name="now"/>.</summary>
-    public static List<DateTime> Held(Group g, DateTime from, DateTime? until, DateTime now)
+    /// <param name="studentId">Student whose absences are skipped when the group does not count them.</param>
+    public static List<DateTime> Held(Group g, DateTime from, DateTime? until, DateTime now, int? studentId = null)
     {
         var last = until is { } u && u.Date.AddDays(1) <= now ? u.Date.AddDays(1).AddTicks(-1) : now;
         var list = new List<DateTime>();
         if (last < from.Date) return list;
         var recorded = g.Sessions.Where(x => x.Date >= from.Date && x.Date <= last.Date).ToLookup(x => x.Date.Date);
+        var skipAbsences = !g.AbsencesCount && studentId is not null;
         for (var d = from.Date; d <= last.Date; d = d.AddDays(1))
         {
             if (recorded.Contains(d))
-                list.AddRange(recorded[d].Where(x => x.Status != SessionStatus.Cancelled).Select(x => x.StartsAt));
+                list.AddRange(recorded[d].Where(x => x.Status != SessionStatus.Cancelled && !(skipAbsences && Missed(x, studentId!.Value))).Select(x => x.StartsAt));
             else
                 list.AddRange(g.Slots.Where(x => x.Day == d.DayOfWeek).Select(x => d + x.Start));
         }
         return list.Where(t => t <= last).Order().ToList();
     }
+
+    private static bool Missed(Session s, int studentId) =>
+        s.Attendance.Any(a => a.StudentId == studentId && a.Status is AttendanceStatus.Absent or AttendanceStatus.Excused);
 
     public static bool Ended(Enrollment e, DateTime now) => e.EndDate is { } end && end.Date < now.Date;
 
@@ -57,7 +63,7 @@ public static class Packs
         var g = e.Group;
         if (g is null || e.StartDate.Date > now.Date) return [];
         var size = Math.Max(1, g.SessionsPerPack);
-        var held = Held(g, e.StartDate, e.EndDate, now);
+        var held = Held(g, e.StartDate, e.EndDate, now, e.StudentId);
         // Still enrolled: a new pack starts as soon as the previous one is used up. Left: only the packs begun.
         var packs = Ended(e, now) ? (held.Count + size - 1) / size : 1 + held.Count / size;
         var amount = discount is { IsActive: true } d ? d.Apply(g.Price) : g.Price;
@@ -70,7 +76,7 @@ public static class Packs
     {
         var g = e.Group!;
         var size = Math.Max(1, g.SessionsPerPack);
-        var held = e.StartDate.Date > now.Date ? 0 : Held(g, e.StartDate, e.EndDate, now).Count;
+        var held = e.StartDate.Date > now.Date ? 0 : Held(g, e.StartDate, e.EndDate, now, e.StudentId).Count;
         return new PackStatus(g.Id, g.FullName, held / size + 1, held % size, size, Ended(e, now));
     }
 }
