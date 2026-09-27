@@ -28,7 +28,11 @@ public class StudentPayment : Entity
     public decimal Amount { get; set; }
     public PaymentMethod Method { get; set; }
     public PaymentKind Kind { get; set; }
-    /// <summary>Billing month the payment applies to (first day of the month).</summary>
+    /// <summary>Group the session payment is for (each group is paid on its own). Null for registration fees, other
+    /// payments, and session payments recorded by older versions.</summary>
+    public int? GroupId { get; set; }
+    public Group? Group { get; set; }
+    /// <summary>Month the payment was made (first day of the month).</summary>
     public DateTime Period { get; set; }
     public string? Note { get; set; }
 }

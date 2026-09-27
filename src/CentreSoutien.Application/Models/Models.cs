@@ -64,9 +64,14 @@ public sealed class GradeLine
 /// A student's payment situation: <see cref="Due"/> is every pack of sessions billed so far, <see cref="Paid"/> every
 /// session payment, <see cref="Balance"/> what is left to pay (<see cref="Credit"/> when paid in advance).
 /// <see cref="DueSince"/> is the date of the oldest pack not fully paid; <see cref="Progress"/> "Maths 3AS A · séance 3/4".
+/// <see cref="Groups"/> gives the same per group: each group is paid on its own.
 /// </summary>
 public sealed record PaymentRow(int StudentId, string Matricule, string FullName, string Level, decimal PackPrice, decimal Due, decimal Paid,
-    decimal Balance, PaymentState State, string? Discount, string? ParentPhone, decimal Credit = 0, DateTime? DueSince = null, string Progress = "");
+    decimal Balance, PaymentState State, string? Discount, string? ParentPhone, decimal Credit = 0, DateTime? DueSince = null, string Progress = "",
+    IReadOnlyList<GroupAccount>? Groups = null)
+{
+    public IReadOnlyList<GroupAccount> GroupAccounts => Groups ?? [];
+}
 
 public sealed record TeacherPayRow(int TeacherId, string FullName, string Subject, string Rule, decimal Earned, decimal Paid, decimal Remaining,
     DateTime? LastPaymentDate);

@@ -111,16 +111,18 @@ public sealed partial class StudentDetailViewModel(
                 new("Remise", s.Discount?.ToString() ?? "Aucune"),
             ];
 
-            // Payments by packs of sessions: everything billed so far (at joining, then every N sessions) against everything paid.
+            // Each group is paid on its own, by packs of sessions (at joining, then every N sessions).
             MonthTitle = "Paiement des séances";
-            var due = Billing.Due(s, now);
-            var paid = Billing.Paid(s);
+            var accounts = Billing.Accounts(s, now);
+            var balance = accounts.Sum(a => a.Balance);
             MonthFinance =
             [
-                new("Séances facturées", Money.Format(due)),
-                new("Payé", Money.Format(paid)),
-                paid > due ? new("Payé d'avance", Money.Format(paid - due)) : new("Reste à payer", Money.Format(due - paid)),
-                new("Prochain paiement", Billing.PackPrice(s, now) is > 0 and var next ? Money.Format(next) : "—"),
+                .. accounts.Select(a => new Field(a.Group, string.Join(" · ", new[]
+                {
+                    a.Status is { } st ? $"séance {Math.Min(st.Done + 1, st.Size)}/{st.Size}" : "a quitté",
+                    a.Balance > 0 ? "reste " + Money.Format(a.Balance) : a.Credit > 0 ? Money.Format(a.Credit) + " d'avance" : "payé",
+                }))),
+                new("Reste à payer", Money.Format(balance)),
             ];
             HasParent = s.Parent is not null;
             ParentName = s.Parent is null ? "Aucun parent lié" : $"{s.Parent.FullName}{(string.IsNullOrWhiteSpace(s.Parent.Relation) ? "" : " · " + s.Parent.Relation)}";

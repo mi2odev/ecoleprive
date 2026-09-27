@@ -33,6 +33,8 @@ public class MigrationTests
                 INSERT INTO "Students" ("Id","Matricule","FirstName","LastName","Gender","Level","IsActive","EnrolledOn","CreatedAt")
                     VALUES (1,'E1001','Lina','Kaci',0,'3AS',1,'2026-09-01','2026-09-01');
                 INSERT INTO "Enrollments" ("Id","StudentId","GroupId","StartDate","CreatedAt") VALUES (1,1,101,'2026-09-01','2026-09-01');
+                INSERT INTO "StudentPayments" ("ReceiptNumber","StudentId","Date","Amount","Method","Kind","Period","CreatedAt")
+                    VALUES ('R1',1,'2026-09-02','4500.0',0,0,'2026-09-01','2026-09-02');
                 INSERT INTO "Slots" ("GroupId","Day","Start","End","CreatedAt") VALUES
                     (101,6,'09:00:00','11:00:00','2026-09-01'), (101,2,'17:00:00','19:00:00','2026-09-01');
                 """);
@@ -59,6 +61,10 @@ public class MigrationTests
 
         // The default reminder spoke of a monthly fee: it follows the new default.
         Assert.Equal(CenterSettings.DefaultPaymentReminderTemplate, (await host.Get<ISettingsService>().GetAsync()).PaymentReminderTemplate);
+
+        // The student only ever had one group: the old payment belongs to it.
+        await using (var db = await factory.CreateDbContextAsync())
+            Assert.Equal(101, (await db.StudentPayments.SingleAsync()).GroupId);
 
         // Billing uses the group price: the first pack is due on joining.
         var students = await host.Get<IStudentService>().ListAsync(new DateTime(2026, 9, 26));

@@ -10,22 +10,28 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CentreSoutien.Presentation.ViewModels.Pages;
 
-/// <summary>One student line of the payments table: packs of sessions left to pay.</summary>
-/// <param name="Waiting">"12 j" since the oldest unpaid pack started, "—" when nothing is due.</param>
-public sealed record PayLine(PaymentRow Item, string Waiting, IRelayCommand Open, IRelayCommand Collect)
+/// <summary>
+/// One line of the payments table: a student in one group (each group is paid on its own), or a student without group.
+/// </summary>
+/// <param name="Waiting">"12 j" since the oldest unpaid pack of the group started, "—" when nothing is due.</param>
+public sealed record PayLine(PaymentRow Item, GroupAccount? Account, string Waiting, IRelayCommand Open, IRelayCommand Collect)
 {
     public int StudentId => Item.StudentId;
+    public int? GroupId => Account?.GroupId;
     public string Name => Item.FullName;
     /// <summary>" · −10 %" when a discount applies (muted after the name).</summary>
     public string Discount => Item.Discount is null ? "" : " · " + DiscountValue(Item.Discount);
-    public string Due => Money.Format(Item.Due);
-    public string Paid => Money.Format(Item.Paid);
-    public string PackPrice => Item.PackPrice > 0 ? Money.Format(Item.PackPrice) : "—";
-    public string Progress => Item.Progress.Length > 0 ? Item.Progress : "Aucun groupe";
-    public string Rest => Item.Credit > 0 ? $"+{Money.Format(Item.Credit)} d'avance" : Money.Format(Item.Balance);
-    public decimal BalanceValue => Item.Balance;
-    public Badge State => Badge.For(Item.State);
-    public bool CanCollect => Item.Balance > 0;
+    public string Due => Money.Format(Account?.Due ?? 0);
+    public string Paid => Money.Format(Account?.Paid ?? 0);
+    public string PackPrice => Account is { PackPrice: > 0 } a ? Money.Format(a.PackPrice) : "—";
+    /// <summary>"Mathématiques · 3AS A · séance 3/4".</summary>
+    public string Progress => Account is null ? "Aucun groupe"
+        : Account.Status is { } st ? $"{Account.Group} · séance {Math.Min(st.Done + 1, st.Size)}/{st.Size}" : $"{Account.Group} · a quitté le groupe";
+    public string Rest => Account is null ? "—"
+        : Account.Balance <= 0 && Account.Credit > 0 ? $"+{Money.Format(Account.Credit)} d'avance" : Money.Format(Account.Balance);
+    public decimal BalanceValue => Account?.Balance ?? 0;
+    public Badge State => Badge.For(Account?.State ?? Item.State);
+    public bool CanCollect => Account is { Balance: > 0 };
 
     // Discount.ToString() is "Name (−10 %)": keep the value only.
     private static string DiscountValue(string label)
@@ -188,9 +194,9 @@ public sealed partial class PaymentsViewModel(
         ? (clock.GetLocalNow().Date - since.Date).Days - Math.Max(0, _settings.PaymentDueDay)
         : null;
 
-    private string Waiting(PaymentRow r)
+    private string Waiting(GroupAccount? a)
     {
-        if (r.Balance <= 0 || r.DueSince is not { } since) return "—";
+        if (a is null || a.Balance <= 0 || a.DueSince is not { } since) return "—";
         var days = (clock.GetLocalNow().Date - since.Date).Days;
         return days <= 0 ? "aujourd'hui" : $"{days} j";
     }
@@ -199,13 +205,15 @@ public sealed partial class PaymentsViewModel(
     {
         var q = SearchText.Trim().ToLowerInvariant();
         var list = _all
-            .Where(r => SelectedFilter == "Tous" || Labels.Of(r.State) == SelectedFilter)
+            .Where(r => SelectedFilter == "Tous" || r.GroupAccounts.Any(a => Labels.Of(a.State) == SelectedFilter) || (r.GroupAccounts.Count == 0 && Labels.Of(r.State) == SelectedFilter))
             .Where(r => q.Length == 0 || $"{r.FullName} {r.Matricule} {r.ParentPhone}".ToLowerInvariant().Contains(q))
             .ToList();
-        Rows = list.Select(r => new PayLine(r, Waiting(r),
-            new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(r.StudentId)),
-            new AsyncRelayCommand(() => CollectAsync(r.StudentId)))).ToList();
-        CountLabel = $"{list.Count} élève{(list.Count > 1 ? "s" : "")} sur {_all.Count}";
+        Rows = list.SelectMany(r => (r.GroupAccounts.Count == 0 ? [null] : r.GroupAccounts.Cast<GroupAccount?>()).Select(a => new PayLine(r, a, Waiting(a),
+                new AsyncRelayCommand(() => nav.NavigateAsync<StudentDetailViewModel>(r.StudentId)),
+                new AsyncRelayCommand(() => CollectAsync(r.StudentId, a?.GroupId)))))
+            .Where(l => SelectedFilter == "Tous" || l.State.Text == SelectedFilter)
+            .ToList();
+        CountLabel = $"{list.Count} élève{(list.Count > 1 ? "s" : "")} sur {_all.Count} · {Rows.Count} ligne{(Rows.Count > 1 ? "s" : "")} (une par groupe)";
         HasNoData = _all.Count == 0;
         HasNoResults = _all.Count > 0 && list.Count == 0;
     }
@@ -228,10 +236,10 @@ public sealed partial class PaymentsViewModel(
         var list = await payments.ReceiptsAsync(month, Period.End(month));
         _monthReceipts = list;
         LatestReceipts = list.Take(12).Select(p => new PayRecentReceipt(
-            p.Student?.FullName ?? "—", $"{p.ReceiptNumber} · {p.Date:dd/MM} · {Labels.Of(p.Method)}", Money.Format(p.Amount),
+            p.Student?.FullName ?? "—", $"{p.ReceiptNumber} · {p.Date:dd/MM} · {p.Group?.FullName ?? Labels.Of(p.Kind)}", Money.Format(p.Amount),
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)))).ToList();
         Receipts = list.Select(p => new PayReceiptLine(p.Id, p.ReceiptNumber, p.Date.ToString("dd/MM/yyyy"), p.Student?.FullName ?? "—",
-            Labels.Of(p.Kind), Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount),
+            p.Group is { } g ? g.FullName : Labels.Of(p.Kind), Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount),
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)),
             new AsyncRelayCommand(() => DeleteReceiptAsync(p)))).ToList();
         ReceiptsTotal = $"{list.Count} reçu{(list.Count > 1 ? "s" : "")} · {Money.Format(list.Sum(p => p.Amount))}";
@@ -260,10 +268,10 @@ public sealed partial class PaymentsViewModel(
         if (await dialogs.ShowAsync(dialog)) await ReloadAsync();
     }
 
-    private async Task CollectAsync(int studentId)
+    private async Task CollectAsync(int studentId, int? groupId)
     {
         var dialog = services.GetRequiredService<CollectPaymentDialogViewModel>();
-        if (!await RunAsync(() => dialog.InitializeAsync(studentId), notifier)) return;
+        if (!await RunAsync(() => dialog.InitializeAsync(studentId, groupId), notifier)) return;
         if (await dialogs.ShowAsync(dialog)) await ReloadAsync();
     }
 
@@ -324,15 +332,20 @@ public sealed partial class PaymentsViewModel(
         await RunAsync(async () =>
         {
             await export.ExportTableAsync(path, "Paiements " + today.ToString("yyyy-MM-dd"),
-                ["Matricule", "Élève", "Niveau", "Groupes et séances", "Remise", "Prix des séances", "Facturé", "Payé", "Reste", "Payé d'avance", "Statut", "Téléphone parent"],
-                _all.Select(r => (IReadOnlyList<object?>)[r.Matricule, r.FullName, r.Level, r.Progress, r.Discount, r.PackPrice, r.Due, r.Paid, r.Balance, r.Credit,
-                    Labels.Of(r.State), r.ParentPhone]));
+                ["Matricule", "Élève", "Niveau", "Groupe", "Séance", "Remise", "Prix des séances", "Facturé", "Payé", "Reste", "Payé d'avance", "Statut", "Téléphone parent"],
+                _all.SelectMany(r => r.GroupAccounts.Select(a => (IReadOnlyList<object?>)[r.Matricule, r.FullName, r.Level, a.Group,
+                    a.Status is { } st ? $"{Math.Min(st.Done + 1, st.Size)}/{st.Size}" : "a quitté", r.Discount, a.PackPrice, a.Due, a.Paid, a.Balance, a.Credit,
+                    Labels.Of(a.State), r.ParentPhone])));
             notifier.Info("Export Excel généré");
             shell.Reveal(path);
         }, notifier);
     }
 
     // ----- Relances -----
+
+    /// <summary>What is owed, group by group: "Mathématiques · 3AS A : 4 500 DZD, Physique · 3AS A : 2 000 DZD".</summary>
+    public static string Owed(PaymentRow r) =>
+        string.Join(", ", r.GroupAccounts.Where(a => a.Balance > 0).Select(a => $"{a.Group} : {Money.Format(a.Balance)}"));
 
     /// <summary>Date a student's payment was due: start of the oldest unpaid pack + the payment delay.</summary>
     private DateTime DueDate(PaymentRow r) => (r.DueSince ?? clock.GetLocalNow().Date).Date.AddDays(Math.Max(0, _settings.PaymentDueDay));
@@ -349,7 +362,7 @@ public sealed partial class PaymentsViewModel(
                 : daysLate > 0 ? new Badge("En retard", BadgeKind.Warn)
                 : new Badge("À échoir", BadgeKind.Neutral);
             var parent = parents.GetValueOrDefault(r.StudentId);
-            var message = MessageTemplates.PaymentReminder(_settings, parent, r.FullName, r.DueSince ?? clock.GetLocalNow().Date, r.Progress, r.PackPrice, r.Balance);
+            var message = MessageTemplates.PaymentReminder(_settings, parent, r.FullName, r.DueSince ?? clock.GetLocalNow().Date, Owed(r), r.PackPrice, r.Balance);
             var sms = MessageTemplates.ShortPaymentReminder(_settings, r.FullName, r.Balance);
             var url = MessageTemplates.WhatsAppUrl(r.ParentPhone, _settings.PhoneCountryCode, message);
             var line = new ReminderLine(r, parent, daysLate, delay, message, sms, url,
@@ -456,7 +469,7 @@ public sealed partial class PaymentsViewModel(
         await RunAsync(() =>
         {
             var cfg = _settings;
-            var pages = list.Select(l => new PrintPage("Rappel de paiement", l.Item.Progress,
+            var pages = list.Select(l => new PrintPage("Rappel de paiement", Owed(l.Item),
             [
                 new PrintParagraph($"Le {today:dd/MM/yyyy}", Muted: true, AlignRight: true),
                 new PrintParagraph($"À l'attention de {l.ParentName ?? MessageTemplates.NoParentGreeting}", Bold: true),
@@ -467,7 +480,7 @@ public sealed partial class PaymentsViewModel(
                 new PrintFields(
                 [
                     ("Élève", l.Name),
-                    ("Groupes", l.Item.Progress),
+                    .. l.Item.GroupAccounts.Where(a => a.Balance > 0).Select(a => (a.Group, "Reste " + Money.Format(a.Balance))),
                     ("Séances facturées", Money.Format(l.Item.Due)),
                     ("Déjà réglé", Money.Format(l.Item.Paid)),
                     ("Reste à payer", Money.Format(l.Item.Balance)),

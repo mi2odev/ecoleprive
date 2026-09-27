@@ -141,6 +141,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             e.Property(x => x.ReceiptNumber).HasMaxLength(40).IsRequired();
             e.HasIndex(x => x.ReceiptNumber).IsUnique();
             e.HasOne(x => x.Student).WithMany(s => s.Payments).HasForeignKey(x => x.StudentId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Group).WithMany().HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.SetNull);
             e.HasIndex(x => x.Date);
         });
 

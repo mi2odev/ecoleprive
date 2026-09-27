@@ -63,6 +63,34 @@ public class BusinessTests
     }
 
     [Fact]
+    public void Each_group_is_paid_on_its_own()
+    {
+        var maths = Saturdays(4000);
+        var physics = G(3000);
+        physics.Slots.Add(new ScheduleSlot { Day = DayOfWeek.Sunday, Start = TimeSpan.FromHours(9), End = TimeSpan.FromHours(11) });
+        var s = new Student { IsActive = true };
+        s.Enrollments.Add(new Enrollment { Group = maths, GroupId = maths.Id, StartDate = new(2026, 9, 5) });
+        s.Enrollments.Add(new Enrollment { Group = physics, GroupId = physics.Id, StartDate = new(2026, 9, 5) });
+        var now = new DateTime(2026, 9, 5, 12, 0, 0);
+
+        // 5 000 paid for maths: its 4 000 is covered, 1 000 in advance for maths only — physics still owes 3 000.
+        s.Payments.Add(new StudentPayment { Amount = 5000, Kind = PaymentKind.Sessions, GroupId = maths.Id });
+        var accounts = Billing.Accounts(s, now);
+        var m = accounts.Single(a => a.GroupId == maths.Id);
+        var p = accounts.Single(a => a.GroupId == physics.Id);
+        Assert.Equal((0m, 1000m, PaymentState.Paid), (m.Balance, m.Credit, m.State));
+        Assert.Equal((3000m, 0m, PaymentState.Unpaid), (p.Balance, p.Credit, p.State));
+        Assert.Equal(3000, Billing.Balance(s, now));
+        Assert.Equal(1000, Billing.Credit(s, now));
+        Assert.Equal(PaymentState.Unpaid, Billing.State(s, now));
+
+        // A payment without a group (older versions) covers the oldest unpaid packs of any group.
+        s.Payments.Add(new StudentPayment { Amount = 3000, Kind = PaymentKind.Sessions });
+        Assert.Equal(0, Billing.Balance(s, now));
+        Assert.Equal(PaymentState.Paid, Billing.Accounts(s, now).Single(a => a.GroupId == physics.Id).State);
+    }
+
+    [Fact]
     public void Cancelled_sessions_do_not_count_and_leaving_bills_only_the_packs_begun()
     {
         var g = Saturdays(4000);
@@ -151,8 +179,10 @@ public class BusinessTests
         await studentsSvc.EnrollAsync(s2.Id, a.Id);
 
         var period = new DateTime(2026, 9, 1);
-        var p1 = await payments.RecordAsync(s1.Id, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null);
-        var p2 = await payments.RecordAsync(s2.Id, 1000, PaymentMethod.Ccp, PaymentKind.Sessions, null);
+        await Assert.ThrowsAsync<BusinessException>(() => payments.RecordAsync(s1.Id, null, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null)); // which group?
+        await Assert.ThrowsAsync<BusinessException>(() => payments.RecordAsync(s1.Id, a.Id, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null)); // left it
+        var p1 = await payments.RecordAsync(s1.Id, b.Id, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null);
+        var p2 = await payments.RecordAsync(s2.Id, a.Id, 1000, PaymentMethod.Ccp, PaymentKind.Sessions, null);
         Assert.Equal("REC-2026-0001", p1.ReceiptNumber);
         Assert.Equal("REC-2026-0002", p2.ReceiptNumber);
 

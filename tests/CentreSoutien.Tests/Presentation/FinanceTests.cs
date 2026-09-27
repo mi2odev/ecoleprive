@@ -64,7 +64,9 @@ public class FinanceTests
         Assert.NotNull(dialog.Result);
         Assert.Contains(dialog.Result!.ReceiptNumber, host.Get<FakePlatform>().Printed);
 
-        var updated = page.Rows.First(r => r.StudentId == row.StudentId);
+        // Only this group's line is paid: each group is paid on its own.
+        Assert.NotNull(row.GroupId);
+        var updated = page.Rows.Single(r => r.StudentId == row.StudentId && r.GroupId == row.GroupId);
         Assert.False(updated.CanCollect);
         Assert.Equal("Payé", updated.State.Text);
         Assert.Contains(page.Receipts, r => r.Number == dialog.Result.ReceiptNumber);

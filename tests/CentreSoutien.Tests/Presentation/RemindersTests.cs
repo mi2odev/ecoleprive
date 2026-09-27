@@ -115,7 +115,7 @@ public class RemindersTests
         await using var host = await UiHost.CreateAsync();
         var page = await OpenRemindersAsync(host);
 
-        var unpaid = page.Rows.Where(r => r.BalanceValue > 0).Select(r => r.StudentId).Order().ToList();
+        var unpaid = page.Rows.Where(r => r.BalanceValue > 0).Select(r => r.StudentId).Distinct().Order().ToList();
         Assert.NotEmpty(unpaid);
         Assert.Equal(unpaid, page.Reminders.Select(r => r.StudentId).Order());
         Assert.All(page.Reminders, r => Assert.True(r.IsSelected));
@@ -127,7 +127,7 @@ public class RemindersTests
         var line = page.Reminders.First(r => r.ParentName is not null && r.CanWhatsApp);
         Assert.Equal((new DateTime(2026, 9, 26) - line.Item.DueSince!.Value.Date).Days - 5, line.DaysLate);
         Assert.Equal(line.DaysLate >= 10 ? BadgeKind.Bad : line.DaysLate > 0 ? BadgeKind.Warn : BadgeKind.Neutral, line.Delay.Kind);
-        Assert.StartsWith($"Bonjour {line.ParentName}, sauf erreur de notre part, les séances de {line.Name} ne sont pas encore réglées ({line.Item.Progress})", line.Message);
+        Assert.StartsWith($"Bonjour {line.ParentName}, sauf erreur de notre part, les séances de {line.Name} ne sont pas encore réglées ({PaymentsViewModel.Owed(line.Item)})", line.Message);
         Assert.Contains($"Reste à payer : {line.Rest}.", line.Message);
         Assert.StartsWith("https://wa.me/213", line.WhatsAppUrl);
     }
@@ -221,7 +221,8 @@ public class RemindersTests
 
         var page = await OpenRemindersAsync(host);
         var line = page.Reminders.First(r => r.CanWhatsApp);
-        Assert.Equal($"Rappel {line.Name} : {line.Rest} ({line.Item.Progress})", line.Message);
+        Assert.Equal($"Rappel {line.Name} : {line.Rest} ({PaymentsViewModel.Owed(line.Item)})", line.Message);
+        Assert.Contains(" DZD", PaymentsViewModel.Owed(line.Item)); // what is owed, group by group
         Assert.StartsWith("https://wa.me/33", line.WhatsAppUrl);
 
         // Reset to the default text and reject an invalid country code.

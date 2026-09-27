@@ -75,8 +75,16 @@ public static class Packs
     }
 }
 
-/// <summary>Pure billing rules. Callers pass entity graphs with the needed navigation properties loaded
-/// (student payments, discount, enrollments → group → subject, slots and sessions).</summary>
+/// <summary>A student's account in one group: packs billed, paid for this group, left to pay, paid in advance.</summary>
+public sealed record GroupAccount(int GroupId, string Group, PackStatus? Status, decimal PackPrice, decimal Due, decimal Paid,
+    decimal Balance, decimal Credit, DateTime? DueSince, PaymentState State);
+
+/// <summary>
+/// Pure billing rules. Callers pass entity graphs with the needed navigation properties loaded
+/// (student payments, discount, enrollments → group → subject, slots and sessions).
+/// Each group is paid on its own: a payment made for a group only covers that group's packs. Session payments recorded
+/// without a group (older versions) cover the oldest unpaid packs of any group.
+/// </summary>
 public static class Billing
 {
     /// <summary>Every pack billed to the student so far, oldest first.</summary>
@@ -86,36 +94,80 @@ public static class Billing
 
     public static decimal Due(Student student, DateTime now) => Charges(student, now).Sum(c => c.Amount);
 
+    private static IEnumerable<StudentPayment> SessionPayments(Student student) => student.Payments.Where(x => x.Kind == PaymentKind.Sessions);
+
     /// <summary>Total of the student's session payments (registration fees and other payments excluded).</summary>
-    public static decimal Paid(Student student) =>
-        student.Payments.Where(x => x.Kind == PaymentKind.Sessions).Sum(x => x.Amount);
+    public static decimal Paid(Student student) => SessionPayments(student).Sum(x => x.Amount);
 
-    public static decimal Balance(Student student, DateTime now) => Math.Max(0, Due(student, now) - Paid(student));
+    /// <summary>Session payments made for <paramref name="groupId"/>.</summary>
+    public static decimal PaidFor(Student student, int groupId) => SessionPayments(student).Where(x => x.GroupId == groupId).Sum(x => x.Amount);
 
-    /// <summary>Paid in advance (more than billed so far).</summary>
-    public static decimal Credit(Student student, DateTime now) => Math.Max(0, Paid(student) - Due(student, now));
-
-    /// <summary>Charges with the part paid, payments covering the oldest charges first.</summary>
+    /// <summary>
+    /// Charges with the part paid. Each group's payments cover that group's packs, oldest first; payments without a
+    /// group then cover the oldest packs still open.
+    /// </summary>
     public static List<ChargeLine> Allocate(Student student, DateTime now)
     {
-        var left = Paid(student);
-        var lines = new List<ChargeLine>();
-        foreach (var c in Charges(student, now))
+        var charges = Charges(student, now);
+        var paid = new decimal[charges.Count];
+        foreach (var group in charges.Select((c, i) => (c, i)).GroupBy(x => x.c.GroupId))
         {
-            var paid = Math.Min(left, c.Amount);
-            left -= paid;
-            lines.Add(new ChargeLine(c, paid));
+            var left = PaidFor(student, group.Key);
+            foreach (var (c, i) in group)
+            {
+                paid[i] = Math.Min(left, c.Amount);
+                left -= paid[i];
+            }
         }
-        return lines;
+        var pool = SessionPayments(student).Where(x => x.GroupId is null).Sum(x => x.Amount);
+        for (var i = 0; i < charges.Count && pool > 0; i++)
+        {
+            var more = Math.Min(pool, charges[i].Amount - paid[i]);
+            paid[i] += more;
+            pool -= more;
+        }
+        return charges.Select((c, i) => new ChargeLine(c, paid[i])).ToList();
     }
+
+    /// <summary>Left to pay, all groups together (a group paid in advance does not reduce another group's debt).</summary>
+    public static decimal Balance(Student student, DateTime now) => Allocate(student, now).Sum(l => l.Rest);
+
+    /// <summary>Paid in advance (more than billed so far), all groups together.</summary>
+    public static decimal Credit(Student student, DateTime now) => Math.Max(0, Paid(student) - Allocate(student, now).Sum(l => l.Paid));
 
     /// <summary>Price of one pack of each group the student currently attends (discount included).</summary>
     public static decimal PackPrice(Student student, DateTime now) =>
-        student.Enrollments.Where(e => e.Group is not null && e.IsActiveOn(now))
-            .Sum(e => student.Discount is { IsActive: true } d ? d.Apply(e.Group!.Price) : e.Group!.Price);
+        student.Enrollments.Where(e => e.Group is not null && e.IsActiveOn(now)).Sum(e => PackPrice(student, e.Group!));
+
+    public static decimal PackPrice(Student student, Group g) => student.Discount is { IsActive: true } d ? d.Apply(g.Price) : g.Price;
 
     public static List<PackStatus> Progress(Student student, DateTime now) =>
         student.Enrollments.Where(e => e.Group is not null && e.IsActiveOn(now)).Select(e => Packs.Status(e, now)).ToList();
+
+    /// <summary>
+    /// One account per group: the groups the student attends now, plus older groups still owing or paid in advance.
+    /// </summary>
+    public static List<GroupAccount> Accounts(Student student, DateTime now)
+    {
+        var lines = Allocate(student, now);
+        return student.Enrollments.Where(e => e.Group is not null).GroupBy(e => e.GroupId).Select(x =>
+        {
+            var g = x.First().Group!;
+            var current = x.FirstOrDefault(e => e.IsActiveOn(now));
+            var mine = lines.Where(l => l.Charge.GroupId == g.Id).ToList();
+            var due = mine.Sum(l => l.Charge.Amount);
+            var covered = mine.Sum(l => l.Paid);
+            var credit = Math.Max(0, PaidFor(student, g.Id) - covered);
+            var open = mine.FirstOrDefault(l => l.Rest > 0);
+            var state = !student.IsActive ? PaymentState.Inactive
+                : open is null ? PaymentState.Paid
+                : open.Paid > 0 ? PaymentState.Partial : PaymentState.Unpaid;
+            return new GroupAccount(g.Id, g.FullName, current is null ? null : Packs.Status(current, now), PackPrice(student, g),
+                due, covered, due - covered, credit, open?.Charge.Date, state);
+        })
+        .Where(a => a.Status is not null || a.Balance > 0 || a.Credit > 0)
+        .OrderBy(a => a.Group).ToList();
+    }
 
     public static PaymentState State(Student student, DateTime now)
     {

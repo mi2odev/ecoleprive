@@ -19,6 +19,11 @@
         </TextBlock>
         <TextBlock Text="Objet" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
         <ListBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" Margin="0,0,0,10" />
+        <StackPanel Visibility="{Binding IsSessions, Converter={StaticResource BoolToVisible}}" Margin="0,0,0,10">
+            <TextBlock Text="Groupe payé" Style="{StaticResource FieldLabel}" />
+            <ComboBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Label" MaxDropDownHeight="320"
+                      ToolTip="Chaque groupe se paie à part : choisissez le groupe réglé" />
+        </StackPanel>
         <TextBlock Text="{Binding Summary}" Style="{StaticResource Muted}" TextWrapping="Wrap" TextTrimming="None" Margin="0,0,0,16" />
         <TextBlock Text="Montant (DZD)" Style="{StaticResource FieldLabel}" />
         <TextBox Text="{Binding Amount, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource LargeTextBox}" FontSize="16" ui:FocusOnShow.Enabled="{Binding CanPickStudent, Converter={StaticResource Not}}" />

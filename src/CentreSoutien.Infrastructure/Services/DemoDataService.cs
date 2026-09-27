@@ -125,22 +125,25 @@ public sealed class DemoDataService(IDbContextFactory<AppDbContext> factory, Tim
         db.Students.AddRange(students);
         await db.SaveChangesAsync(ct);
 
-        // Payments for the current month.
+        // Session payments, group by group (each group is paid on its own): most paid, some partly, some not.
         var settings = await db.Settings.FirstAsync(ct);
         foreach (var st in students.Where(s => s.IsActive))
         {
             st.Enrollments = groups.SelectMany(g => g.Enrollments).Where(e => e.StudentId == st.Id).ToList();
-            var due = Billing.Balance(st, clock.GetLocalNow().DateTime);
-            var x = R();
-            var amount = x < 0.6 ? due : x < 0.82 ? Math.Round(due / 200) * 100 : 0;
-            if (amount <= 0) continue;
-            var day = Math.Min(today.Day, 1 + (int)(R() * Math.Max(1, today.Day)));
-            db.StudentPayments.Add(new StudentPayment
+            foreach (var account in Billing.Accounts(st, clock.GetLocalNow().DateTime))
             {
-                ReceiptNumber = settings.ReceiptPrefix + settings.NextReceiptNumber++.ToString("0000"), StudentId = st.Id, Amount = amount,
-                Kind = PaymentKind.Sessions, Period = period, Date = period.AddDays(day - 1).AddHours(9 + (int)(R() * 9)),
-                Method = Pick(new[] { PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.BaridiMob, PaymentMethod.Ccp }),
-            });
+                var due = account.Balance;
+                var x = R();
+                var amount = x < 0.6 ? due : x < 0.82 ? Math.Round(due / 200) * 100 : 0;
+                if (amount <= 0) continue;
+                var day = Math.Min(today.Day, 1 + (int)(R() * Math.Max(1, today.Day)));
+                db.StudentPayments.Add(new StudentPayment
+                {
+                    ReceiptNumber = settings.ReceiptPrefix + settings.NextReceiptNumber++.ToString("0000"), StudentId = st.Id, GroupId = account.GroupId,
+                    Amount = amount, Kind = PaymentKind.Sessions, Period = period, Date = period.AddDays(day - 1).AddHours(9 + (int)(R() * 9)),
+                    Method = Pick(new[] { PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.Cash, PaymentMethod.BaridiMob, PaymentMethod.Ccp }),
+                });
+            }
         }
 
         // Teacher payments for the three previous months.

@@ -253,7 +253,11 @@ public class CollectPaymentQuickAmountsTests
         // Suggested amount = the balance, so nothing is left.
         Assert.Equal(Money.Number(row.Balance), dialog.Amount);
         Assert.Equal($"Reste après ce paiement : {Money.Format(0)}", dialog.RemainingAfter);
-        Assert.Contains("séance", dialog.Summary); // groups and where the student is in the pack
+        Assert.Contains("éance", dialog.Summary); // where the student is in the group's pack
+        // Each group is paid on its own: the group with something to pay is chosen.
+        Assert.True(dialog.IsSessions);
+        Assert.NotEmpty(dialog.Groups);
+        Assert.True(row.GroupAccounts.Single(a => a.GroupId == dialog.SelectedGroup!.Value).Balance > 0);
 
         dialog.Amount = "1000";
         Assert.Equal($"Reste après ce paiement : {Money.Format(row.Balance - 1000)}", dialog.RemainingAfter);
@@ -284,8 +288,9 @@ public class CollectPaymentQuickAmountsTests
         Assert.Equal("à jour", dialog.StudentBalance);
         Assert.DoesNotContain(dialog.QuickAmounts, q => q.Label == "Reste à payer");
         // Up to date: the next pack is proposed (paid in advance).
-        Assert.Contains(dialog.QuickAmounts, q => q.Label == "Prochaines séances" && q.Value == row.PackPrice);
-        Assert.Equal(Money.Number(row.PackPrice), dialog.Amount);
+        var next = Assert.Single(dialog.QuickAmounts, q => q.Label == "Prochaines séances");
+        Assert.Equal(Money.Number(next.Value), dialog.Amount);
+        Assert.Contains(row.GroupAccounts, a => a.GroupId == dialog.SelectedGroup!.Value && a.PackPrice == next.Value);
 
         var picker = host.Get<CollectPaymentDialogViewModel>();
         await picker.InitializeAsync(null);

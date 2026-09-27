@@ -23,18 +23,23 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
         var lines = Billing.Allocate(s, now);
         var due = lines.Sum(l => l.Charge.Amount);
         var paid = Billing.Paid(s);
-        return new(s.Id, s.Matricule, s.FullName, s.Level, Billing.PackPrice(s, now), due, paid, Math.Max(0, due - paid), Billing.State(s, now),
-            s.Discount?.ToString(), s.Parent?.Phone ?? s.Phone, Math.Max(0, paid - due),
+        return new(s.Id, s.Matricule, s.FullName, s.Level, Billing.PackPrice(s, now), due, paid, lines.Sum(l => l.Rest), Billing.State(s, now),
+            s.Discount?.ToString(), s.Parent?.Phone ?? s.Phone, Math.Max(0, paid - lines.Sum(l => l.Paid)),
             lines.FirstOrDefault(l => l.Rest > 0)?.Charge.Date,
-            string.Join(" · ", Billing.Progress(s, now).Select(x => x.Label)));
+            string.Join(" · ", Billing.Progress(s, now).Select(x => x.Label)),
+            Billing.Accounts(s, now));
     }
 
-    public async Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default)
+    public async Task<StudentPayment> RecordAsync(int studentId, int? groupId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default)
     {
         if (amount <= 0) throw new BusinessException("Le montant doit être positif.");
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var student = await db.Students.FindAsync([studentId], ct) ?? throw new BusinessException("Élève introuvable.");
+        if (kind != PaymentKind.Sessions) groupId = null;
+        else if (groupId is null) throw new BusinessException("Choisissez le groupe payé.");
+        else if (!await db.Enrollments.AnyAsync(e => e.StudentId == studentId && e.GroupId == groupId, ct))
+            throw new BusinessException("Cet élève n'est pas inscrit dans ce groupe.");
         var settings = await db.Settings.FirstAsync(ct);
         var number = settings.ReceiptPrefix + settings.NextReceiptNumber.ToString("0000");
         while (await db.StudentPayments.AnyAsync(x => x.ReceiptNumber == number, ct))
@@ -45,7 +50,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
         settings.NextReceiptNumber++;
         var payment = new StudentPayment
         {
-            ReceiptNumber = number, StudentId = student.Id, Amount = amount, Method = method, Kind = kind,
+            ReceiptNumber = number, StudentId = student.Id, GroupId = groupId, Amount = amount, Method = method, Kind = kind,
             Period = Period.Of(clock.GetLocalNow().DateTime), Date = clock.GetLocalNow().DateTime, Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
         };
         db.StudentPayments.Add(payment);
@@ -59,7 +64,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var end = to.Date.AddDays(1);
-        var list = await db.StudentPayments.AsNoTracking().Include(p => p.Student)
+        var list = await db.StudentPayments.AsNoTracking().Include(p => p.Student).Include(p => p.Group).ThenInclude(g => g!.Subject)
             .Where(p => p.Date >= from.Date && p.Date < end).ToListAsync(ct);
         return list.OrderByDescending(p => p.Date).ThenByDescending(p => p.Id).ToList();
     }
@@ -68,6 +73,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         return await db.StudentPayments.AsNoTracking().Include(p => p.Student).ThenInclude(s => s!.Parent)
+            .Include(p => p.Group).ThenInclude(g => g!.Subject)
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
     }
 

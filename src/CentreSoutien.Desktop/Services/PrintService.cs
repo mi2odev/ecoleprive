@@ -38,7 +38,9 @@ public sealed class PrintService : IPrintService
         [
             ("Élève", student is null ? "—" : $"{student.FullName} ({student.Matricule})"),
             ("Parent / tuteur", student?.Parent?.FullName ?? "—"),
-            ("Objet", payment.Kind == Domain.Enums.PaymentKind.Sessions ? "Paiement des séances" : Labels.Of(payment.Kind)),
+            ("Objet", payment.Kind == Domain.Enums.PaymentKind.Sessions
+                ? payment.Group is { } g ? $"Séances · {g.FullName} ({g.SessionsPerPack} séances)" : "Paiement des séances"
+                : Labels.Of(payment.Kind)),
             ("Mode de paiement", Labels.Of(payment.Method)),
             ("Note", string.IsNullOrWhiteSpace(payment.Note) ? "—" : payment.Note!),
         ]);

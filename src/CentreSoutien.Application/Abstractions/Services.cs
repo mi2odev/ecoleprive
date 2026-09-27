@@ -106,7 +106,8 @@ public interface IPaymentService
 {
     /// <summary>Payment situation of every active student today (packs billed, paid, left to pay).</summary>
     Task<List<PaymentRow>> OverviewAsync(CancellationToken ct = default);
-    Task<StudentPayment> RecordAsync(int studentId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default);
+    /// <param name="groupId">Group paid for: required for session payments (each group is paid on its own).</param>
+    Task<StudentPayment> RecordAsync(int studentId, int? groupId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default);
     Task<List<StudentPayment>> ReceiptsAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<StudentPayment?> GetReceiptAsync(int paymentId, CancellationToken ct = default);
     Task DeleteAsync(int paymentId, CancellationToken ct = default);
