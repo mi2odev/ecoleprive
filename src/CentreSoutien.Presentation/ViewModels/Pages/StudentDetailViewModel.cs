@@ -138,7 +138,7 @@ public sealed partial class StudentDetailViewModel(
                 g.Average is null ? "—" : g.Average.Value.ToString("0.00"), g.Average is null || g.Average >= cfg.PassingGrade)).ToList();
 
             Payments = s.Payments.OrderByDescending(p => p.Date).Select(p => new PaymentHistoryRow(
-                p.ReceiptNumber, p.Date.ToString("dd/MM/yyyy"), Labels.Of(p.Kind), Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount),
+                p.ReceiptNumber, p.Date.ToString("dd/MM/yyyy"), p.Group?.FullName ?? Labels.Of(p.Kind), Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount),
                 new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)),
                 new AsyncRelayCommand(() => DeletePaymentAsync(p)))).ToList();
 
@@ -300,18 +300,15 @@ public sealed partial class StudentDetailViewModel(
         {
             var p = await payments.GetReceiptAsync(paymentId) ?? throw new BusinessException("Reçu introuvable.");
             var cfg = await settings.GetAsync();
-            printer.PrintReceipt(p, cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, "images"));
+            printer.PrintReceipt(p, cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, "images"), duplicate: true);
         }, notifier);
     }
 
     private async Task DeletePaymentAsync(StudentPayment p)
     {
-        if (!await dialogs.ConfirmAsync("Annuler le paiement", $"Supprimer le paiement {p.ReceiptNumber} de {Money.Format(p.Amount)} ? Le reçu ne sera plus valable.", "Supprimer le paiement")) return;
-        await RunAsync(async () =>
-        {
-            await payments.DeleteAsync(p.Id);
-            notifier.Info("Paiement supprimé");
-            await RefreshAsync();
-        }, notifier);
+        p.Student ??= _student;
+        var dialog = services.GetRequiredService<CancelReceiptDialogViewModel>();
+        dialog.Initialize(p);
+        if (await dialogs.ShowAsync(dialog)) await RefreshAsync();
     }
 }

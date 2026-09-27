@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CentreSoutien.Presentation.ViewModels.Pages;
 
+/// <summary>One line of the activity journal.</summary>
+public sealed record JournalRow(string At, string Category, string Action, string? Details);
+
 /// <summary>
 /// All settings of the center and the application. The form edits a copy of <see cref="CenterSettings"/>
 /// that is saved as a whole by "Enregistrer".
@@ -36,6 +39,7 @@ public sealed partial class SettingsViewModel(
         new("backup", "Sauvegarde et export"),
         new("app", "Langue et thème"),
         new("sec", "Sécurité"),
+        new("journal", "Journal d'activité"),
     ];
 
     public IReadOnlyList<Option<CompensationType>> CompensationTypes => Options.CompensationTypes;
@@ -72,11 +76,58 @@ public sealed partial class SettingsViewModel(
     public bool IsBackup => Section == "backup";
     public bool IsApp => Section == "app";
     public bool IsSecurity => Section == "sec";
+    public bool IsJournal => Section == "journal";
+
+    // ----- Journal d'activité (read-only) -----
+
+    public IReadOnlyList<Option<AuditCategory?>> JournalCategories { get; } =
+    [
+        new(null, "Tout"), new(AuditCategory.Payment, "Paiements"), new(AuditCategory.Student, "Élèves"), new(AuditCategory.Group, "Groupes"),
+        new(AuditCategory.TeacherPayment, "Enseignants"), new(AuditCategory.Expense, "Dépenses"), new(AuditCategory.Settings, "Paramètres"),
+        new(AuditCategory.Backup, "Sauvegardes"), new(AuditCategory.Security, "Connexions"),
+    ];
+
+    [ObservableProperty] private Option<AuditCategory?>? _selectedJournalCategory;
+    [ObservableProperty] private string _journalSearch = "";
+    [ObservableProperty] private IReadOnlyList<JournalRow> _journal = [];
+    [ObservableProperty] private string _journalSummary = "";
+    private List<AuditEntry> _journalEntries = [];
+
+    async partial void OnSelectedJournalCategoryChanged(Option<AuditCategory?>? value)
+    {
+        if (IsJournal) await LoadJournalAsync();
+    }
+
+    partial void OnJournalSearchChanged(string value) => FilterJournal();
+
+    /// <summary>Latest 1 000 entries of the chosen category.</summary>
+    public async Task LoadJournalAsync()
+    {
+        await RunAsync(async () =>
+        {
+            _journalEntries = await services.GetRequiredService<IAuditService>().ListAsync(SelectedJournalCategory?.Value, take: 1000);
+            FilterJournal();
+        }, notifier);
+    }
+
+    private void FilterJournal()
+    {
+        var words = JournalSearch.Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var list = _journalEntries.Where(e => words.All(w => $"{e.Action} {e.Details}".ToLowerInvariant().Contains(w))).ToList();
+        Journal = list.Select(e => new JournalRow(e.At.ToString("dd/MM/yyyy HH:mm"), JournalCategories.FirstOrDefault(c => c.Value == e.Category)?.Label ?? "",
+            e.Action, e.Details)).ToList();
+        JournalSummary = list.Count == 0 ? "Aucune opération" : $"{list.Count} opération{(list.Count > 1 ? "s" : "")} (les plus récentes d'abord)";
+    }
 
     partial void OnSelectedSectionChanged(Option<string>? value)
     {
-        foreach (var p in new[] { nameof(Section), nameof(IsCentre), nameof(IsTarifs), nameof(IsRemun), nameof(IsEval), nameof(IsRecus), nameof(IsMessages), nameof(IsBackup), nameof(IsApp), nameof(IsSecurity) })
+        foreach (var p in new[] { nameof(Section), nameof(IsCentre), nameof(IsTarifs), nameof(IsRemun), nameof(IsEval), nameof(IsRecus), nameof(IsMessages), nameof(IsBackup), nameof(IsApp), nameof(IsSecurity), nameof(IsJournal) })
             OnPropertyChanged(p);
+        if (value?.Value == "journal")
+        {
+            if (SelectedJournalCategory is null) SelectedJournalCategory = JournalCategories[0];
+            else _ = LoadJournalAsync();
+        }
     }
 
     // ----- Messages aux parents -----

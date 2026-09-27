@@ -35,6 +35,13 @@ public class StudentPayment : Entity
     /// <summary>Month the payment was made (first day of the month).</summary>
     public DateTime Period { get; set; }
     public string? Note { get; set; }
+    /// <summary>
+    /// Set when the receipt was cancelled: a receipt is never deleted, it stays numbered and visible (marked "Annulé")
+    /// but no longer counts anywhere (the database hides cancelled payments from every calculation).
+    /// </summary>
+    public DateTime? CancelledAt { get; set; }
+    public string? CancelReason { get; set; }
+    public bool IsCancelled => CancelledAt is not null;
 }
 
 public class TeacherPayment : Entity
@@ -70,4 +77,14 @@ public class Document : Entity
     public DocumentOwnerType OwnerType { get; set; }
     public int? OwnerId { get; set; }
     public string? Notes { get; set; }
+}
+
+/// <summary>One line of the activity journal: what was done in the application and when (payments, cancellations,
+/// students, groups, settings, backups…). Written by the services, never edited.</summary>
+public class AuditEntry : Entity
+{
+    public DateTime At { get; set; }
+    public AuditCategory Category { get; set; }
+    public string Action { get; set; } = "";
+    public string? Details { get; set; }
 }

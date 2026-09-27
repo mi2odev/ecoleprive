@@ -44,9 +44,13 @@ public sealed record PayLine(PaymentRow Item, GroupAccount? Account, string Wait
 /// <summary>Compact receipt entry of the "Derniers reçus" column.</summary>
 public sealed record PayRecentReceipt(string Name, string Details, string Amount, IRelayCommand Print);
 
-/// <summary>Receipt line of the "Reçus" tab.</summary>
+/// <summary>Receipt line of the "Reçus" tab. <see cref="State"/> is "Valide" or "Annulé" (reason in <see cref="StateDetails"/>).</summary>
 public sealed record PayReceiptLine(int Id, string Number, string Date, string Student, string Kind, string Month, string Method, string Amount,
-    IRelayCommand Print, IRelayCommand Delete);
+    IRelayCommand Print, IRelayCommand Delete, bool IsCancelled = false, string? StateDetails = null)
+{
+    public Badge State => IsCancelled ? new Badge("Annulé", BadgeKind.Bad) : new Badge("Valide", BadgeKind.Ok);
+    public bool CanCancel => !IsCancelled;
+}
 
 /// <summary>Discount line of the "Remises" tab.</summary>
 public sealed record DiscountLine(int Id, string Name, string Type, string Value, Badge Active, string Students, string? Notes, IRelayCommand Edit, IRelayCommand Delete);
@@ -234,15 +238,19 @@ public sealed partial class PaymentsViewModel(
     {
         var month = Month;
         var list = await payments.ReceiptsAsync(month, Period.End(month));
-        _monthReceipts = list;
-        LatestReceipts = list.Take(12).Select(p => new PayRecentReceipt(
+        _monthReceipts = list.Where(p => !p.IsCancelled).ToList();
+        LatestReceipts = _monthReceipts.Take(12).Select(p => new PayRecentReceipt(
             p.Student?.FullName ?? "—", $"{p.ReceiptNumber} · {p.Date:dd/MM} · {p.Group?.FullName ?? Labels.Of(p.Kind)}", Money.Format(p.Amount),
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)))).ToList();
         Receipts = list.Select(p => new PayReceiptLine(p.Id, p.ReceiptNumber, p.Date.ToString("dd/MM/yyyy"), p.Student?.FullName ?? "—",
             p.Group is { } g ? g.FullName : Labels.Of(p.Kind), Labels.Month(p.Period), Labels.Of(p.Method), Money.Format(p.Amount),
             new AsyncRelayCommand(() => PrintReceiptAsync(p.Id)),
-            new AsyncRelayCommand(() => DeleteReceiptAsync(p)))).ToList();
-        ReceiptsTotal = $"{list.Count} reçu{(list.Count > 1 ? "s" : "")} · {Money.Format(list.Sum(p => p.Amount))}";
+            new AsyncRelayCommand(() => CancelReceiptAsync(p)),
+            p.IsCancelled, p.IsCancelled ? $"Annulé le {p.CancelledAt:dd/MM/yyyy HH:mm} · {p.CancelReason}" : null)).ToList();
+        var valid = _monthReceipts;
+        var cancelled = list.Count - valid.Count;
+        ReceiptsTotal = $"{valid.Count} reçu{(valid.Count > 1 ? "s" : "")} · {Money.Format(valid.Sum(p => p.Amount))}"
+                        + (cancelled > 0 ? $" · {cancelled} annulé{(cancelled > 1 ? "s" : "")}" : "");
         HasNoReceipts = list.Count == 0;
     }
 
@@ -281,21 +289,15 @@ public sealed partial class PaymentsViewModel(
         {
             var p = await payments.GetReceiptAsync(paymentId) ?? throw new BusinessException("Reçu introuvable.");
             var cfg = await settings.GetAsync();
-            printer.PrintReceipt(p, cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, StorageAreas.Images));
+            printer.PrintReceipt(p, cfg, cfg.LogoFile is null ? null : storage.GetPath(cfg.LogoFile, StorageAreas.Images), duplicate: true);
         }, notifier);
     }
 
-    private async Task DeleteReceiptAsync(StudentPayment p)
+    private async Task CancelReceiptAsync(StudentPayment p)
     {
-        if (!await dialogs.ConfirmAsync("Annuler le paiement",
-                $"Supprimer le paiement {p.ReceiptNumber} de {Money.Format(p.Amount)} ({p.Student?.FullName}) ? Le reçu ne sera plus valable.", "Supprimer le paiement"))
-            return;
-        await RunAsync(async () =>
-        {
-            await payments.DeleteAsync(p.Id);
-            notifier.Info("Paiement supprimé");
-        }, notifier);
-        await ReloadAsync();
+        var dialog = services.GetRequiredService<CancelReceiptDialogViewModel>();
+        dialog.Initialize(p);
+        if (await dialogs.ShowAsync(dialog)) await ReloadAsync();
     }
 
     [RelayCommand]

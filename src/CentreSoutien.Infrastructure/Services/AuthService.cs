@@ -21,7 +21,12 @@ public sealed class AuthService(IDbContextFactory<AppDbContext> factory, IPasswo
             account.LastLoginAt = clock.GetLocalNow().DateTime;
             if (hasher.NeedsRehash(account.PasswordHash)) account.PasswordHash = hasher.Hash(password);
             if (keys.BackupWrap is null) keys.SetBackupPassword(password);
+            db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Security, "Connexion"));
         }
+        else
+            db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Security,
+                result.Outcome == LoginOutcome.LockedOut ? "Connexion bloquée (trop d'essais)" : "Échec de connexion",
+                string.IsNullOrWhiteSpace(username) ? null : $"Nom d'utilisateur saisi : {username.Trim()}"));
         await db.SaveChangesAsync(ct);
         return result;
     }
@@ -77,6 +82,7 @@ public sealed class AuthService(IDbContextFactory<AppDbContext> factory, IPasswo
         account.PasswordHash = hasher.Hash(newPassword);
         account.MustChangePassword = false;
         account.PasswordChangedAt = clock.GetLocalNow().DateTime;
+        db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Security, "Mot de passe modifié"));
         await db.SaveChangesAsync(ct);
         keys.SetBackupPassword(newPassword);
     }

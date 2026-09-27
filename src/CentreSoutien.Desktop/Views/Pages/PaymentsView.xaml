@@ -181,7 +181,7 @@
                         <TextBlock Grid.Column="1" Text="Date" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="2" Text="Élève" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="3" Text="Objet" Style="{StaticResource ColumnHeader}" />
-                        <TextBlock Grid.Column="4" Text="Mois" Style="{StaticResource ColumnHeader}" />
+                        <TextBlock Grid.Column="4" Text="État" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="5" Text="Mode" Style="{StaticResource ColumnHeader}" />
                         <TextBlock Grid.Column="6" Text="Montant" Style="{StaticResource ColumnHeader}" />
                     </Grid>
@@ -210,12 +210,15 @@
                                     <TextBlock Grid.Column="1" Text="{Binding Date}" Style="{StaticResource Muted}" />
                                     <TextBlock Grid.Column="2" Text="{Binding Student}" Style="{StaticResource BodyStrong}" Margin="0,0,10,0" ToolTip="{Binding Student}" />
                                     <TextBlock Grid.Column="3" Text="{Binding Kind}" Style="{StaticResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Kind}" />
-                                    <TextBlock Grid.Column="4" Text="{Binding Month}" Style="{StaticResource Muted}" />
+                                    <ContentControl Grid.Column="4" Content="{Binding State}" Focusable="False" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                    ToolTip="{Binding StateDetails}" />
                                     <TextBlock Grid.Column="5" Text="{Binding Method}" Style="{StaticResource Muted}" />
                                     <TextBlock Grid.Column="6" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
                                     <StackPanel Grid.Column="7" Orientation="Horizontal" HorizontalAlignment="Right">
                                         <Button Content="Imprimer" Command="{Binding Print}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
-                                        <Button Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}" />
+                                        <Button Content="Annuler" Command="{Binding Delete}" Style="{StaticResource DangerLinkButton}"
+                                                Visibility="{Binding CanCancel, Converter={StaticResource BoolToVisible}}"
+                                                ToolTip="Annuler le reçu (il reste dans la liste, marqué « Annulé », avec le motif)" />
                                     </StackPanel>
                                 </Grid>
                             </Border>

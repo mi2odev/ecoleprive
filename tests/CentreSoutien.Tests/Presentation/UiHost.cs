@@ -74,7 +74,14 @@ public sealed class FakePlatform : IFilePicker, IShell, IPrintService, IThemeSer
         Printed.Add(jobName);
         PrintedPages.Add((jobName, pages));
     }
-    public void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath) => Printed.Add(payment.ReceiptNumber);
+    public void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath, bool duplicate = false)
+    {
+        Printed.Add(payment.ReceiptNumber);
+        if (duplicate) Duplicates.Add(payment.ReceiptNumber);
+    }
+
+    /// <summary>Receipts reprinted as "DUPLICATA".</summary>
+    public List<string> Duplicates { get; } = [];
     public void PrintReport(string title, string subtitle, CenterSettings settings, IReadOnlyList<(string Label, string Value)> summary, IReadOnlyList<PrintTable> tables) => Printed.Add(title);
     public AppTheme Current { get; private set; }
     public void Apply(AppTheme theme) => Current = theme;

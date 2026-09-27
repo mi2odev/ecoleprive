@@ -75,3 +75,15 @@ public enum Gender
     Male = 1,
     Female = 2,
 }
+
+public enum AuditCategory
+{
+    Payment = 0,
+    TeacherPayment = 1,
+    Student = 2,
+    Group = 3,
+    Expense = 4,
+    Settings = 5,
+    Security = 6,
+    Backup = 7,
+}

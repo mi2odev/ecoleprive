@@ -7,9 +7,17 @@ using Microsoft.EntityFrameworkCore;
 namespace CentreSoutien.Infrastructure.Services;
 
 /// <summary>Generic CRUD for flat reference entities (no owned collections are saved).</summary>
-public class CrudService<T>(IDbContextFactory<AppDbContext> factory) : ICrudService<T> where T : Entity
+public class CrudService<T>(IDbContextFactory<AppDbContext> factory, TimeProvider? clock = null) : ICrudService<T> where T : Entity
 {
     protected IDbContextFactory<AppDbContext> Factory => factory;
+
+    /// <summary>Activity journal line for a saved (<paramref name="added"/> or modified) or deleted item; null = not journaled.</summary>
+    protected virtual (Domain.Enums.AuditCategory Category, string Action)? Journal(T entity, string change) => null;
+
+    private void AddJournal(AppDbContext db, T entity, string change)
+    {
+        if (clock is not null && Journal(entity, change) is { } j) db.AuditLog.Add(Audit.Entry(clock, j.Category, j.Action));
+    }
 
     protected virtual IQueryable<T> Query(AppDbContext db) => db.Set<T>().AsNoTracking();
     protected virtual IEnumerable<T> Order(IEnumerable<T> items) => items.OrderBy(x => x.Id);
@@ -32,6 +40,7 @@ public class CrudService<T>(IDbContextFactory<AppDbContext> factory) : ICrudServ
     {
         Validate(entity);
         await using var db = await factory.CreateDbContextAsync(ct);
+        AddJournal(db, entity, entity.Id == 0 ? "ajoutée" : "modifiée");
         db.Entry(entity).State = entity.Id == 0 ? EntityState.Added : EntityState.Modified;
         try
         {
@@ -51,6 +60,7 @@ public class CrudService<T>(IDbContextFactory<AppDbContext> factory) : ICrudServ
         var entity = await db.Set<T>().FindAsync([id], ct);
         if (entity is null) return;
         db.Remove(entity);
+        AddJournal(db, entity, "supprimée");
         try
         {
             await db.SaveChangesAsync(ct);
@@ -88,8 +98,11 @@ public sealed class RoomService(IDbContextFactory<AppDbContext> f) : CrudService
     }
 }
 
-public sealed class DiscountService(IDbContextFactory<AppDbContext> f) : CrudService<Discount>(f)
+public sealed class DiscountService(IDbContextFactory<AppDbContext> f, TimeProvider clock) : CrudService<Discount>(f, clock)
 {
+    protected override (Domain.Enums.AuditCategory, string)? Journal(Discount e, string change) =>
+        (Domain.Enums.AuditCategory.Settings, $"Remise {change} : {e}");
+
     protected override IEnumerable<Discount> Order(IEnumerable<Discount> items) => items.OrderBy(x => x.Name);
     protected override void Validate(Discount e)
     {
@@ -99,8 +112,11 @@ public sealed class DiscountService(IDbContextFactory<AppDbContext> f) : CrudSer
     }
 }
 
-public sealed class ExpenseService(IDbContextFactory<AppDbContext> f) : CrudService<Expense>(f)
+public sealed class ExpenseService(IDbContextFactory<AppDbContext> f, TimeProvider clock) : CrudService<Expense>(f, clock)
 {
+    protected override (Domain.Enums.AuditCategory, string)? Journal(Expense e, string change) =>
+        (Domain.Enums.AuditCategory.Expense, $"Dépense {change} : {Money.Format(e.Amount)} · {e.Category}{(string.IsNullOrWhiteSpace(e.Description) ? "" : " · " + e.Description)} ({e.Date:dd/MM/yyyy})");
+
     protected override IEnumerable<Expense> Order(IEnumerable<Expense> items) => items.OrderByDescending(x => x.Date).ThenByDescending(x => x.Id);
     protected override void Validate(Expense e)
     {
@@ -153,7 +169,7 @@ public sealed class ParentService(IDbContextFactory<AppDbContext> factory) : IPa
     }
 }
 
-public sealed class SettingsService(IDbContextFactory<AppDbContext> factory) : ISettingsService
+public sealed class SettingsService(IDbContextFactory<AppDbContext> factory, TimeProvider clock) : ISettingsService
 {
     public async Task<CenterSettings> GetAsync(CancellationToken ct = default)
     {
@@ -171,6 +187,7 @@ public sealed class SettingsService(IDbContextFactory<AppDbContext> factory) : I
         if (settings.GradeScale <= 0) throw new BusinessException("Le barème doit être positif.");
         await using var db = await factory.CreateDbContextAsync(ct);
         db.Settings.Update(settings);
+        db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Settings, "Paramètres du centre enregistrés"));
         await db.SaveChangesAsync(ct);
         Money.Currency = settings.Currency;
         return settings;

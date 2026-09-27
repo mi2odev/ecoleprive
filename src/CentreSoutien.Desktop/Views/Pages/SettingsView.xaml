@@ -520,6 +520,42 @@
                         </Border>
                     </StackPanel>
 
+                    <!-- ===== Journal d'activité ===== -->
+                    <StackPanel Visibility="{Binding IsJournal, Converter={StaticResource BoolToVisible}}">
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                   Text="Tout ce qui est fait dans l'application est noté ici, avec la date et l'heure : paiements encaissés et reçus annulés, élèves ajoutés ou inscrits, groupes, dépenses, paiements enseignants, paramètres, sauvegardes et connexions. Ce journal ne peut pas être modifié." />
+                        <DockPanel Margin="0,0,0,12">
+                            <TextBox DockPanel.Dock="Right" Width="260" Text="{Binding JournalSearch, UpdateSourceTrigger=PropertyChanged, Delay=150}"
+                                     Tag="Rechercher (nom, reçu, montant…)" Margin="12,0,0,0" />
+                            <ListBox ItemsSource="{Binding JournalCategories}" SelectedItem="{Binding SelectedJournalCategory}" DisplayMemberPath="Label" Style="{StaticResource ChipList}" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding JournalSummary}" Style="{StaticResource Small}" Margin="0,0,0,8" />
+                        <Border Style="{StaticResource Card}">
+                            <ItemsControl ItemsSource="{Binding Journal}" VirtualizingPanel.IsVirtualizing="True">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:JournalRow}">
+                                        <Border Style="{StaticResource TableRow}" Padding="16,9">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="130" />
+                                                    <ColumnDefinition Width="110" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding At}" Style="{StaticResource Muted}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Category}" Style="{StaticResource Small}" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="{Binding Action}" Style="{StaticResource Body}" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{Binding Details}" Style="{StaticResource Small}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                               Visibility="{Binding Details, Converter={StaticResource NotNullToVisible}}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+
                     <Border Style="{StaticResource Divider}" Margin="0,18,0,16" />
                     <Button Content="Enregistrer" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" />
                 </StackPanel>

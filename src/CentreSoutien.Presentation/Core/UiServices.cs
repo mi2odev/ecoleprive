@@ -64,7 +64,8 @@ public interface IPrintService
     /// <summary>Prints several pages in one job (one print dialog), e.g. all report cards of a group.</summary>
     void PrintPages(string jobName, CenterSettings settings, string? logoPath, IReadOnlyList<PrintPage> pages);
 
-    void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath);
+    /// <param name="duplicate">Reprint of an existing receipt: marked "DUPLICATA".</param>
+    void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath, bool duplicate = false);
     /// <summary>Prints (or saves as PDF through the "Microsoft Print to PDF" printer) a simple report.</summary>
     void PrintReport(string title, string subtitle, CenterSettings settings, IReadOnlyList<(string Label, string Value)> summary, IReadOnlyList<PrintTable> tables);
 }

@@ -89,6 +89,7 @@ public sealed class BackupService(
 
                 settings.LastBackupAt = now;
                 settings.LastBackupSize = new FileInfo(file).Length;
+                db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Backup, "Sauvegarde créée", Path.GetFileName(file)));
                 await db.SaveChangesAsync(ct);
                 Prune(folder, settings.BackupRetentionCount);
                 return file;
@@ -162,6 +163,8 @@ public sealed class BackupService(
             // Bring an older backup up to the current schema.
             await using var db = await factory.CreateDbContextAsync(ct);
             await db.Database.MigrateAsync(ct);
+            db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Backup, "Sauvegarde restaurée", Path.GetFileName(backupFile)));
+            await db.SaveChangesAsync(ct);
             keys.SetBackupPassword(password!);
         }
         finally

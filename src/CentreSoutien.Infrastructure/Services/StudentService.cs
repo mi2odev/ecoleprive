@@ -2,6 +2,7 @@ using CentreSoutien.Application.Abstractions;
 using CentreSoutien.Application.Models;
 using CentreSoutien.Domain.Calculations;
 using CentreSoutien.Domain.Entities;
+using CentreSoutien.Domain.Enums;
 using CentreSoutien.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -60,7 +61,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
         return await db.Students.AsNoTrackingWithIdentityResolution()
             .Include(s => s.Parent)
             .Include(s => s.Discount)
-            .Include(s => s.Payments)
+            .Include(s => s.Payments).ThenInclude(p => p.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Subject)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Teacher)
             .Include(s => s.Enrollments).ThenInclude(e => e.Group).ThenInclude(g => g!.Room)
@@ -97,6 +98,8 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
             student.School, student.Phone, student.Address, student.PhotoFile, student.IsActive, student.EnrolledOn,
             student.Notes, student.ParentId, student.DiscountId,
         });
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Student,
+            student.Id == 0 ? $"Élève ajouté : {student.FullName} ({student.Matricule})" : $"Fiche modifiée : {student.FullName} ({student.Matricule})"));
         await db.SaveChangesAsync(ct);
         student.Id = entity.Id;
         return student;
@@ -105,11 +108,12 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        if (await db.StudentPayments.AnyAsync(p => p.StudentId == id, ct))
-            throw new BusinessException("Cet élève a des paiements enregistrés. Rendez-le inactif plutôt que de le supprimer, ou supprimez d'abord ses paiements.");
+        if (await db.StudentPayments.IgnoreQueryFilters().AnyAsync(p => p.StudentId == id, ct))
+            throw new BusinessException("Cet élève a des paiements enregistrés (même annulés) : rendez-le inactif plutôt que de le supprimer.");
         var s = await db.Students.FindAsync([id], ct);
         if (s is null) return;
         db.Students.Remove(s);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Student, $"Élève supprimé : {s.FullName} ({s.Matricule})"));
         await db.SaveChangesAsync(ct);
     }
 
@@ -130,7 +134,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var today = clock.GetLocalNow().Date;
-        var group = await db.Groups.Include(g => g.Enrollments).FirstOrDefaultAsync(g => g.Id == groupId, ct)
+        var group = await db.Groups.Include(g => g.Enrollments).Include(g => g.Subject).FirstOrDefaultAsync(g => g.Id == groupId, ct)
             ?? throw new BusinessException("Groupe introuvable.");
         var student = await db.Students.FindAsync([studentId], ct) ?? throw new BusinessException("Élève introuvable.");
         if (!student.IsActive) throw new BusinessException("Réactivez l'élève avant de l'inscrire.");
@@ -138,6 +142,7 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
         if (active.Any(e => e.StudentId == studentId)) throw new BusinessException("L'élève est déjà inscrit dans ce groupe.");
         if (active.Count >= group.Capacity) throw new BusinessException($"Le groupe est complet ({group.Capacity} places).");
         db.Enrollments.Add(new Enrollment { StudentId = studentId, GroupId = groupId, StartDate = today });
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Student, $"{student.FullName} inscrit dans {group.FullName}"));
         await db.SaveChangesAsync(ct);
     }
 
@@ -153,6 +158,9 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
             if (e.StartDate.Date >= today) db.Enrollments.Remove(e);
             else e.EndDate = today.AddDays(-1);
         }
+        if (list.Count > 0 && await db.Students.FindAsync([studentId], ct) is { } student
+            && await db.Groups.Include(g => g.Subject).FirstOrDefaultAsync(g => g.Id == groupId, ct) is { } group)
+            db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Student, $"{student.FullName} retiré de {group.FullName}"));
         await db.SaveChangesAsync(ct);
     }
 
@@ -176,6 +184,9 @@ public sealed class StudentService(IDbContextFactory<AppDbContext> factory, Time
         await using var db = await factory.CreateDbContextAsync(ct);
         var s = await db.Students.FindAsync([studentId], ct) ?? throw new BusinessException("Élève introuvable.");
         s.DiscountId = discountId;
+        var discount = discountId is null ? null : await db.Discounts.FindAsync([discountId], ct);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Student,
+            discount is null ? $"Remise retirée : {s.FullName}" : $"Remise appliquée : {s.FullName} · {discount}"));
         await db.SaveChangesAsync(ct);
     }
 

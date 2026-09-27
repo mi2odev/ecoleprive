@@ -71,10 +71,50 @@ public class FinanceTests
         Assert.Equal("Payé", updated.State.Text);
         Assert.Contains(page.Receipts, r => r.Number == dialog.Result.ReceiptNumber);
 
-        // Reprint from the "Derniers reçus" column.
+        // Reprint from the "Derniers reçus" column: marked as a duplicate.
         host.Get<FakePlatform>().Printed.Clear();
         await Run(page.LatestReceipts[0].Print);
         Assert.Single(host.Get<FakePlatform>().Printed);
+        Assert.Contains(dialog.Result.ReceiptNumber, host.Get<FakePlatform>().Duplicates);
+
+        // Cancel it: a reason is required, the receipt stays listed as "Annulé" and the line owes again.
+        var line = page.Receipts.Single(r => r.Number == dialog.Result.ReceiptNumber);
+        Assert.True(line.CanCancel);
+        var cancel = await WithDialogAsync<CancelReceiptDialogViewModel>(host, () => Run(line.Delete), d =>
+        {
+            Assert.Contains(dialog.Result.ReceiptNumber, d.Summary);
+            d.Reasons[0].Apply.Execute(null);
+        });
+        Assert.False(cancel.HasError, cancel.Error);
+        line = page.Receipts.Single(r => r.Number == dialog.Result.ReceiptNumber);
+        Assert.True(line.IsCancelled);
+        Assert.Equal("Annulé", line.State.Text);
+        Assert.Contains("Erreur de saisie", line.StateDetails);
+        Assert.False(line.CanCancel);
+        Assert.Contains("1 annulé", page.ReceiptsTotal);
+        Assert.DoesNotContain(page.LatestReceipts, r => r.Details.StartsWith(dialog.Result.ReceiptNumber));
+        Assert.True(page.Rows.Single(r => r.StudentId == row.StudentId && r.GroupId == row.GroupId).CanCollect);
+    }
+
+    [Fact]
+    public async Task Activity_journal_lists_and_filters_the_operations()
+    {
+        await using var host = await UiHost.CreateAsync();
+        await host.Get<IAuditService>().AddAsync(AuditCategory.Backup, "Sauvegarde créée", "sauvegarde-test.csbak");
+        await host.Get<IAuditService>().AddAsync(AuditCategory.Expense, "Dépense ajoutée : 9 800 DZD · Charges");
+        await host.Get<Navigator>().NavigateAsync<SettingsViewModel>("journal");
+        var page = host.Page<SettingsViewModel>();
+        Assert.True(page.IsJournal);
+        await page.LoadJournalAsync();
+        Assert.Equal("Dépense ajoutée : 9 800 DZD · Charges", page.Journal[0].Action); // latest first
+        Assert.Contains(page.Journal, r => r.Category == "Sauvegardes" && r.Details == "sauvegarde-test.csbak");
+
+        page.JournalSearch = "sauvegarde test";
+        Assert.Equal("Sauvegarde créée", Assert.Single(page.Journal).Action);
+        page.JournalSearch = "";
+        page.SelectedJournalCategory = page.JournalCategories.Single(c => c.Value == AuditCategory.Expense);
+        await page.LoadJournalAsync();
+        Assert.All(page.Journal, r => Assert.Equal("Dépenses", r.Category));
     }
 
     [Fact]
@@ -225,7 +265,7 @@ public class FinanceTests
         await host.Get<Navigator>().NavigateAsync<SettingsViewModel>();
         var page = host.Page<SettingsViewModel>();
         Assert.False(page.HasError, page.Error);
-        Assert.Equal(9, page.Sections.Count);
+        Assert.Equal(10, page.Sections.Count); // … + "Journal d'activité"
 
         page.SelectedSection = page.Sections.First(s => s.Value == "sec");
         Assert.True(page.IsSecurity);

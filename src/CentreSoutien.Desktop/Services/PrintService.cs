@@ -23,14 +23,20 @@ public sealed class PrintService : IPrintService
     private static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(0x5B, 0x64, 0x75));
     private static readonly Brush Line = new SolidColorBrush(Color.FromRgb(0xDC, 0xE2, 0xEA));
 
-    public void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath)
+    public void PrintReceipt(StudentPayment payment, CenterSettings settings, string? logoPath, bool duplicate = false)
     {
         var doc = NewDocument();
         doc.Blocks.Add(Header(settings, settings.ShowLogoOnReceipt ? logoPath : null));
 
         var title = new Paragraph { Margin = new Thickness(0, 18, 0, 4) };
         title.Inlines.Add(new Run("Reçu de paiement") { FontFamily = Serif, FontSize = 24 });
+        var mark = payment.IsCancelled ? "ANNULÉ" : duplicate ? "DUPLICATA" : null;
+        if (mark is not null)
+            title.Inlines.Add(new Run("   " + mark) { FontSize = 14, FontWeight = FontWeights.Bold, Foreground = payment.IsCancelled ? Brushes.DarkRed : Muted });
         doc.Blocks.Add(title);
+        if (payment.IsCancelled)
+            doc.Blocks.Add(new Paragraph(new Run($"Reçu annulé le {payment.CancelledAt:dd/MM/yyyy à HH:mm} · motif : {payment.CancelReason}"))
+                { Foreground = Brushes.DarkRed, Margin = new Thickness(0, 0, 0, 6) });
         doc.Blocks.Add(new Paragraph(new Run($"N° {payment.ReceiptNumber} · {payment.Date:dd/MM/yyyy HH:mm}")) { Foreground = Muted, Margin = new Thickness(0, 0, 0, 14) });
 
         var student = payment.Student;
@@ -50,6 +56,8 @@ public sealed class PrintService : IPrintService
         amount.Inlines.Add(new Run("Montant reçu   ") { Foreground = Muted });
         amount.Inlines.Add(new Run(Money.Format(payment.Amount)) { FontFamily = Serif, FontSize = 26 });
         doc.Blocks.Add(amount);
+        doc.Blocks.Add(new Paragraph(new Run("Arrêté le présent reçu à la somme de : " + NumberWords.Amount(payment.Amount, settings.Currency) + "."))
+            { Foreground = Ink, FontStyle = FontStyles.Italic, Margin = new Thickness(0, 6, 0, 0) });
 
         var sign = new Paragraph(new Run("Cachet et signature")) { Margin = new Thickness(0, 36, 0, 40), TextAlignment = TextAlignment.Right, Foreground = Muted };
         doc.Blocks.Add(sign);

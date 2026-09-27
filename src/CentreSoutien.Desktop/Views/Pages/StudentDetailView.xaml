@@ -288,7 +288,8 @@
                                     <TextBlock Grid.Column="3" Text="{Binding Method}" Style="{StaticResource Muted}" />
                                     <TextBlock Grid.Column="4" Text="{Binding Amount}" Style="{StaticResource BodyStrong}" />
                                     <Button Grid.Column="5" Content="Reçu" Command="{Binding Print}" Style="{StaticResource LinkButton}" Margin="0,0,12,0" />
-                                    <Button Grid.Column="6" Content="Supprimer" Command="{Binding Delete}" Style="{StaticResource LinkButton}" />
+                                    <Button Grid.Column="6" Content="Annuler" Command="{Binding Delete}" Style="{StaticResource LinkButton}"
+                                            ToolTip="Annuler le reçu (il reste visible dans Paiements → Reçus, marqué « Annulé »)" />
                                 </Grid>
                             </Border>
                         </DataTemplate>

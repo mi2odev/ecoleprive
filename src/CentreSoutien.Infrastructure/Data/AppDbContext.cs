@@ -24,6 +24,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<TeacherPayment> TeacherPayments => Set<TeacherPayment>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -136,12 +137,25 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
         b.Entity<Discount>(e => e.Property(x => x.Name).HasMaxLength(80).IsRequired());
 
+        b.Entity<AuditEntry>(e =>
+        {
+            e.ToTable("AuditLog");
+            e.Property(x => x.Action).HasMaxLength(300);
+            e.Property(x => x.Details).HasMaxLength(1000);
+            e.HasIndex(x => x.At);
+        });
+
         b.Entity<StudentPayment>(e =>
         {
             e.Property(x => x.ReceiptNumber).HasMaxLength(40).IsRequired();
             e.HasIndex(x => x.ReceiptNumber).IsUnique();
             e.HasOne(x => x.Student).WithMany(s => s.Payments).HasForeignKey(x => x.StudentId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Group).WithMany().HasForeignKey(x => x.GroupId).OnDelete(DeleteBehavior.SetNull);
+            // Cancelled receipts are kept for the record but excluded from every query (balances, revenue, reports…).
+            // The receipts list and the cash journal read them with IgnoreQueryFilters().
+            e.HasQueryFilter(x => x.CancelledAt == null);
+            e.Property(x => x.CancelReason).HasMaxLength(300);
+            e.Ignore(x => x.IsCancelled);
             e.HasIndex(x => x.Date);
         });
 

@@ -228,6 +228,10 @@ public sealed partial class ImportService(IDbContextFactory<AppDbContext> factor
             foreach (var m in plan.Row.Messages) messages.Add($"Ligne {d.RowNumber} ({d.FullName}) : {m}");
         }
 
+        if (created > 0)
+            db.AuditLog.Add(Audit.Entry(clock, Domain.Enums.AuditCategory.Student,
+                $"Import Excel : {created} élève{(created > 1 ? "s" : "")} ajouté{(created > 1 ? "s" : "")}",
+                $"{parentsCreated} parent(s) · {enrollments} inscription(s) · {skipped} ligne(s) ignorée(s)"));
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         return new ImportResult(created, parentsCreated, enrollments, skipped, messages);

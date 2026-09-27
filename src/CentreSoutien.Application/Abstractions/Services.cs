@@ -110,7 +110,8 @@ public interface IPaymentService
     Task<StudentPayment> RecordAsync(int studentId, int? groupId, decimal amount, PaymentMethod method, PaymentKind kind, string? note, CancellationToken ct = default);
     Task<List<StudentPayment>> ReceiptsAsync(DateTime from, DateTime to, CancellationToken ct = default);
     Task<StudentPayment?> GetReceiptAsync(int paymentId, CancellationToken ct = default);
-    Task DeleteAsync(int paymentId, CancellationToken ct = default);
+    /// <summary>Cancels a receipt (it stays numbered and listed, marked "Annulé", and no longer counts).</summary>
+    Task CancelAsync(int paymentId, string reason, CancellationToken ct = default);
 }
 
 public interface ITeacherPaymentService
@@ -119,6 +120,14 @@ public interface ITeacherPaymentService
     Task<TeacherPayment> RecordAsync(int teacherId, decimal amount, PaymentMethod method, DateTime period, string? note, CancellationToken ct = default);
     Task<List<TeacherPayment>> HistoryAsync(int? teacherId = null, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
+}
+
+/// <summary>Activity journal: what was done in the application (payments, cancellations, students, groups, settings…).</summary>
+public interface IAuditService
+{
+    Task AddAsync(AuditCategory category, string action, string? details = null, CancellationToken ct = default);
+    /// <summary>Latest entries first.</summary>
+    Task<List<AuditEntry>> ListAsync(AuditCategory? category = null, DateTime? from = null, int take = 500, CancellationToken ct = default);
 }
 
 public interface IDashboardService

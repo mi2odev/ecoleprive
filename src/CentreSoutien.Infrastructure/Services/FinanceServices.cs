@@ -42,7 +42,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
             throw new BusinessException("Cet élève n'est pas inscrit dans ce groupe.");
         var settings = await db.Settings.FirstAsync(ct);
         var number = settings.ReceiptPrefix + settings.NextReceiptNumber.ToString("0000");
-        while (await db.StudentPayments.AnyAsync(x => x.ReceiptNumber == number, ct))
+        while (await db.StudentPayments.IgnoreQueryFilters().AnyAsync(x => x.ReceiptNumber == number, ct))
         {
             settings.NextReceiptNumber++;
             number = settings.ReceiptPrefix + settings.NextReceiptNumber.ToString("0000");
@@ -54,6 +54,10 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
             Period = Period.Of(clock.GetLocalNow().DateTime), Date = clock.GetLocalNow().DateTime, Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
         };
         db.StudentPayments.Add(payment);
+        var group = groupId is null ? null : await db.Groups.Include(g => g.Subject).FirstOrDefaultAsync(g => g.Id == groupId, ct);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Payment,
+            $"Reçu {number} : {Money.Format(amount)} encaissés · {student.FullName}",
+            string.Join(" · ", new[] { group?.FullName ?? Labels.Of(kind), Labels.Of(method), payment.Note }.Where(x => !string.IsNullOrWhiteSpace(x)))));
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         payment.Student = student;
@@ -64,7 +68,7 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
     {
         await using var db = await factory.CreateDbContextAsync(ct);
         var end = to.Date.AddDays(1);
-        var list = await db.StudentPayments.AsNoTracking().Include(p => p.Student).Include(p => p.Group).ThenInclude(g => g!.Subject)
+        var list = await db.StudentPayments.IgnoreQueryFilters().AsNoTracking().Include(p => p.Student).Include(p => p.Group).ThenInclude(g => g!.Subject)
             .Where(p => p.Date >= from.Date && p.Date < end).ToListAsync(ct);
         return list.OrderByDescending(p => p.Date).ThenByDescending(p => p.Id).ToList();
     }
@@ -72,17 +76,21 @@ public sealed class PaymentService(IDbContextFactory<AppDbContext> factory, Time
     public async Task<StudentPayment?> GetReceiptAsync(int paymentId, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        return await db.StudentPayments.AsNoTracking().Include(p => p.Student).ThenInclude(s => s!.Parent)
+        return await db.StudentPayments.IgnoreQueryFilters().AsNoTracking().Include(p => p.Student).ThenInclude(s => s!.Parent)
             .Include(p => p.Group).ThenInclude(g => g!.Subject)
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct);
     }
 
-    public async Task DeleteAsync(int paymentId, CancellationToken ct = default)
+    public async Task CancelAsync(int paymentId, string reason, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(reason)) throw new BusinessException("Indiquez le motif de l'annulation.");
         await using var db = await factory.CreateDbContextAsync(ct);
-        var p = await db.StudentPayments.FindAsync([paymentId], ct);
-        if (p is null) return;
-        db.StudentPayments.Remove(p);
+        var p = await db.StudentPayments.Include(x => x.Student).FirstOrDefaultAsync(x => x.Id == paymentId, ct)
+            ?? throw new BusinessException("Reçu introuvable ou déjà annulé.");
+        p.CancelledAt = clock.GetLocalNow().DateTime;
+        p.CancelReason = reason.Trim();
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Payment,
+            $"Reçu {p.ReceiptNumber} annulé ({Money.Format(p.Amount)} · {p.Student?.FullName})", $"Motif : {p.CancelReason}"));
         await db.SaveChangesAsync(ct);
     }
 }
@@ -120,6 +128,8 @@ public sealed class TeacherPaymentService(IDbContextFactory<AppDbContext> factor
             Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(),
         };
         db.TeacherPayments.Add(payment);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.TeacherPayment,
+            $"Paiement enseignant : {Money.Format(amount)} versés à {t.FullName}", $"{Labels.Month(payment.Period)} · {Labels.Of(method)}"));
         await db.SaveChangesAsync(ct);
         payment.Teacher = t;
         return payment;
@@ -136,9 +146,11 @@ public sealed class TeacherPaymentService(IDbContextFactory<AppDbContext> factor
     public async Task DeleteAsync(int id, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var p = await db.TeacherPayments.FindAsync([id], ct);
+        var p = await db.TeacherPayments.Include(x => x.Teacher).FirstOrDefaultAsync(x => x.Id == id, ct);
         if (p is null) return;
         db.TeacherPayments.Remove(p);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.TeacherPayment,
+            $"Paiement enseignant supprimé : {Money.Format(p.Amount)} · {p.Teacher?.FullName}", $"{Labels.Month(p.Period)} · versé le {p.Date:dd/MM/yyyy}"));
         await db.SaveChangesAsync(ct);
     }
 }

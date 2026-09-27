@@ -265,3 +265,41 @@ public sealed partial class TeacherPaymentDialogViewModel(ITeacherPaymentService
         return true;
     }
 }
+
+/// <summary>
+/// Cancels a student receipt. A receipt is never deleted: it keeps its number, stays in the list marked "Annulé" with
+/// the reason, and no longer counts in balances or revenue.
+/// </summary>
+public sealed partial class CancelReceiptDialogViewModel(IPaymentService payments, INotifier notifier) : DialogViewModel
+{
+    private int _paymentId;
+
+    public override string Title => "Annuler un reçu";
+    public override string ConfirmText => "Annuler le reçu";
+    public override string CancelText => "Garder le reçu";
+    public override bool IsDanger => true;
+    public override double Width => 480;
+
+    [ObservableProperty] private string _summary = "";
+    [ObservableProperty] private string _reason = "";
+
+    /// <summary>Usual reasons, one click fills the field.</summary>
+    public IReadOnlyList<QuickAmountOption> Reasons { get; private set; } = [];
+
+    public void Initialize(Domain.Entities.StudentPayment p)
+    {
+        _paymentId = p.Id;
+        Summary = $"Reçu {p.ReceiptNumber} du {p.Date:dd/MM/yyyy} · {Money.Format(p.Amount)} · {p.Student?.FullName}"
+                  + (p.Group is { } g ? $" · {g.FullName}" : "");
+        Reasons = new[] { "Erreur de saisie", "Mauvais élève ou mauvais groupe", "Remboursement", "Doublon" }
+            .Select(r => new QuickAmountOption(r, 0, new RelayCommand(() => Reason = r))).ToList();
+    }
+
+    protected override async Task<bool> OnConfirmAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Reason)) throw new BusinessException("Indiquez le motif de l'annulation.");
+        await payments.CancelAsync(_paymentId, Reason);
+        notifier.Info("Reçu annulé · il reste visible dans la liste des reçus");
+        return true;
+    }
+}

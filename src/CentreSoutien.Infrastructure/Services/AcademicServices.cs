@@ -65,6 +65,9 @@ public sealed class TeacherService(IDbContextFactory<AppDbContext> factory, Time
             FirstName = teacher.FirstName.Trim(), LastName = teacher.LastName.Trim(), teacher.Phone, teacher.Email, teacher.Address,
             teacher.SubjectId, teacher.StartYear, teacher.CompensationType, teacher.CompensationValue, teacher.IsActive, teacher.PhotoFile, teacher.Notes,
         });
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.TeacherPayment,
+            $"Enseignant {(teacher.Id == 0 ? "ajouté" : "modifié")} : {teacher.FirstName.Trim()} {teacher.LastName.Trim()}",
+            TeacherEarnings.RuleLabel(teacher, Money.Format)));
         await db.SaveChangesAsync(ct);
         teacher.Id = entity.Id;
         return teacher;
@@ -78,6 +81,7 @@ public sealed class TeacherService(IDbContextFactory<AppDbContext> factory, Time
         var t = await db.Teachers.FindAsync([id], ct);
         if (t is null) return;
         db.Teachers.Remove(t);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.TeacherPayment, $"Enseignant supprimé : {t.FullName}"));
         await db.SaveChangesAsync(ct);
     }
 }
@@ -200,6 +204,10 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         });
         db.Slots.RemoveRange(entity.Slots);
         entity.Slots = slotList;
+        var subject = await db.Subjects.FindAsync([group.SubjectId], ct);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Group,
+            $"Groupe {(group.Id == 0 ? "créé" : "modifié")} : {subject?.Name ?? "?"} · {level} {group.Name.Trim()}",
+            $"{Money.Format(group.Price)} / {group.SessionsPerPack} séances · capacité {group.Capacity}{(group.AbsencesCount ? "" : " · absences non comptées")}"));
         await db.SaveChangesAsync(ct);
         group.Id = entity.Id;
         return group;
@@ -210,9 +218,10 @@ public sealed class GroupService(IDbContextFactory<AppDbContext> factory, TimePr
         await using var db = await factory.CreateDbContextAsync(ct);
         if (await db.Enrollments.AnyAsync(e => e.GroupId == id, ct))
             throw new BusinessException("Ce groupe a (ou a eu) des élèves inscrits. Désactivez-le plutôt que de le supprimer.");
-        var g = await db.Groups.FindAsync([id], ct);
+        var g = await db.Groups.Include(x => x.Subject).FirstOrDefaultAsync(x => x.Id == id, ct);
         if (g is null) return;
         db.Groups.Remove(g);
+        db.AuditLog.Add(Audit.Entry(clock, AuditCategory.Group, $"Groupe supprimé : {g.FullName}"));
         await db.SaveChangesAsync(ct);
     }
 }

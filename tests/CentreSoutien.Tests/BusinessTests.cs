@@ -222,6 +222,27 @@ public class BusinessTests
         Assert.Equal(4500, groupB.Collected);
 
         await Assert.ThrowsAsync<BusinessException>(() => studentsSvc.DeleteAsync(s1.Id)); // has payments
+
+        // A receipt is cancelled, never deleted: it keeps its number, stays listed, and no longer counts.
+        await Assert.ThrowsAsync<BusinessException>(() => payments.CancelAsync(p2.Id, " ")); // reason required
+        await payments.CancelAsync(p2.Id, "Erreur de saisie");
+        rows = await payments.OverviewAsync();
+        Assert.Equal(4500, rows.Single(r => r.StudentId == s2.Id).Balance);
+        var receipt = Assert.Single(await payments.ReceiptsAsync(period, period.AddMonths(1)), r => r.Id == p2.Id);
+        Assert.True(receipt.IsCancelled);
+        Assert.Equal("Erreur de saisie", receipt.CancelReason);
+        await Assert.ThrowsAsync<BusinessException>(() => payments.CancelAsync(p2.Id, "encore")); // already cancelled
+        var p3 = await payments.RecordAsync(s2.Id, a.Id, 4500, PaymentMethod.Cash, PaymentKind.Sessions, null);
+        Assert.Equal("REC-2026-0003", p3.ReceiptNumber); // numbers are never reused
+
+        // Everything is in the activity journal, latest first.
+        var journal = await host.Get<IAuditService>().ListAsync();
+        Assert.StartsWith("Reçu REC-2026-0003 : 4 500 DZD encaissés", journal[0].Action);
+        Assert.Contains(journal, e => e.Action.StartsWith("Reçu REC-2026-0002 annulé") && e.Details == "Motif : Erreur de saisie");
+        Assert.Contains(journal, e => e.Action == "Amira Haddad inscrit dans Mathématiques · 3AS A");
+        Assert.Contains(journal, e => e.Action == "Yacine Benali retiré de Mathématiques · 3AS A");
+        Assert.Contains(journal, e => e.Action.StartsWith("Groupe créé : Mathématiques · 3AS B"));
+        Assert.All(await host.Get<IAuditService>().ListAsync(AuditCategory.Payment), e => Assert.Equal(AuditCategory.Payment, e.Category));
     }
 
     [Fact]
